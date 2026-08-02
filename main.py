@@ -1,3 +1,7 @@
+# 1. 필수 패키지 설치
+#!pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
+
+import os
 import requests
 import pandas as pd
 import numpy as np
@@ -14,15 +18,27 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # =========================================================
-# [설정] 깃허브 토큰 / 저장소 / Groq API 키
+# [보안 설정] 코랩 Secrets(열쇠 아이콘) 또는 GitHub Secrets 연동
 # =========================================================
-GITHUB_TOKEN = "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"
+try:
+    # 1. 구글 코랩 환경일 경우
+    from google.colab import userdata
+    GROQ_API_KEY = userdata.get('GROQ_API_KEY')
+    GITHUB_TOKEN = userdata.get('GH_TOKEN')
+except ImportError:
+    # 2. GitHub Actions 등 일반 파이썬 서버 환경일 경우
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+    GITHUB_TOKEN = os.environ.get("GH_TOKEN", "")
+
 GITHUB_REPO_NAME = "dhlee090512-arch/report"
-GROQ_API_KEY = "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"
 
 try:
-    groq_client = Groq(api_key=GROQ_API_KEY.strip())
-    print("✅ Groq AI 클라이언트 초기화 성공!")
+    if GROQ_API_KEY:
+        groq_client = Groq(api_key=GROQ_API_KEY.strip())
+        print("✅ Groq AI 클라이언트 초기화 성공!")
+    else:
+        groq_client = None
+        print("⚠️ GROQ_API_KEY가 설정되지 않았습니다. (코랩 왼쪽 🔑 메뉴를 확인하세요)")
 except Exception as e:
     groq_client = None
     print(f"⚠️ Groq 클라이언트 설정 오류: {e}")
@@ -63,7 +79,6 @@ def get_yahoo_news_keywords():
 # =========================================================
 def sanitize_text(text):
     """파이썬 정규식을 활용한 한자/일본어 완전 제거 및 보정"""
-    # 한자(CJK) 및 가나(일본어) 문자 제거
     cleaned = re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', text)
     return cleaned.strip()
 
@@ -138,9 +153,7 @@ def generate_ai_market_status(market_type, macro_data, news_keywords):
             if line.startswith("상태:"): status_line = line.replace("상태:", "").strip()
             elif line.startswith("사유:"): reason_text = line.replace("사유:", "").strip()
         
-        status_line = sanitize_text(status_line)
-        reason_text = sanitize_text(reason_text)
-        return status_line, reason_text
+        return sanitize_text(status_line), sanitize_text(reason_text)
     except Exception as e:
         return "보통 🟡", f"시황 판단 생성 안내: {e}"
 
@@ -169,8 +182,7 @@ def generate_ai_stock_reason(stock_name, news_keywords, technical_summary):
             ],
             temperature=0.4, max_tokens=150
         )
-        draft = res.choices[0].message.content.strip()
-        return sanitize_text(draft)
+        return sanitize_text(res.choices[0].message.content.strip())
     except Exception:
         return "최근 뉴스 이슈 테마 유입과 함께 기관/외국인 수급 결합 및 이평선 지지가 확인되어 추천 종목으로 선정되었습니다."
 
@@ -180,7 +192,6 @@ def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_sta
     
     currency_name = "원" if currency_symbol == "원" else "달러($)"
     
-    # 1단계: 깊이 있는 다각도 분석 초안 생성
     prompt = f"""
     너는 20년 경력의 수석 기술적 분석 트레이더이다.
     제공된 {stock_name} 종목의 차트 Raw Data(OHLCV 원본) 및 핵심 보조지표를 바탕으로 
@@ -214,15 +225,12 @@ def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_sta
             temperature=0.3, max_tokens=850
         )
         draft_comment = res.choices[0].message.content.strip()
-        
-        # 2단계: 텍스트 재검토 및 교정 (Self-Correction)
-        final_comment = review_and_correct_text(draft_comment, currency_name)
-        return final_comment
+        return review_and_correct_text(draft_comment, currency_name)
     except Exception as e:
         return f"상세 분석 생성 중 오류 발생: {e}"
 
 # =========================================================
-# PART 1: 🇰🇷 국장(index.html) 분석 및 배포
+# PART 1: 🇰🇷 국장(index.html) 분석 및 배포 (5개 종목)
 # =========================================================
 print("\n" + "="*60)
 print("🇰🇷 [PART 1] 한국 증시(국장) 뉴스 스캔 & AI 융합 분석 중...")
@@ -645,25 +653,28 @@ full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><m
 
 print("\n🌐 [PART 3] GitHub Pages 웹 서버로 업로드 중...")
 try:
+    if not GITHUB_TOKEN:
+        raise ValueError("GH_TOKEN이 설정되지 않았습니다. (코랩 왼쪽 🔑 메뉴 확인)")
+
     g = Github(GITHUB_TOKEN)
     repo = g.get_repo(GITHUB_REPO_NAME)
     
     try:
         c_kr = repo.get_contents("index.html")
-        repo.update_file("index.html", f"Self-Correction & Multi-Indicator Analysis KR: {now_str}", full_html_kr, c_kr.sha)
+        repo.update_file("index.html", f"Public Safe Deployment KR: {now_str}", full_html_kr, c_kr.sha)
     except Exception:
-        repo.create_file("index.html", f"Initial Self-Correction KR: {now_str}", full_html_kr)
+        repo.create_file("index.html", f"Initial Public Safe KR: {now_str}", full_html_kr)
     print("✅ 국장 대시보드(index.html) 배포 성공!")
 
     try:
         c_us = repo.get_contents("us_index.html")
-        repo.update_file("us_index.html", f"Self-Correction & Multi-Indicator Analysis US: {now_str}", full_html_us, c_us.sha)
+        repo.update_file("us_index.html", f"Public Safe Deployment US: {now_str}", full_html_us, c_us.sha)
     except Exception:
-        repo.create_file("us_index.html", f"Initial Self-Correction US: {now_str}", full_html_us)
+        repo.create_file("us_index.html", f"Initial Public Safe US: {now_str}", full_html_us)
     print("✅ 미장 대시보드(us_index.html) 배포 성공!")
 
     print("\n" + "="*65)
-    print("🎉 [재검토 프롬프트로 한자 완전 제거 + 단기/중장기 다각도 지표 분석] 배포 성공!")
+    print("🎉 [보안 완벽 적용] 대시보드 배포 성공!")
     print("🔗 🇰🇷 국장 접속 주소: https://dhlee090512-arch.github.io/report/index.html")
     print("🔗 🇺🇸 미장 접속 주소: https://dhlee090512-arch.github.io/report/us_index.html")
     print("="*65)
