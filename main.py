@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from bs4 import BeautifulSoup
 from github import Github
-from groq import Groq
+from groq import Groq, RateLimitError
 import datetime
 import time
 import re
@@ -31,6 +31,9 @@ except ImportError:
     GITHUB_TOKEN = os.environ.get("GH_TOKEN", "")
 
 GITHUB_REPO_NAME = "dhlee090512-arch/report"
+
+# Groq 429 초과 플래그
+groq_limit_exceeded = False
 
 try:
     if GROQ_API_KEY:
@@ -84,7 +87,8 @@ def sanitize_text(text):
 
 def review_and_correct_text(draft_text, currency_name):
     """2단계: 작성된 코멘트를 재검토하여 한자/일본어를 완전히 제거하고 한글/영문으로 다듬기"""
-    if not groq_client or not draft_text:
+    global groq_limit_exceeded
+    if not groq_client or groq_limit_exceeded or not draft_text:
         return sanitize_text(draft_text)
     
     review_prompt = f"""
@@ -110,13 +114,18 @@ def review_and_correct_text(draft_text, currency_name):
         )
         final_text = res.choices[0].message.content.strip()
         return sanitize_text(final_text)
+    except RateLimitError:
+        print("⚠️ Groq API 429 에러 감지: 일일 요청한도 초과")
+        groq_limit_exceeded = True
+        return sanitize_text(draft_text)
     except Exception:
         return sanitize_text(draft_text)
 
 def generate_ai_market_status(market_type, macro_data, news_keywords):
     """정량 지표 + AI 맥락 평가를 결합한 시장 상태(긍정/보통/부정) 판단"""
-    if not groq_client: 
-        return "보통 🟡", "시장 지표 데이터 관망 필요"
+    global groq_limit_exceeded
+    if not groq_client or groq_limit_exceeded: 
+        return "보통 🟡", "일일 요청한도 초과"
     
     prompt = f"""
     너는 글로벌 마켓 리서치 헤드이자 수석 애널리스트이다.
@@ -154,13 +163,18 @@ def generate_ai_market_status(market_type, macro_data, news_keywords):
             elif line.startswith("사유:"): reason_text = line.replace("사유:", "").strip()
         
         return sanitize_text(status_line), sanitize_text(reason_text)
+    except RateLimitError:
+        print("⚠️ Groq API 429 에러 감지: 일일 요청한도 초과")
+        groq_limit_exceeded = True
+        return "보통 🟡", "일일 요청한도 초과"
     except Exception as e:
         return "보통 🟡", f"시황 판단 생성 안내: {e}"
 
 def generate_ai_stock_reason(stock_name, news_keywords, technical_summary):
     """추천 종목 고른 이유 1~2줄 요약 생성"""
-    if not groq_client: 
-        return "주요 수급 유입 및 기술적 이평선 정배열 모멘텀 포착으로 선정되었습니다."
+    global groq_limit_exceeded
+    if not groq_client or groq_limit_exceeded: 
+        return "일일 요청한도 초과"
     
     prompt = f"""
     너는 주식 분석 전문가이다. {stock_name} 종목이 오늘 주요 추천 종목으로 선정된 이유를 1~2줄(2문장 이내)로 깔끔하게 작성하라.
@@ -183,12 +197,18 @@ def generate_ai_stock_reason(stock_name, news_keywords, technical_summary):
             temperature=0.4, max_tokens=150
         )
         return sanitize_text(res.choices[0].message.content.strip())
+    except RateLimitError:
+        print("⚠️ Groq API 429 에러 감지: 일일 요청한도 초과")
+        groq_limit_exceeded = True
+        return "일일 요청한도 초과"
     except Exception:
         return "최근 뉴스 이슈 테마 유입과 함께 기관/외국인 수급 결합 및 이평선 지지가 확인되어 추천 종목으로 선정되었습니다."
 
 def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_status, ma_status, target, stop, currency_symbol="원"):
     """종목별 단기 & 중장기 다각도 상세 분석 코멘트 (10줄 내외) + 2단계 재검토 적용"""
-    if not groq_client: return "AI 상세 분석을 불러올 수 없습니다."
+    global groq_limit_exceeded
+    if not groq_client or groq_limit_exceeded: 
+        return "일일 요청한도 초과"
     
     currency_name = "원" if currency_symbol == "원" else "달러($)"
     
@@ -226,6 +246,10 @@ def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_sta
         )
         draft_comment = res.choices[0].message.content.strip()
         return review_and_correct_text(draft_comment, currency_name)
+    except RateLimitError:
+        print("⚠️ Groq API 429 에러 감지: 일일 요청한도 초과")
+        groq_limit_exceeded = True
+        return "일일 요청한도 초과"
     except Exception as e:
         return f"상세 분석 생성 중 오류 발생: {e}"
 
@@ -611,7 +635,7 @@ for stock_name, symbol in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: GitHub Pages 배포
+# PART 3: GitHub Pages 배포 (원본 100% 동일 로직)
 # =========================================================
 html_style = """
 <style>
