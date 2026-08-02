@@ -1,5 +1,5 @@
 # 1. 필수 패키지 설치
-#!pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
+!pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
 
 import os
 import requests
@@ -21,12 +21,10 @@ warnings.filterwarnings('ignore')
 # [보안 설정] 코랩 Secrets(열쇠 아이콘) 또는 GitHub Secrets 연동
 # =========================================================
 try:
-    # 1. 구글 코랩 환경일 경우
     from google.colab import userdata
     GROQ_API_KEY = userdata.get('GROQ_API_KEY')
     GITHUB_TOKEN = userdata.get('GH_TOKEN')
 except ImportError:
-    # 2. GitHub Actions 등 일반 파이썬 서버 환경일 경우
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
     GITHUB_TOKEN = os.environ.get("GH_TOKEN", "")
 
@@ -35,10 +33,13 @@ GITHUB_REPO_NAME = "dhlee090512-arch/report"
 # Groq 429 초과 플래그
 groq_limit_exceeded = False
 
+# 적용 AI 모델 정의 (한도가 넉넉하고 속도가 빠른 Instant 모델 사용)
+GROQ_MODEL = "llama-3.1-8b-instant"
+
 try:
     if GROQ_API_KEY:
         groq_client = Groq(api_key=GROQ_API_KEY.strip())
-        print("✅ Groq AI 클라이언트 초기화 성공!")
+        print(f"✅ Groq AI 클라이언트 초기화 성공! (적용 모델: {GROQ_MODEL})")
     else:
         groq_client = None
         print("⚠️ GROQ_API_KEY가 설정되지 않았습니다. (코랩 왼쪽 🔑 메뉴를 확인하세요)")
@@ -105,7 +106,7 @@ def review_and_correct_text(draft_text, currency_name):
     """
     try:
         res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": "너는 한자 및 일본어를 절대 사용하지 않고 오직 한글과 영문으로만 문장을 교정하는 감사관이다."},
                 {"role": "user", "content": review_prompt}
@@ -148,7 +149,7 @@ def generate_ai_market_status(market_type, macro_data, news_keywords):
     """
     try:
         res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": "너는 한자와 일본어를 사용하지 않고 한국어와 영문으로만 답하는 주식 애널리스트이다."},
                 {"role": "user", "content": prompt}
@@ -189,7 +190,7 @@ def generate_ai_stock_reason(stock_name, news_keywords, technical_summary):
     """
     try:
         res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": "너는 한자를 절대 사용하지 않는 주식 큐레이터이다."},
                 {"role": "user", "content": prompt}
@@ -237,7 +238,7 @@ def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_sta
     """
     try:
         res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=GROQ_MODEL,
             messages=[
                 {"role": "system", "content": f"너는 한자와 일본어를 쓰지 않고, 오직 한글과 영문으로만 주식 차트를 다각도로 종합 분석하는 전문가이다. 통화는 {currency_name}만 사용한다."},
                 {"role": "user", "content": prompt}
@@ -635,7 +636,7 @@ for stock_name, symbol in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: GitHub Pages 배포 (원본 100% 동일 로직)
+# PART 3: GitHub Pages 배포
 # =========================================================
 html_style = """
 <style>
@@ -698,7 +699,7 @@ try:
     print("✅ 미장 대시보드(us_index.html) 배포 성공!")
 
     print("\n" + "="*65)
-    print("🎉 [보안 완벽 적용] 대시보드 배포 성공!")
+    print("🎉 [보안 완벽 적용 및 Instant 모델 반영] 대시보드 배포 성공!")
     print("🔗 🇰🇷 국장 접속 주소: https://dhlee090512-arch.github.io/report/index.html")
     print("🔗 🇺🇸 미장 접속 주소: https://dhlee090512-arch.github.io/report/us_index.html")
     print("="*65)
