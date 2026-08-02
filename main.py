@@ -1,6 +1,3 @@
-# 1. 필수 패키지 설치
-#!pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
-
 import requests
 import pandas as pd
 import numpy as np
@@ -12,6 +9,7 @@ from github import Github
 from groq import Groq
 import datetime
 import time
+import re
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -41,7 +39,6 @@ now_str = datetime.datetime.now(kst_timezone).strftime("%Y-%m-%d %H:%M KST")
 # 📰 뉴스 헤드라인 키워드 수집 함수
 # =========================================================
 def get_naver_news_keywords():
-    """네이버 금융 주요 헤드라인 뉴스에서 핵심 키워드 추출"""
     try:
         url = "https://finance.naver.com/news/mainnews.naver"
         res = requests.get(url, headers=headers, timeout=10)
@@ -52,7 +49,6 @@ def get_naver_news_keywords():
         return "반도체 | AI | 금리 | 원전 | 실적발표 | 밸류업"
 
 def get_yahoo_news_keywords():
-    """야후 파이낸스 미장 주요 헤드라인 키워드 추출"""
     try:
         url = "https://finance.yahoo.com/news/"
         res = requests.get(url, headers=headers, timeout=10)
@@ -63,36 +59,76 @@ def get_yahoo_news_keywords():
         return "Fed Interest Rate | AI Tech | Big Tech Earnings | Inflation | NVIDIA | Semiconductor"
 
 # =========================================================
-# 🤖 AI 프롬프트 생성 함수
+# 🤖 AI 프롬프트 및 재검토(Self-Correction) 함수
 # =========================================================
+def sanitize_text(text):
+    """파이썬 정규식을 활용한 한자/일본어 완전 제거 및 보정"""
+    # 한자(CJK) 및 가나(일본어) 문자 제거
+    cleaned = re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', text)
+    return cleaned.strip()
+
+def review_and_correct_text(draft_text, currency_name):
+    """2단계: 작성된 코멘트를 재검토하여 한자/일본어를 완전히 제거하고 한글/영문으로 다듬기"""
+    if not groq_client or not draft_text:
+        return sanitize_text(draft_text)
+    
+    review_prompt = f"""
+    아래 작성된 초안 텍스트를 검토하여 '오직 순수 한글(한국어)과 영문, 숫자, 문장부호'로만 재구성하라.
+    
+    [초안 텍스트]
+    {draft_text}
+    
+    [재검토 및 수정 지침]
+    1. 초안에 한자(漢字)나 일본어(가나) 문자가 단 한 글자라도 포함되어 있다면 모두 삭제하거나 한글 표기로 바꿀 것.
+    2. 전문적인 주식 트레이더 톤앤매너와 원본의 분석 내용, 문장 맥락을 그대로 유지할 것.
+    3. 통화 단주는 반드시 '{currency_name}' 단위 표기를 유지할 것.
+    4. 검토 완료된 최종 결과 문장만 바로 출력할 것.
+    """
+    try:
+        res = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "너는 한자 및 일본어를 절대 사용하지 않고 오직 한글과 영문으로만 문장을 교정하는 감사관이다."},
+                {"role": "user", "content": review_prompt}
+            ],
+            temperature=0.2, max_tokens=800
+        )
+        final_text = res.choices[0].message.content.strip()
+        return sanitize_text(final_text)
+    except Exception:
+        return sanitize_text(draft_text)
+
 def generate_ai_market_status(market_type, macro_data, news_keywords):
-    """정량 지표 + AI 맥락 평가를 결합한 시장 상태(긍정/보통/부정) 및 총평 판단"""
+    """정량 지표 + AI 맥락 평가를 결합한 시장 상태(긍정/보통/부정) 판단"""
     if not groq_client: 
         return "보통 🟡", "시장 지표 데이터 관망 필요"
     
     prompt = f"""
     너는 글로벌 마켓 리서치 헤드이자 수석 애널리스트이다.
-    아래 제공된 {market_type}의 매크로 지표, 지수 위치, 외국인/기관 수급 및 최근 주요 뉴스 헤드라인 키워드를 종합 분석하라.
+    아래 제공된 {market_type}의 매크로 지표, 지수 위치, 수급 상황 및 최근 주요 뉴스 헤드라인 키워드를 종합 분석하라.
     
     [정량 데이터 & 뉴스 이슈]
     - 지수 및 매크로: {macro_data}
     - 최근 주요 뉴스 키워드: {news_keywords}
     
     [판단 기준]
-    - 단 하루의 기술적 반등이나 일시적 호재만으로 '긍정'을 부여하지 말 것. 
-    - 주요 이평선이 역배열이거나 수급의 연속성이 약하면 '부정' 또는 '보통'으로 엄격하게 평가할 것.
-    - 시장 상태 평가 단어는 반드시 [긍정 🟢 / 보통 🟡 / 부정 🔴] 중 정확히 하나만 선택할 것.
+    - 단 하루의 기술적 반등이나 일시적 호재만으로 '긍정'을 부여하지 말 것.
+    - 주요 이평선이 역배열이거나 수급 연속성이 약하면 '부정' 또는 '보통'으로 엄격하게 평가할 것.
+    - 시장 상태 평가 단어는 반드시 [긍정 🟢 / 보통 🟡 / 부정 🔴] 중 하나만 선택할 것.
     
-    [출력 양식 - 반드시 아래 줄바꿈 형식 준수]
+    [출력 양식]
     상태: <긍정 🟢 OR 보통 🟡 OR 부정 🔴>
-    사유: <단기 급등/하락 여부, 이평선 배열, 주요 뉴스 이슈 및 수급 상황을 다각도로 종합한 2~3문장의 시장 상태 판단 사유>
+    사유: <단기 급등/하락 여부, 이평선 배열, 주요 뉴스 이슈 및 수급 상황을 종합한 2~3문장의 판단 사유>
     
-    [언어 조건] 100% 한국어로만 작성하고 한자(漢字) 및 중국어 문자는 절대 사용하지 말 것.
+    [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글과 영문만 사용할 것.
     """
     try:
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "너는 한자와 일본어를 사용하지 않고 한국어와 영문으로만 답하는 주식 애널리스트이다."},
+                {"role": "user", "content": prompt}
+            ],
             temperature=0.3, max_tokens=300
         )
         content = res.choices[0].message.content.strip()
@@ -101,76 +137,87 @@ def generate_ai_market_status(market_type, macro_data, news_keywords):
         for line in content.split("\n"):
             if line.startswith("상태:"): status_line = line.replace("상태:", "").strip()
             elif line.startswith("사유:"): reason_text = line.replace("사유:", "").strip()
+        
+        status_line = sanitize_text(status_line)
+        reason_text = sanitize_text(reason_text)
         return status_line, reason_text
     except Exception as e:
         return "보통 🟡", f"시황 판단 생성 안내: {e}"
 
 def generate_ai_stock_reason(stock_name, news_keywords, technical_summary):
     """추천 종목 고른 이유 1~2줄 요약 생성"""
-    if not groq_client: return "주요 수급 유입 및 기술적 이평선 정배열 모멘텀 포착으로 선정되었습니다."
+    if not groq_client: 
+        return "주요 수급 유입 및 기술적 이평선 정배열 모멘텀 포착으로 선정되었습니다."
     
     prompt = f"""
-    너는 주식 분석 전문가이다. {stock_name} 종목이 오늘 주요 추천 종목으로 픽(Pick)된 이유를 1~2줄(2문장 이내)로 깔끔하게 작성하라.
+    너는 주식 분석 전문가이다. {stock_name} 종목이 오늘 주요 추천 종목으로 선정된 이유를 1~2줄(2문장 이내)로 깔끔하게 작성하라.
     
     [참고 데이터]
     - 최근 뉴스/정책/이슈 키워드: {news_keywords}
     - 종목 기술적/수급 요약: {technical_summary}
     
     [작성 요구사항]
-    1. 단순 차트 상승 외에도 최근 뉴스/정책 이슈와의 연관성 및 외국인/기관 수급 결합 요인을 강조할 것.
-    2. 100% 한국어로만 작성하고 한자는 절대 사용하지 말 것.
-    3. 본문 1~2줄 내용만 바로 출력할 것.
-    """
-    try:
-        res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.4, max_tokens=150
-        )
-        return res.choices[0].message.content.strip()
-    except Exception:
-        return "최근 뉴스 이슈 테마 유입과 함께 기관/외국인 수급 결합 및 이평선 지지가 확인되어 추천 종목으로 선정되었습니다."
-
-def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_status, ma_status, target, stop, currency_symbol="원"):
-    """종목별 기술적 다각도 상세 분석 코멘트 (10줄 내외)"""
-    if not groq_client: return "AI 상세 분석을 불러올 수 없습니다."
-    
-    currency_name = "원" if currency_symbol == "원" else "달러($)"
-    
-    prompt = f"""
-    너는 20년 경력의 수석 기술적 분석 트레이더이다.
-    제공된 {stock_name} 종목의 차트 Raw Data(OHLCV 원본 데이터) 및 보조지표(RSI, MACD, 이동평균선)를 바탕으로 
-    **정확히 10줄 내외의 매우 깊이 있고 상세한 기술적 분석 및 실전 매매 전략 리포트**를 작성하라.
-    
-    [📊 {stock_name} 상세 기술 지표 데이터]
-    - 통화 단위: {currency_name} ({currency_symbol})
-    - 최근 10 거래일 차트 Raw Data (날짜 | 시가 | 고가 | 저가 | 종가 | 거래량):
-    {raw_data_str}
-    - 보조 지표: RSI(14) = {rsi} / MACD 신호 = {macd_status} / 이동평균선 = {ma_status}
-    - 제시 목표가: {target:,}{currency_symbol} / 손절가: {stop:,}{currency_symbol}
-    
-    [작성 구성 가이드 - 총 10줄 내외 작성]
-    1. **최근 캔들 궤적 분석:** 최근 10일간의 종가 흐름 및 시가/고가/저가 캔들 형상(위꼬리, 아래꼬리) 분석.
-    2. **거래량 및 수급 동향:** 거래량 증가/감소 패턴과 매수 주체 강도 진단.
-    3. **보조지표 다각도 진단:** MACD 골든/데드크로스 위치 및 RSI 과매수/과매도 수준 종합.
-    4. **이동평균선 및 추세 지지:** 20일선 및 60일선 지지/저항 구조 판단.
-    5. **실전 매매 및 리스크 전략:** 제시된 목표가({target:,}{currency_symbol})와 손절가({stop:,}{currency_symbol}) 기반의 분할 매수/손절 대응 가이드.
-    
-    [필수 규칙]
-    - **100% 순수 한국어로만 작성할 것. 한자(漢字) 및 중국어 문자는 단 한 글자도 사용하지 말 것.**
-    - 통화 표기는 반드시 **{currency_symbol} ({currency_name})**만 사용할 것.
-    - 문장 단위나 줄바꿈을 활용해 읽기 쉽게 약 10줄 내외로 충실하게 작성할 것. 서론/인삿말 완전 제외.
+    1. 단순 주가 상승 외에 최근 뉴스/정책 이슈와의 연관성 및 외국인/기관 수급 결합 요인을 강조할 것.
+    2. 오직 순수 한글과 영문만 사용할 것. 한자 및 일본어 절대 금지.
     """
     try:
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": f"너는 한국어로만 답변하는 차트 전문가이다. 한자를 절대 사용하지 않으며 {currency_name} 단위를 엄격히 지킨다."},
+                {"role": "system", "content": "너는 한자를 절대 사용하지 않는 주식 큐레이터이다."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.4, max_tokens=800
+            temperature=0.4, max_tokens=150
         )
-        return res.choices[0].message.content.strip()
+        draft = res.choices[0].message.content.strip()
+        return sanitize_text(draft)
+    except Exception:
+        return "최근 뉴스 이슈 테마 유입과 함께 기관/외국인 수급 결합 및 이평선 지지가 확인되어 추천 종목으로 선정되었습니다."
+
+def generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi, macd_status, ma_status, target, stop, currency_symbol="원"):
+    """종목별 단기 & 중장기 다각도 상세 분석 코멘트 (10줄 내외) + 2단계 재검토 적용"""
+    if not groq_client: return "AI 상세 분석을 불러올 수 없습니다."
+    
+    currency_name = "원" if currency_symbol == "원" else "달러($)"
+    
+    # 1단계: 깊이 있는 다각도 분석 초안 생성
+    prompt = f"""
+    너는 20년 경력의 수석 기술적 분석 트레이더이다.
+    제공된 {stock_name} 종목의 차트 Raw Data(OHLCV 원본) 및 핵심 보조지표를 바탕으로 
+    **단기 및 중장기 관점에서의 다각도 기술적 분석 종합 리포트(약 10줄 내외)**를 작성하라.
+    
+    [📊 {stock_name} 차트 데이터]
+    - 통화 단위: {currency_name} ({currency_symbol})
+    - 최근 10 거래일 차트 Raw Data (날짜 | 시가 | 고가 | 저가 | 종가 | 거래량):
+    {raw_data_str}
+    - 보조 지표: RSI(14) = {rsi} / MACD 신호 = {macd_status} / 이동평균선 배열 = {ma_status}
+    - 제시 목표가: {target:,}{currency_symbol} / 손절가: {stop:,}{currency_symbol}
+    
+    [필수 분석 지표 및 관점 - 아래 항목을 모두 조합하여 작성]
+    1. **단기 관점:** 일봉 캔들 모형(위꼬리/아래꼬리), 최근 5~10일 거래량 수급 변화, RSI 과매수/과매도, MACD 단기 크로스, 단기 지지/저항선.
+    2. **중장기 관점:** 주봉 추세 방향성, 20일/60일 이동평균선 정배열/역배열 구조, 중장기 주요 매물대.
+    3. **차트 패턴 및 전반적 형태:** 눌림목 지지, 전고점 돌파 시도, 박스권 횡보 등 전체적인 차트 패턴 진단.
+    4. **실전 대응 전략:** 목표가({target:,}{currency_symbol}) 및 손절가({stop:,}{currency_symbol})를 고려한 분할 매수 타점과 리스크 관리 지침.
+    
+    [엄격한 언어 제약]
+    - **오직 한글(한국어)과 영문, 숫자만 사용할 것. 한자(漢字) 및 일본어 문자는 절대 포함하지 말 것.**
+    - 통화 단위는 반드시 **{currency_symbol} ({currency_name})**만 표기할 것.
+    - 줄바꿈을 적절히 활용하여 약 10줄 내외의 체계적인 본문으로 작성할 것. (서론/인사말 금지)
+    """
+    try:
+        res = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": f"너는 한자와 일본어를 쓰지 않고, 오직 한글과 영문으로만 주식 차트를 다각도로 종합 분석하는 전문가이다. 통화는 {currency_name}만 사용한다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3, max_tokens=850
+        )
+        draft_comment = res.choices[0].message.content.strip()
+        
+        # 2단계: 텍스트 재검토 및 교정 (Self-Correction)
+        final_comment = review_and_correct_text(draft_comment, currency_name)
+        return final_comment
     except Exception as e:
         return f"상세 분석 생성 중 오류 발생: {e}"
 
@@ -182,7 +229,6 @@ print("🇰🇷 [PART 1] 한국 증시(국장) 뉴스 스캔 & AI 융합 분석 
 print("="*60)
 
 kr_news_keywords = get_naver_news_keywords()
-print(f"  📰 국장 주요 뉴스 키워드: {kr_news_keywords[:60]}...")
 
 API_KEY = "RROFC9J3FLRFSHGO7VXC"
 url_macro = f"https://ecos.bok.or.kr/api/KeyStatisticList/{API_KEY}/json/kr/1/100"
@@ -327,7 +373,7 @@ for stock_name, symbol in selected_kr_targets.items():
 
         tech_summary_str = f"현재가 {latest_close:,}원, RSI {rsi_val}, MACD {macd_status}, 주봉 {weekly_trend}"
         
-        print(f"  ⚡ [국장] {stock_name} 1~2줄 선정 이유 및 10줄 상세 리포트 작성 중...")
+        print(f"  ⚡ [국장] {stock_name} 선정 이유 및 재검토 적용 10줄 분석 작성 중...")
         pick_reason = generate_ai_stock_reason(stock_name, kr_news_keywords, tech_summary_str)
         ai_comment = generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi_val, macd_status, ma_status, target_price_1, stop_loss, "원")
 
@@ -369,7 +415,7 @@ for stock_name, symbol in selected_kr_targets.items():
                 <div class="report-line text-green">🚀 1차 목표가    : {target_price_1:,} 원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ Groq Detailed 10-Line Technical Analysis</div>
+                <div class="ai-title">⚡ Groq Comprehensive Technical Analysis</div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
             </div>
             <div class="chart-container">{chart_html}</div>
@@ -385,7 +431,6 @@ print("🇺🇸 [PART 2] 미국 증시(미장) 뉴스 스캔 & 10개 종목 상�
 print("="*60)
 
 us_news_keywords = get_yahoo_news_keywords()
-print(f"  📰 미장 주요 뉴스 키워드: {us_news_keywords[:60]}...")
 
 vix_val = 18.5
 try:
@@ -507,7 +552,7 @@ for stock_name, symbol in selected_us_targets.items():
 
         tech_summary_str = f"현재가 ${latest_close}, RSI {rsi_val}, MACD {macd_status}, 주봉 {weekly_trend}"
         
-        print(f"  ⚡ [미장] {stock_name} 1~2줄 선정 이유 및 10줄 상세 리포트 작성 중...")
+        print(f"  ⚡ [미장] {stock_name} 선정 이유 및 재검토 적용 10줄 분석 작성 중...")
         pick_reason = generate_ai_stock_reason(stock_name, us_news_keywords, tech_summary_str)
         ai_comment = generate_ai_detailed_10line_analysis(stock_name, raw_data_str, rsi_val, macd_status, ma_status, target_price_1, stop_loss, "$")
 
@@ -605,20 +650,20 @@ try:
     
     try:
         c_kr = repo.get_contents("index.html")
-        repo.update_file("index.html", f"Full Advanced News/Reason/10Line Update KR: {now_str}", full_html_kr, c_kr.sha)
+        repo.update_file("index.html", f"Self-Correction & Multi-Indicator Analysis KR: {now_str}", full_html_kr, c_kr.sha)
     except Exception:
-        repo.create_file("index.html", f"Initial Full Advanced KR: {now_str}", full_html_kr)
+        repo.create_file("index.html", f"Initial Self-Correction KR: {now_str}", full_html_kr)
     print("✅ 국장 대시보드(index.html) 배포 성공!")
 
     try:
         c_us = repo.get_contents("us_index.html")
-        repo.update_file("us_index.html", f"Full Advanced News/Reason/10Line Update US: {now_str}", full_html_us, c_us.sha)
+        repo.update_file("us_index.html", f"Self-Correction & Multi-Indicator Analysis US: {now_str}", full_html_us, c_us.sha)
     except Exception:
-        repo.create_file("us_index.html", f"Initial Full Advanced US: {now_str}", full_html_us)
+        repo.create_file("us_index.html", f"Initial Self-Correction US: {now_str}", full_html_us)
     print("✅ 미장 대시보드(us_index.html) 배포 성공!")
 
     print("\n" + "="*65)
-    print("🎉 [뉴스 이슈 반영 + AI 융합 시장 상태 + 1~2줄 선정 이유 + 10줄 상세 리포트] 대시보드 완성!")
+    print("🎉 [재검토 프롬프트로 한자 완전 제거 + 단기/중장기 다각도 지표 분석] 배포 성공!")
     print("🔗 🇰🇷 국장 접속 주소: https://dhlee090512-arch.github.io/report/index.html")
     print("🔗 🇺🇸 미장 접속 주소: https://dhlee090512-arch.github.io/report/us_index.html")
     print("="*65)
