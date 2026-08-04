@@ -6,6 +6,8 @@ on:
     - cron: '28 22 * * *'
     # 📌 UTC 11:28 -> KST (한국시간) 매일 저녁 20:28
     - cron: '28 11 * * *'
+    # test
+    - cron: '10 14 * * *'
   
   # 깃허브 Actions 탭에서 [Run workflow] 버튼으로 수동 즉시 실행 지원
   workflow_dispatch:
