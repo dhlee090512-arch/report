@@ -1,14 +1,13 @@
 name: Daily Stock AI Report Update
 
 on:
-  # 매일 한국시간 오전 7시 30분 & 오후 8시 30분 자동 실행
   schedule:
-    # 30 22 * * * -> UTC 22:30 (KST 기준 다음날 07:30)
-    # 30 11 * * * -> UTC 11:30 (KST 기준 당일 20:30)
-    - cron: '30 22 * * *'
-    - cron: '30 11 * * *'
+    # 📌 UTC 22:28 -> KST (한국시간) 매일 아침 07:28
+    - cron: '28 22 * * *'
+    # 📌 UTC 11:28 -> KST (한국시간) 매일 저녁 20:28
+    - cron: '28 11 * * *'
   
-  # 깃허브 웹페이지 Actions 탭에서 버튼 눌러 수동 실행
+  # 깃허브 Actions 탭에서 [Run workflow] 버튼으로 수동 즉시 실행 지원
   workflow_dispatch:
 
 jobs:
@@ -16,21 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 저장소 코드 가져오기
+    - name: 저장소 코드 체크아웃
       uses: actions/checkout@v4
 
-    - name: 파이썬 환경 설정
+    - name: 파이썬 3.10 환경 설정
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    - name: 필수 패키지 라이브러리 설치
+    - name: 필수 라이브러리 패키지 설치
       run: |
         python -m pip install --upgrade pip
         pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub
 
-    - name: main.py 자체 실행
+    - name: main.py 자동으로 실행
       env:
         GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        GROQ_API_KEY2: ${{ secrets.GROQ_API_KEY2 }}
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: python main.py
