@@ -2,14 +2,14 @@ name: Daily Stock AI Report Update
 
 on:
   schedule:
-    # 📌 UTC 22:28 -> KST (한국시간) 매일 아침 07:28
+    # 📌 UTC 22:28 -> KST 매일 아침 07:28
     - cron: '28 22 * * *'
-    # 📌 UTC 11:28 -> KST (한국시간) 매일 저녁 20:28
+    # 📌 UTC 11:28 -> KST 매일 저녁 20:28
     - cron: '28 11 * * *'
-    # test
-    - cron: '15 14 * * *'
-  
-  # 깃허브 Actions 탭에서 [Run workflow] 버튼으로 수동 즉시 실행 지원
+    # 📌 테스트용
+    - cron: '25 14 * * *'
+
+  # 깃허브 Actions 탭에서 수동 실행 버튼 활성화
   workflow_dispatch:
 
 jobs:
