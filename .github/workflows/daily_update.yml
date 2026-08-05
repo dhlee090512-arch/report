@@ -1,7 +1,7 @@
 name: Daily Stock AI Report Update
 
 on:
-  schedule:
+  #schedule:
     # 📌 UTC 22:28 -> KST 매일 아침 07:28
     #- cron: '28 22 * * *'
     # 📌 UTC 11:28 -> KST 매일 저녁 20:28
