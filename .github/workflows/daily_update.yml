@@ -37,5 +37,6 @@ jobs:
         # 📌 토스증권 API 키 추가
         TOSS_CLIENT_ID: ${{ secrets.TOSS_CLIENT_ID }}
         TOSS_CLIENT_SECRET: ${{ secrets.TOSS_CLIENT_SECRET }}
+        FIXIE_URL: ${{ secrets.FIXIE_URL }}
       
       run: python main.py
