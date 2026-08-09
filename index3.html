@@ -1,1075 +1,548 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>마이 포트폴리오 대시보드</title>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>마이 포트폴리오 대시보드</title>
     <style>
         :root { --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; --muted: #94a3b8; }
-        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        body { font-family: Pretendard, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1000px; margin: 0 auto; }
-        
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: #334155; color: #fff; cursor: pointer; text-decoration: none; font-weight: bold; }
+        .tab-btn { padding: 10px 20px; border-radius: 8px; background: #334155; color: #fff; text-decoration: none; font-weight: bold; }
         .tab-btn.active { background: #3b82f6; }
-        
         .summary-card { background: linear-gradient(135deg, #1e293b, #334155); padding: 20px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-around; text-align: center; }
         .summary-item .num { font-size: 1.5rem; font-weight: bold; margin-top: 5px; }
         .fx-info { font-size: 0.8rem; color: #60a5fa; margin-top: 4px; }
-        
         .card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .card-header h3 { margin: 0; font-size: 1.25rem; }
         .ticker { font-size: 0.9rem; color: var(--muted); }
         .qty { margin: 3px 0 0 0; font-size: 0.85rem; color: var(--muted); }
-        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; color: white; }
-        
+        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; color: white; }
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-        .metrics-grid div { display: flex; flex-direction: column; }
-        .label { font-size: 0.75rem; color: var(--muted); }
+        .label { font-size: 0.75rem; color: var(--muted); display: block; }
         .value { font-weight: bold; margin-top: 2px; }
-        
-        .plus { color: #ef4444; }
-        .minus { color: #3b82f6; }
-        
-        .ai-box { background: #0f172a; padding: 12px 15px; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 0.9rem; line-height: 1.5; }
+        .plus { color: #ef4444; } .minus { color: #3b82f6; }
+        .ai-box { background: #0f172a; padding: 12px; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 0.9rem; }
         .ai-box strong { color: #60a5fa; display: block; margin-bottom: 4px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="nav-tabs">
-            <a href="index.html" class="tab-btn">🇰🇷 국장 리포트</a>
-            <a href="us_index.html" class="tab-btn">🇺🇸 미장 리포트</a>
-            <a href="index3.html" class="tab-btn active">🎯 마이 대시보드</a>
+    </style></head><body><div class="container">
+    <div class="nav-tabs">
+        <a href="index.html" class="tab-btn">🇰🇷 국장 리포트</a>
+        <a href="us_index.html" class="tab-btn">🇺🇸 미장 리포트</a>
+        <a href="index3.html" class="tab-btn active">🎯 마이 대시보드</a>
+    </div>
+    <div class="summary-card">
+        <div class="summary-item">
+            <div class="label">총 평가 금액 (원화)</div>
+            <div class="num">52,687,283 원</div>
+            <div class="fx-info">적용 환율: 1,407.4 원/USD</div>
         </div>
-
-        <div class="summary-card">
-            <div class="summary-item">
-                <div class="label">총 평가 금액 (원화 환산)</div>
-                <div class="num">52,687,283 원</div>
-                <div class="fx-info">적용 환율: 1,407.4 원/USD</div>
-            </div>
-            <div class="summary-item">
-                <div class="label">총 평가 손익</div>
-                <div class="num minus">-6,122,497 원</div>
-            </div>
-            <div class="summary-item">
-                <div class="label">전체 수익률</div>
-                <div class="num minus">-10.41%</div>
-            </div>
+        <div class="summary-item">
+            <div class="label">총 평가 손익</div>
+            <div class="num minus">-6,122,497 원</div>
         </div>
-
-        <h2>📊 토스증권 연동 보유 종목 AI 분석</h2>
-        
+        <div class="summary-item">
+            <div class="label">전체 수익률</div>
+            <div class="num minus">-10.41%</div>
+        </div>
+    </div>
+    <h2>📊 토스증권 연동 보유 종목 AI 분석</h2>
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>RISE 미국AI밸류체인데일리고정커버드콜 <span class="ticker">(490590)</span></h3>
                     <p class="qty">보유 수량: 700.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩13,804.16</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩14,650.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+6.13%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+592,089원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩13,804.16</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩14,650.00</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+6.13%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+592,089원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>현재 RSI(14) 지표는 54.09로 중립적인 수준에 위치하고 있어, 과도한 매수 또는 매도 압력이 없는 것으로 판단됩니다. 또한, 현재 수익률은 6.13%로 양호한 수준이지만, 더 높은 수익을 기대하기에는 아직 충분하지 않아 보유 유지하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>RSI 지표가 54.09로 중립 区域에 위치하여 있지만, 수익률이 6.13%로 양호한 상승 국면에 있으므로 매수 신호가 발생하고, 추세가 지속될 가능성이 높다는 점을 고려하여 BUY 신호가 발생하였다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>RISE 미국AI밸류체인TOP3Plus <span class="ticker">(485690)</span></h3>
                     <p class="qty">보유 수량: 250.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩24,934.00</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩22,490.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-9.80%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-611,000원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩24,934.00</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩22,490.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-9.80%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-611,000원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 RSI(14) 지표가 54.98로 중립적인 수준에 위치하여 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 수익률 관점에서 현재 수익률이 -9.80%로 손실이 발생하고 있지만, RSI 지표의 중립적인 위치로 인해 급격한 매도 또는 매수를 권장하지 않으며, 보유 종목에 대한 추가 분석과 시장 동향을 관찰하여 향후 전략을 결정하는 것이 적절합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 RSI가 54.98로 중립 영역에 위치하여 매수 또는 매도 신호는 발생하지 않았으며, 수익률이 -9.80%로 하락세이지만 매도할 필요성은 없어 보입니다. 따라서 현재는 HOLD하는 것이 적절해 보입니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>RISE 미국테크100데일리고정커버드콜 <span class="ticker">(491620)</span></h3>
                     <p class="qty">보유 수량: 150.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩10,651.87</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩10,970.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+2.99%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+47,720원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩10,651.87</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩10,970.00</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+2.99%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+47,720원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 47.75로 중립적인 위치에 있기 때문에 매수 또는 매도 신호를 내리기에는 아직 이르다. 수익률 관점에서 볼 때, 현재 수익률이 +2.99%로 약간의 상승세를 보이고 있지만, 아직 큰 수익을 내기에는 부족하여 보유를 유지하는 것이 합리적이다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재가가 평단가를 상회하고, 수익률이 양수가 나타나고 있으므로 매수 신호가 발생하였습니다. 또한 RSI 지표가 중간 구간에 위치하고 있어 추가 上昇 여지가 있는 것으로 판단됩니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>TIME 미국배당다우존스액티브 <span class="ticker">(0036D0)</span></h3>
                     <p class="qty">보유 수량: 36.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩11,324.42</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩12,950.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+14.35%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+58,521원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩11,324.42</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩12,950.00</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+14.35%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+58,521원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 37.26으로 상대적으로 낮은 수준을 유지하고 있어 과매도 상태에 접근하고 있음을 알 수 있습니다. 수익률 관점에서는 현재 수익률이 +14.35%로 양호한 수준을 유지하고 있어, 추가 상승 가능성과 함께 보유 종목에 대한 중립적인 관점을 유지하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재가가 평단가보다 높고 수익률이 양수이며, RSI 지표 또한 과매도 구간을 벗어나면서 상승 조건이 형성되어 있으므로 BUY 신호가 발동했다. 또한, 현재 수익률이 14.35%로 전체적으로 상승 추세임을 나타내고 있다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>KODEX 미국S&P500액티브 <span class="ticker">(0041E0)</span></h3>
                     <p class="qty">보유 수량: 180.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩17,249.42</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩16,655.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-3.45%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-106,995원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩17,249.42</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩16,655.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-3.45%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-106,995원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 45.92로 중간 수준에 위치하여 매수 또는 매도 신호가 명확하지 않습니다. 수익률 관점에서는 현재 수익률이 -3.45%로 손실을 보이고 있지만, 아직 큰 손실은 아니므로 보유를 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 수익률은 -3.45%로 마이너스지만, RSI 지수가 45.92로 중간 수준에 있는 것으로 보아 과매도 또는 과매수 상태는 değil 것으로 판단됩니다. 따라서 현재는 유지보유를recommended합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>SOL 미국넥스트테크TOP10액티브 <span class="ticker">(0118S0)</span></h3>
                     <p class="qty">보유 수량: 300.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩12,851.50</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩11,035.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-14.13%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-544,950원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩12,851.50</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩11,035.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-14.13%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-544,950원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 52.73으로 중립적인 구간에 위치하여 매수 또는 매도 신호가 명확하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -14.13%로 손실이 발생하고 있지만, 아직 큰 손실은 아니므로 보유 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>SOL 미국넥스트테크TOP10액티브의 현재가가 평단가보다 낮으며, 수익률이 마이너스인 것으로 보아 하락세를 보이고 있지만, RSI 지표가 52.73으로 중립적이며 과매도 또는 과매수를 나타내는 구간에 있지 않아 매수 또는 매도 신호를 명확히 내리기 어렵습니다. 따라서慎重한 관찰이 필요하고, 추가적인 기술적 분석이나 시장 동향을 고려하여投資判断을 내리는 것이 현명할 것입니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>TIME 글로벌우주테크&방산액티브 <span class="ticker">(478150)</span></h3>
                     <p class="qty">보유 수량: 115.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩22,216.74</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩21,365.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-3.83%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-97,950원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩22,216.74</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩21,365.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-3.83%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-97,950원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 56.82로 중간 수준에 위치하여 매수 또는 매도 신호가 명확하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -3.83%로 약간의 손실을 보이고 있지만, 큰 손실은 아니므로 현재 보유 중인 종목을 계속 보유하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 수익률이 음으로 나타나고 있지만, RSI 지수가 56.82로 중간 수준을 유지하고 있어 시장이 보합적인 분위기임을 알 수 있습니다. 따라서 급격한 매수 또는 매도를 피하고 현재 주가의 움직임을 관찰하는 것이 좋으며, 추가적인 분석이 필요합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>TIGER 미국우주테크 <span class="ticker">(0183J0)</span></h3>
                     <p class="qty">보유 수량: 70.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩13,209.89</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩7,880.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-40.35%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-373,092원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩13,209.89</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩7,880.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-40.35%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-373,092원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 55.76으로 중립적인 위치에 있기 때문에 급격한 매도 또는 매수를 권장하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -40.35%로 손실이 크기 때문에 손절매를 고려할 수 있지만, 추가적인 하락 가능성과 상승 가능성을 모두 고려하여 현재는 보유하는 것이 적절합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>TIGER 미국우주테크의 현재가는 약 7,880원으로 전일대비 하락한 상태이며, 수익률은 -40.35%로 하락세를 보이고 있습니다. 그러나 RSI 지수가 55.76로 중간수준을 형성하고 있어, 매수신호가 발생할 가능성이 있어 BUY 신호가 발생합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>두산에너빌리티 <span class="ticker">(034020)</span></h3>
                     <p class="qty">보유 수량: 30.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩83,461.53</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩77,100.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-7.62%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-190,846원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩83,461.53</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩77,100.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-7.62%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-190,846원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>두산에너빌리티의 현재 RSI(14) 지표는 65.57로, 이는 과매수 영역에 접근하고 있지만 아직 과매도 또는 과매수 상태는 아님을 나타냄으로써, 기술적 관점에서 보았을 때 매도 또는 매수 신호는 아님을 알 수 있습니다. 또한, 현재 수익률은 -7.62%로 평균 매수 가격 대비 하락세를 보이고 있지만, 과도한 손실은 아니므로 보유를 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>두산에너빌리티의 현재가는 ₩77,100.00으로 평단가 ₩83,461.53보다 낮고, 수익률은 -7.62%로 적자지만, RSI 지수가 65.57로 상승倚기 위해 HOLD를 유지할 필요가 있다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>한화오션 <span class="ticker">(042660)</span></h3>
                     <p class="qty">보유 수량: 30.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩97,187.07</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩89,400.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-8.01%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-233,612원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩97,187.07</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩89,400.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-8.01%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-233,612원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 56.13으로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호는 명확하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -8.01%로 손실을 보이고 있지만, 아직 큰 손실은 아니므로 보유 종목을 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>RSI 지수가 56.13으로 중간 수준으로 유지되고 있기 때문에 현재는 거래를 주춤하게 두어야 하며, 추가 변동성에 대한 관찰이 필요합니다. 또한, 평단가 대비 수익률이 -8.01%로 적손 발생하고 있지만, 단기적으로는 조정을 마무리하고 상승의 기회를 기다려야 합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>SKC <span class="ticker">(011790)</span></h3>
                     <p class="qty">보유 수량: 60.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩100,797.25</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩81,200.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-19.44%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-1,175,835원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩100,797.25</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩81,200.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-19.44%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-1,175,835원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, SKC의 RSI(14) 지수가 52.68로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호가 명확하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -19.44%로 손실이 발생하고 있지만, RSI 지수가 과매도 영역은 아니므로 매도 신호는 아니며, 매수 신호도 명확하지 않아 현재는 보유하는 것이 적절합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 주가(₩81,200.00)가 평단가(₩100,797.25) 미만으로 수익률이 마이너스(-19.44%)로 돌아섰기 때문에 BUY 신호는 적합하지 않으며, RSI(52.68)도 중립적인 수준이므로 매도할 이유도 없기 때문에 HOLD가 적절한 선택입니다. 또한, RSI 지표가 과매도 지역인 30 이하 수준으로 빠지지 않았고, 중간 구간에 위치하여 급격한 매도压力은 보이지 않습니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>SK하이닉스 <span class="ticker">(000660)</span></h3>
                     <p class="qty">보유 수량: 5.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">₩2,134,643.00</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">₩1,422,000.00</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-33.38%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-3,563,215원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">₩2,134,643.00</span></div>
+                    <div><span class="label">현재가</span><span class="value">₩1,422,000.00</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-33.38%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-3,563,215원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 40.35로 중립적인 수준에 위치하여 매수 또는 매도 신호를 명확하게 주지 않고 있습니다. 수익률 관점에서 볼 때, 현재 수익률이 -33.38%로 손실이 발생하고 있지만, 과거의 저점을 다시 시험하지는 않고 있어 매도 압력이 크지 않아 보이므로 현재는 보유하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 수익률이 -33.38%로 하락했고, RSI도 40.35로 과매도 영역에 근접하여 BUY 신호가 발생할 가능성이 있지만, 주가가 아직 많이 하락한 상황이므로 매도壓力이 còn 존재하여 HOLD가 적절합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>NASA <span class="ticker">(NASA)</span></h3>
                     <p class="qty">보유 수량: 1.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$35.71</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$25.55</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-28.45%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-14,297원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$35.71</span></div>
+                    <div><span class="label">현재가</span><span class="value">$25.55</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-28.45%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-14,297원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 현재 RSI(14) 지수가 63.01로 중립적인 위치에 있기 때문에 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 수익률 관점에서 볼 때, 현재 수익률이 -28.45%로 손실이 누적되고 있지만, 과도한 매도 압력이 형성되지 않고 있는 상황에서 추가적인 손실을 최소화하기 위해 현금 보유를 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재가가 평단가보다 낮은 것으로 보아 아직 손실이 누적 중이며, RSI 값은 중간 수준으로 과매수 atau 과매도 상태가 아님을 보여줍니다. 따라서 추가 매수 或 매도 없이 현재 포지션을 유지하는 것이 합리적입니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>아이온큐 <span class="ticker">(IONQ)</span></h3>
                     <p class="qty">보유 수량: 12.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$43.02</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$44.43</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+3.27%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+23,765원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$43.02</span></div>
+                    <div><span class="label">현재가</span><span class="value">$44.43</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+3.27%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+23,765원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, 현재 RSI(14) 지수가 68.60으로 상당히 높아 과열 상태에 있음을 알 수 있습니다. 수익률 관점에서 보면, 현재 수익률이 +3.27%로 약간의 수익을 보이고 있지만, 과열 상태로 인해 하락할 가능성이 있으므로 주의가 필요합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 아이온큐(IONQ)의 수익률은 3.27%로 상승하고 있습니다. 그러나 RSI 지수가 68.60으로 높아 과열 가능성이 있기 때문에 HOLD를 추천합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>브로드컴 <span class="ticker">(AVGO)</span></h3>
                     <p class="qty">보유 수량: 1.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$397.41</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$427.76</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+7.64%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+42,717원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$397.41</span></div>
+                    <div><span class="label">현재가</span><span class="value">$427.76</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+7.64%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+42,717원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 73.58로 상당히 높은 수준에 도달하여 과매수 상태에 접근하고 있으므로 주의가 필요합니다. 수익률 관점에서는 현재 +7.64%의 수익을 기록하고 있으나, 과매수 상태로 인해 조정 가능성이 있어 보유 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>브로드컴(AVGO)의 현재가가 평단가를 상회하고 있으나, RSI 지수가 70을 초과하여 과열状態에 있다. 따라서 현재는 매수 신호가 아님으로 HOLD가 적절한 판단이다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>KORU <span class="ticker">(KORU)</span></h3>
                     <p class="qty">보유 수량: 20.3594주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$18.21</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$17.36</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-4.64%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-24,216원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$18.21</span></div>
+                    <div><span class="label">현재가</span><span class="value">$17.36</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-4.64%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-24,216원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 48.12로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호가 명확하지 않습니다. 수익률 관점에서 볼 때, 현재 수익률이 -4.64%로 약간의 손실을 보이고 있지만, 큰 손실은 아니므로 현재 보유 중인 종목을 계속 보유하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 KORU의 수익률이 -4.64%로 하락하고 있는 상황이며, RSI 또한 48.12로 중립적인 지표를 보이고 있습니다. 이러한 상황에서 즉각적인 매수 또는 매도 신호를 내ﾘ기보다 더 자세한 분석과 시장을 지켜보는 것이 필요해 보이므로 HOLD 신호가 적절합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>방코 산탄데르(ADR) <span class="ticker">(SAN)</span></h3>
                     <p class="qty">보유 수량: 10.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$14.65</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$14.70</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+0.34%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+704원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$14.65</span></div>
+                    <div><span class="label">현재가</span><span class="value">$14.70</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+0.34%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+704원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 RSI(14) 지표가 68.75로 상당히 높은 수준에 위치하고 있어, 과매수 상태에 근접하여 조정 가능성이 존재합니다. 수익률 관점에서 현재 수익률이 +0.34%로 약간의 상승세를 보이고 있지만, 매수가와 현재가의 차이가 미미하여 추가 상승 가능성에 대한 신중한 관찰이 필요합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>산탄데르은행의 현재주가가 평단가보다わず간 بالاتر이고, RSI가 68.75로상승국면에 있지만 과매수 지점에 근접해있기에 매수신호는발생하지 않습니다. 따라서 현재의 가격으로는 보유를 유지하는 것이 합리적입니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>비아샛 <span class="ticker">(VSAT)</span></h3>
                     <p class="qty">보유 수량: 3.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$79.01</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$80.38</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+1.73%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+5,785원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$79.01</span></div>
+                    <div><span class="label">현재가</span><span class="value">$80.38</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+1.73%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+5,785원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, 비아셋(VSAT)의 RSI(14) 지수가 63.46으로 중립적인 수준에 위치하고 있어 과매수 또는 과매도 상태는 아니므로 현재 홀드하는 것이 적절합니다. 수익률 관점에서는 현재가가 평균 매수가보다 약 1.73% 높은 수준으로 수익을 내고 있지만, 큰 상승세는 보이지 않아 보유를 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>비아셋(VSAT)의 현재가는 80.38로 평단가 79.01을 상회하고 있으며, 수익률은 +1.73%로 상승세를 보이고 있습니다. 또한 RSI 지수가 63.46으로 상당히 높아 매수 기회를 나타내고 있으므로 BUY 신호가 발생합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>어플라이드 머티리얼즈 <span class="ticker">(AMAT)</span></h3>
                     <p class="qty">보유 수량: 1.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$542.50</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$539.14</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-0.62%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-4,729원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$542.50</span></div>
+                    <div><span class="label">현재가</span><span class="value">$539.14</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-0.62%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-4,729원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, 어플라이드 머티리얼즈 (AMAT)의 RSI(14) 지표는 52.06으로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 수익률 관점에서 볼 때, 현재 수익률은 -0.62%로 약간의 손실을 보이고 있지만, 평균 매수가와 현재가의 차이가 크지 않아 보유를 유지하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>어플라이드 머티리얼즈(AMAT)의 현재 수익률이 음수이며, RSI 값도 중립적인 50 근처에 위치해 있어 매수 혹은 매도 신호를 명확히 내리기 어렵다. 또한 종가가 평단가보다 조금 낮은 수준이므로, HOLD하는 것이 적절하다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>오라클 <span class="ticker">(ORCL)</span></h3>
                     <p class="qty">보유 수량: 4.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$139.90</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$147.02</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+5.09%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+40,084원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$139.90</span></div>
+                    <div><span class="label">현재가</span><span class="value">$147.02</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+5.09%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+40,084원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 71.82로 높게 유지되고 있어 과열 징후가 보이므로 조심스러운 매수 신호를 주의해야 합니다. 수익률 관점에서 볼 때, 현재 수익률이 +5.09%로 양호한 수준이지만, 과열된 시장 상황에서 추가 상승의 가능성은 제한적이므로 보유 종목을 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>오라클(ORCL)의 현재가가 평단가보다 높으며, 수익률은 5.09%로 양호한 편이나, RSI 지표 값이 71.82로 과열영역에 접근하고 있어 일시적인 조정 가능성이 있어 매도신호는 아니나 추가 매수는 하지 않는 것이 좋으며, 매수 후 상승에 따른 이익 실현을 위해서는 추가 상승이 이루어졌을 때 매도 考慮할 수 있는 지점을 찾는 것이 중요하다. 따라서, 현재는 매수나 매도를 하지 말고 보유하는 것이 합리적이라고 판단된다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>인텔 <span class="ticker">(INTC)</span></h3>
                     <p class="qty">보유 수량: 1.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$98.71</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$101.65</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+2.98%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+4,138원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$98.71</span></div>
+                    <div><span class="label">현재가</span><span class="value">$101.65</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+2.98%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+4,138원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 54.09로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 수익률 관점에서는 현재 수익률이 +2.98%로 약간의 수익을 기록하고 있지만, 큰 상승세는 보이지 않아 현금 보유를 유지하는 것이 합리적입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>인텔의 현재가는 평단가보다 cao고, 수익률이正であるため 매수신호가 발생했으며, RSI 지표도 중간 이상의 수준을 유지하고 있어 추가 상승 가능성이 높아 보인다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>코닝 <span class="ticker">(GLW)</span></h3>
                     <p class="qty">보유 수량: 5.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$151.96</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$165.68</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+9.03%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+96,572원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$151.96</span></div>
+                    <div><span class="label">현재가</span><span class="value">$165.68</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+9.03%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+96,572원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>현재 코닝(GLW)의 RSI(14) 지표는 56.31로 중립적인 수준에 위치하고 있어 과매수 또는 과매도 상태는 아니므로, 기술적 관점에서 보아 현재의 가격 동향을 유지할 가능성이 있습니다. 또한, 현재 수익률이 +9.03%로 양호한 수준에 있으므로, 추가적인 매수 또는 매도 신호가 발생할 때까지 보유를 유지하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>코닝(GLW)의 현재 수익률은 9.03%로 상승세를 보이고 있지만, RSI 지표가 56.31으로 중립적인 위치에 있어 추가 상승 가능성은 있으나 과열되지는 않은 상태이므로 현재는 보유를 유지하는 것이 적절합니다. 또한, 평단가 대비 약 9%の上昇한 현재가로 투자자들의 매도 압력이 나타날 수 있으므로 주의가 필요합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>테슬라 <span class="ticker">(TSLA)</span></h3>
                     <p class="qty">보유 수량: 1.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$324.30</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$328.58</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+1.32%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+6,024원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$324.30</span></div>
+                    <div><span class="label">현재가</span><span class="value">$328.58</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+1.32%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+6,024원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 34.92로 상대적으로 저조한 수준에 위치하고 있어 과매도 상태로 판단되며, 추가 상승 가능성이 존재합니다. 수익률 관점에서 볼 때, 현재 수익률이 +1.32%로 약간의 수익을 기록하고 있지만, 큰 상승세는 보이지 않아 보유 유지하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>테슬라(TSLA)의 현재가가 평단가보다高고, RSI가 34.92로 과매도 지역에 접근하고 있어 매수 신호가 발생했다. 이러한 상황에서 수익률 juga 1.32% 로増加하고 있어 BUY 신호가 발생했다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>ASTX <span class="ticker">(ASTX)</span></h3>
                     <p class="qty">보유 수량: 30.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$17.36</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$15.73</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-9.34%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-68,484원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$17.36</span></div>
+                    <div><span class="label">현재가</span><span class="value">$15.73</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-9.34%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-68,484원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 65.11로 상대적으로 높은 수준에 있지만 아직 과매수 영역은 아니므로 매도 신호는 아님. 수익률 관점에서 볼 때, 현재 수익률이 -9.34%로 손실이 발생하고 있지만, 아직 큰 손실은 아니므로 매도보다는 보유를 유지하는 것이 합리적임.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>ASTX(ASTX)의 현재 수익률은 -9.34%로 음ATIVE하지만, RSI가 65.11로 과매도 구간이 아님으로 매도하기에는 적절하지 않으며, 매도하지도 않아서 HOLD한다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>AT&T <span class="ticker">(T)</span></h3>
                     <p class="qty">보유 수량: 15.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$22.66</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$23.79</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+4.99%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+23,856원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$22.66</span></div>
+                    <div><span class="label">현재가</span><span class="value">$23.79</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+4.99%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+23,856원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 65.44로 상당히 높은 수준에 있으므로 과열 징후가 나타나고 있지만, 아직은 매도 신호는 아님. 수익률 관점에서 볼 때, 현재 수익률이 +4.99%로 양호한 수준이므로 보유를 유지하는 것이 합리적이며, 추가 상승 가능성에 대비하여 HOLD하는 것이 적절함.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>AT&T(T)의 현재가는 평단가보다 높은 수준에 있지만, RSI 지표는 과열되는 수준에 접근하고 있어 추가 상승의 가능성은 제한적이며, 보합세를 유지할 가능성이 높다. 또한, 현재 수익률이 이미 4.99%에 달하고 있기 때문에, 과한 매수세는 피하는 것이 좋다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>IBM <span class="ticker">(IBM)</span></h3>
                     <p class="qty">보유 수량: 2.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$222.06</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$237.28</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value plus">+6.85%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value plus">+42,843원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$222.06</span></div>
+                    <div><span class="label">현재가</span><span class="value">$237.28</span></div>
+                    <div><span class="label">수익률</span><span class="value plus">+6.85%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value plus">+42,843원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 71.94로 상당히 높은 수준에 위치하고 있어 과열 징후가 나타나고 있습니다. 수익률 관점에서는 현재 수익률이 +6.85%로 양호한 수준이지만, 과열로 인한 조정 가능성이 있어 주의가 필요합니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 IBM의 주가($237.28)가 평단가($222.06) 보다 높은 편이며, 수익률은 +6.85%로 상승세를 보이고 있으나, RSI 지표(71.94)가 과열구간에 접근해 있기 때문에 조심스럽게 매수를 고려해야 하며, 과열 지표가 완화되기 전까지는 보유 또는 관망이 필요합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>SNXX <span class="ticker">(SNXX)</span></h3>
                     <p class="qty">보유 수량: 30.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$11.14</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$9.11</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-18.22%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-85,701원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$11.14</span></div>
+                    <div><span class="label">현재가</span><span class="value">$9.11</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-18.22%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-85,701원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지표가 41.42로 상대적으로 중립적인 수준에 위치하고 있어 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 수익률 관점에서 볼 때, 현재 수익률이 -18.22%로 손실이 누적되고 있지만, 추가적인 하락 가능성과 상승 가능성을 고려하여 현재는 보유하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재가가 평단가보다 낮고 수익률이 마이너스이며 RSI 또한 중립 반영으로 주가가하락 한 후 반등 될 가능성이 있음으로BUY 신호가 발생합니다.</p></div>
             </div>
         </div>
-        
         <div class="card">
             <div class="card-header">
                 <div>
                     <h3>SOXL <span class="ticker">(SOXL)</span></h3>
                     <p class="qty">보유 수량: 2.0주</p>
                 </div>
-                <div class="signal-badge" style="background-color: #f39c12;">
-                    중립 🟡
-                </div>
+                <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
             </div>
             <div class="card-body">
                 <div class="metrics-grid">
-                    <div>
-                        <span class="label">평균 매수가</span>
-                        <span class="value">$144.65</span>
-                    </div>
-                    <div>
-                        <span class="label">현재가</span>
-                        <span class="value">$140.25</span>
-                    </div>
-                    <div>
-                        <span class="label">수익률</span>
-                        <span class="value minus">-3.04%</span>
-                    </div>
-                    <div>
-                        <span class="label">평가 손익 (원화)</span>
-                        <span class="value minus">-12,393원</span>
-                    </div>
+                    <div><span class="label">평균 매수가</span><span class="value">$144.65</span></div>
+                    <div><span class="label">현재가</span><span class="value">$140.25</span></div>
+                    <div><span class="label">수익률</span><span class="value minus">-3.04%</span></div>
+                    <div><span class="label">평가 손익(원화)</span><span class="value minus">-12,393원</span></div>
                 </div>
-                <div class="ai-box">
-                    <strong>🤖 Groq AI 매매 가이드</strong>
-                    <p>기술적 관점에서 볼 때, RSI(14) 지수가 51.09로 중립적인 수준에 위치하여 매수 또는 매도 신호를 명확하게 주지 않고 있습니다. 수익률 관점에서 볼 때, 현재 수익률이 -3.04%로 약간의 손실을 보이고 있지만, 큰 손실은 아니므로 현재 보유 중인 종목을 계속 보유하는 것이 적절해 보입니다.</p>
-                </div>
+                <div class="ai-box"><strong>🤖 Groq AI 매매 가이드</strong><p>현재 SOXL의 수익률은 -3.04%로 하락세를 보이고 있지만, RSI가 51.09로 중립적인 구간에 위치해 있어매매신호는 HOLD로 유지된다. 또한, 현재가가 평단가보다 낮은 상황에서 매도하지 않는다면, 손실을 실현하지 않기 위해 HOLD하는 것이 합리적인 전략으로 보인다.</p></div>
             </div>
-        </div>
-        
-    </div>
-</body>
-</html>
+        </div></div></body></html>
