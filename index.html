@@ -1,66 +1,230 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>국장 리포트</title>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국장 AI 분석 대시보드</title>
     <style>
-        body { font-family: Pretendard, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        :root { --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; --muted: #94a3b8; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border-radius: 8px; background: #334155; color: #fff; text-decoration: none; font-weight: bold; }
+        .tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: #334155; color: #fff; cursor: pointer; text-decoration: none; font-weight: bold; }
         .tab-btn.active { background: #3b82f6; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; }
-        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; color: white; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); background: #0f172a; padding: 12px; border-radius: 8px; margin: 15px 0; }
-        .label { font-size: 0.75rem; color: #94a3b8; display: block; }
-        .value { font-weight: bold; font-size: 1.1rem; }
+        
+        .weekly-summary { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #3b82f6; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .weekly-title { font-size: 1.1rem; font-weight: bold; color: #60a5fa; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .themes-wrapper { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .theme-chip { background: #334155; color: #f1f5f9; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; border: 1px solid #475569; }
+        .sentiment-badge { background: #3b82f6; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; }
+        
+        .header-title { margin-bottom: 20px; font-size: 1.4rem; font-weight: bold; color: #f8fafc; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-header h3 { margin: 0; font-size: 1.25rem; }
+        .ticker { font-size: 0.85rem; color: var(--muted); }
+        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; color: white; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .metrics-grid div { display: flex; flex-direction: column; }
+        .label { font-size: 0.75rem; color: var(--muted); }
+        .value { font-weight: bold; margin-top: 2px; }
         .plus { color: #ef4444; } .minus { color: #3b82f6; }
-        .ai-box { background: #0f172a; padding: 12px; border-left: 4px solid #3b82f6; border-radius: 4px; }
-    </style></head><body><div class="container">
-    <div class="nav-tabs">
-        <a href="index.html" class="tab-btn active">🇰🇷 국장 리포트</a>
-        <a href="us_index.html" class="tab-btn">🇺🇸 미장 리포트</a>
-        <a href="index3.html" class="tab-btn">🎯 마이 대시보드</a>
+        .ai-box { background: #0f172a; padding: 12px 15px; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 0.9rem; line-height: 1.5; }
+        .ai-box strong { color: #60a5fa; display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-tabs">
+            <a href="index.html" class="tab-btn active">🇰🇷 국장 리포트</a>
+            <a href="us_index.html" class="tab-btn">🇺🇸 미장 리포트</a>
+            <a href="index3.html" class="tab-btn">🎯 마이 대시보드</a>
+        </div>
+
+        <!-- 최근 1주일 주간 뉴스 & 인기 테마 섹션 -->
+        <div class="weekly-summary">
+            <div class="weekly-title">
+                <span>📰 최근 1주일 증시 인기 테마 & 시장 감성</span>
+                <span class="sentiment-badge">감성 지수: 42점 (부정적)</span>
+            </div>
+            <div class="themes-wrapper">
+                <span class="theme-chip">🔥 레버리지</span><span class="theme-chip">🔥 동전주</span><span class="theme-chip">🔥 코스닥</span><span class="theme-chip">🔥 주식 담보 대출</span><span class="theme-chip">🔥 IPO</span>
+            </div>
+            <p style="margin: 0; font-size: 0.9rem; color: #cbd5e1; line-height: 1.5;">
+                최근 국내 증시 관련 뉴스 헤드라인을 분석한 결과, 시장의 분위기는 부정적으로 나타나고 있습니다. 주가 하락, 동전주 상폐 위기, 레버리지 규제 등 부정적인 요소들이 시장의 신뢰를 떨어뜨리고 있는 것으로 보입니다.
+            </p>
+        </div>
+
+        <div class="header-title">🇰🇷 국내 증시 주요 지수 & 종목 AI 진단</div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>코스피 지수 <span class="ticker">(^KS11)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩6,259</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-0.60%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">47.0</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩6,575 / ₩7,626 / ₩6,794</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 코스피 지수의 RSI(14) 지표는 46.96로 중립적인 위치에 있으므로, 과매수 또는 과매도 상태는 아닌 것으로 판단됩니다. 또한, 20일 이평선(₩6,574.78)보다 현재가(₩6,258.77)가 낮은 위치에 있지만, 120일 이평선(₩6,794.19)보다는 높아 장기적인 관점에서 매수 기회를 엿볼 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>코스닥 지수 <span class="ticker">(^KQ11)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩799</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-0.36%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">56.4</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩763 / ₩918 / ₩1,030</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>RSI(14) 지표가 56.41로 중립적인 위치에 있지만, 최근 주가가 20일 이평선 위로 상승하고 있는 것으로 보아 상승 모멘텀을 유지하고 있습니다. 또한, 120일 이평선은 ₩1,029.95로 현재 주가보다 높은 위치에 있지만, 주가가 20일 이평선과 60일 이평선 사이에서 안정적인 상승세를 보이고 있어 매수 신호를 보입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>삼성전자 <span class="ticker">(005930.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩231,000</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+0.22%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">46.7</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩247,950 / ₩292,644 / ₩248,124</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 RSI(14) 지표가 46.73으로 중립적인 수준에 위치하고 있으며, 20일 이평과 120일 이평을 고려할 때, 삼성전자의 주가는 최근 하락세를 보이고 있지만, 과도한 매도 압력이 형성되지 않은 상태입니다. 따라서, 기술적 지표와 모멘텀 관점에서 볼 때, 현재는 매수 또는 매도의 명확한 신호가 나타나지 않고 있으므로 주가의 추이를 지속적으로 관찰하면서 홀드하는 것이 적절해 보입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>SK하이닉스 <span class="ticker">(000660.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩1,422,000</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-4.88%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">40.3</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩1,725,300 / ₩2,091,546 / ₩1,583,406</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>RSI(14) 지표가 40.35로 중립적인 수준을 유지하고 있으며, 현재가가 20일 및 60일 이평선 아래에 위치해 있지만, 120일 이평선과 비교하면 아직 큰 하락세는 아닌 것으로 판단됩니다. 또한, 등락률이 최근에 하락한 것으로 나타나지만, 장기적인 관점에서 볼 때 SK하이닉스의 기술적 지표와 모멘텀은 중립적인 상태로 유지되고 있으므로, 현재는 매수 또는 매도 신호를 내ﾘ기에는 조심스러운 상황입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>삼성전자우 <span class="ticker">(005935.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩170,100</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-1.16%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">50.3</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩176,740 / ₩194,631 / ₩167,923</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 RSI(14) 지표가 50.31로 중립적인 위치에 있기 때문에, 과매수 또는 과매도 상태는 아니라는 것을 알 수 있습니다. 또한, 120일 이평선인 ₩167,923.31보다 현재가 ₩170,100.00이 높기 때문에, 중장기적인 상승 추세는 유지되고 있지만, 단기적으로는 하락세를 보이고 있어 매수 또는 매도 신호는 명확하지 않습니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>LG에너지솔루션 <span class="ticker">(373220.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩360,000</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+4.35%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">62.5</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩327,950 / ₩370,033 / ₩391,421</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>LG에너지솔루션의 RSI(14) 지표가 62.54로 상승세를 보이고 있으며, 20일 이평선과 60일 이평선 위에 위치해 있으므로 기술적 지표상 상승 모멘텀을 유지하고 있습니다. 또한, 120일 이평선에 비해 현재가가 약간 하락한 상태이므로 중장기적인 관점에서 매수 기회를 포착할 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>삼성바이오로직스 <span class="ticker">(207940.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩1,556,000</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+2.77%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">67.4</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩1,449,800 / ₩1,394,133 / ₩1,492,592</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>삼성바이오로직스의 RSI(14) 지표가 67.44로 상승세를 보이고 있어 기술적 지표상으로는 매수 신호를 보이고 있습니다. 또한, 20일 이평과 60일 이평을 상회하고 있어 모멘텀 관점에서 보았을 때도 상승 추세가 유지되고 있어 매수 신호를 보입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>현대차 <span class="ticker">(005380.KS)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">₩395,500</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-1.12%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">49.0</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">₩403,950 / ₩535,600 / ₩529,164</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현대차의 현재 RSI(14) 지표는 49.04로 중립적인 수준에 위치해 있어 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 또한, 20일 이평선이 60일 및 120일 이평선 아래에 위치하고 있으나, 최근 가격 동향을 고려하면 매도 압력이 강하지 않아 현재는 보유를 유지하는 것이 적절해 보입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
     </div>
-    <h2>🇰🇷 주요 국내 증시 현황</h2>
-            <div class="card">
-                <div class="card-header">
-                    <h3>코스피 <span class="ticker">(^KS11)</span></h3>
-                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">6,259 원</span></div>
-                    <div><span class="label">전일대비</span><span class="value minus">-0.60%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>현재 코스피 주가는 6,259로 하락하고 있어 조심스럽게 상황을 관찰해야 하며, 변동률이 -0.60%로 다소 하락세를 보이고 있지만 크게 급박한 상황은 아니기에 매수나 매도를 결정하기 어렵습니다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>코스닥 <span class="ticker">(^KQ11)</span></h3>
-                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">799 원</span></div>
-                    <div><span class="label">전일대비</span><span class="value minus">-0.36%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>코스닥 현재가는 799로, 변동률은 음수로 나타나 하락 추세입니다. 이러한 상황에서 거래 주의가 필요하여 HOLD가 적절합니다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>삼성전자 <span class="ticker">(005930.KS)</span></h3>
-                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">231,000 원</span></div>
-                    <div><span class="label">전일대비</span><span class="value plus">+0.22%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>현재가 231,000원으로 변동률이 약세를 보이고 있으므로 매매에 유의해야 하며, 변동폭이 상대적으로 작아 거래량과 추가적인 정보를 참고하여 결정하는 것이 좋습니다. 또한, 현재 주가가 어느 수준에 있는지 및 시장 상황을 고려하여 신중히 매수 또는 매도를 결정해야 합니다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>SK하이닉스 <span class="ticker">(000660.KS)</span></h3>
-                    <div class="signal-badge" style="background-color: #e74c3c;">매도 🔴</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">1,422,000 원</span></div>
-                    <div><span class="label">전일대비</span><span class="value minus">-4.88%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>현재가 1,422,000원으로 하락하고 있으며, 변동률도 -4.88%로 부정적인 신호를 보이고 있어서 매도 신호가 발생합니다. 최근 주가 하락 추세와 함께 반영된 부정적 влия로 인해 추가로 가격이 떨어질 가능성이 있어 매도하거나 주식 보유를 하지 않는 것이 좋습니다.</p></div>
-            </div></div></body></html>
+</body>
+</html>
