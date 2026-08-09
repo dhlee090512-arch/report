@@ -1,66 +1,208 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>미장 리포트</title>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미장 AI 분석 대시보드</title>
     <style>
-        body { font-family: Pretendard, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        :root { --bg: #0f172a; --card-bg: #1e293b; --text: #f8fafc; --muted: #94a3b8; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border-radius: 8px; background: #334155; color: #fff; text-decoration: none; font-weight: bold; }
+        .tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: #334155; color: #fff; cursor: pointer; text-decoration: none; font-weight: bold; }
         .tab-btn.active { background: #3b82f6; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; }
-        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; color: white; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); background: #0f172a; padding: 12px; border-radius: 8px; margin: 15px 0; }
-        .label { font-size: 0.75rem; color: #94a3b8; display: block; }
-        .value { font-weight: bold; font-size: 1.1rem; }
+        .header-title { margin-bottom: 20px; font-size: 1.5rem; font-weight: bold; color: #60a5fa; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-header h3 { margin: 0; font-size: 1.25rem; }
+        .ticker { font-size: 0.85rem; color: var(--muted); }
+        .signal-badge { padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; color: white; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .metrics-grid div { display: flex; flex-direction: column; }
+        .label { font-size: 0.75rem; color: var(--muted); }
+        .value { font-weight: bold; margin-top: 2px; }
         .plus { color: #ef4444; } .minus { color: #3b82f6; }
-        .ai-box { background: #0f172a; padding: 12px; border-left: 4px solid #3b82f6; border-radius: 4px; }
-    </style></head><body><div class="container">
-    <div class="nav-tabs">
-        <a href="index.html" class="tab-btn">🇰🇷 국장 리포트</a>
-        <a href="us_index.html" class="tab-btn active">🇺🇸 미장 리포트</a>
-        <a href="index3.html" class="tab-btn">🎯 마이 대시보드</a>
+        .ai-box { background: #0f172a; padding: 12px 15px; border-left: 4px solid #3b82f6; border-radius: 4px; font-size: 0.9rem; line-height: 1.5; }
+        .ai-box strong { color: #60a5fa; display: block; margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-tabs">
+            <a href="index.html" class="tab-btn">🇰🇷 국장 리포트</a>
+            <a href="us_index.html" class="tab-btn active">🇺🇸 미장 리포트</a>
+            <a href="index3.html" class="tab-btn">🎯 마이 대시보드</a>
+        </div>
+        <div class="header-title">🇺🇸 미국 증시 주요 지수 & 종목 AI 진단</div>
+        
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>S&P 500 <span class="ticker">(^GSPC)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$7,757.64</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+0.62%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">69.8</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$7,525.4 / $7,486.9 / $7,185.6</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 RSI(14) 지표가 69.78로 상승세를 보이고 있으나, 과매수 영역에 접근하고 있어 조심스러운 매수 기회를 제공하고 있습니다. 또한, 20일 및 60일 이평선이 상승하고 있어 중장기적인 상승 모멘텀을 유지하고 있으나, 현재가가 52주 최고가에 근접하고 있어 매도 압력이 증가할 가능성이 있어 주의가 필요합니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>나스닥 종합 <span class="ticker">(^IXIC)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$26,690.62</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+1.30%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">63.3</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$25,672.5 / $26,009.1 / $24,629.0</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 RSI(14) 지수가 63.30으로 상승세를 보이고 있으며, 20일 및 60일 이평선 위에 위치해 있으므로 기술적 지표 상으로 매수 신호가 발생하고 있습니다. 또한, 120일 이평선도 상승하고 있으므로 중장기적인 관점에서 나스닥 종합 지수는 상승 모멘텀을 유지하고 있으며, 이는 추가적인 상승 가능성을 시사합니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>엔비디아 (NVIDIA) <span class="ticker">(NVDA)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$223.96</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+2.27%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">65.6</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$206.8 / $208.6 / $199.1</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>현재 RSI(14) 지수가 65.61로 상승하고 있어 모멘텀의 상승세가 유지되고 있으며, 20일 이평선($206.82), 60일 이평선($208.59), 120일 이평선($199.09) 모두 현재가($223.96)가 위에 위치하여 장기적인 상승 추세를 보이고 있습니다. 이러한 기술적 지표와 모멘텀의 상승세를 고려하면 엔비디아(NVDA)의 주가가 추가 상승할 가능성이 있어 BUY 신호가 발생합니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>테슬라 (Tesla) <span class="ticker">(TSLA)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$328.58</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+2.83%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">34.9</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$343.3 / $388.0 / $388.3</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>테슬라의 현재 RSI(14) 지표는 34.92로, 과매도 영역에 접근하고 있어 반등의 기회를 제공하고 있습니다. 또한, 20일 이평선($343.33)과 60일 이평선($388.03), 120일 이평선($388.34) 모두 현재가보다 높은 위치에 있지만, 최근의 등락률 상승과 함께 반등의 가능성이 있어 BUY 신호를 발급합니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>애플 (Apple) <span class="ticker">(AAPL)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$313.33</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+0.29%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">40.8</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$323.4 / $308.6 / $286.4</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>애플(AAPL)의 현재 RSI(14) 지표는 40.82로, 과매도 지역에 접근하고 있지만 아직 과매도 신호는 아님을 나타내며, 20일 이평선과 60일 이평선의 관계를 고려하면 지지ระด이 형성 중으로 보이며, 추가 상승 가능성이 있지만, 현재 가격이 120일 이평선 위에 위치하여 중기적으로는 하락 가능성도 존재함을 기술적 지표와 모멘텀 관점에서 분석할 수 있습니다. 또한, 최근 등락률이 미미한 편으로 보아 현재는 매수 또는 매도 신호를 명확히 내리기에는 어려움이 있어 주시하고 있는 종목으로 HOLD하는 것이 적절하다고 판단됩니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>마이크로소프트 <span class="ticker">(MSFT)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #e74c3c;">매도 🔴</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$499.99</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+0.03%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">81.4</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$423.8 / $408.5 / $402.9</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>마이크로소프트의 RSI(14) 지표가 81.43으로 매우 높은 수준에 위치하고 있어 과매수 상태로 판단되며, 이는 단기적으로는 하락의 가능성이 높음을 시사합니다. 또한, 현재가가 20일, 60일, 120일 이평선 모두 위에 위치하고 있지만, RSI의 과매수 상태와 함께 상승 모멘텀의 감소 가능성을 고려할 때 매도 신호가 발생한 것으로 판단됩니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>아마존 <span class="ticker">(AMZN)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$274.48</span></div>
+                        <div><span class="label">전일대비</span><span class="value plus">+0.82%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">62.9</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$251.6 / $250.6 / $239.9</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>아마존의 RSI(14) 지표는 62.93로 상승세를 보이고 있으며, 이는 중기적인 상승 모멘텀을 나타내는 것으로 해석될 수 있습니다. 또한, 20일 및 60일 이평선은 모두 상승세를 보이고 있어 중장기적인 상승 추세가 유지되고 있음을 나타내며, 이는 매수 신호로 판단됩니다.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3>알파벳 (구글) <span class="ticker">(GOOGL)</span></h3>
+                    </div>
+                    <div class="signal-badge" style="background-color: #f39c12;">중립 🟡</div>
+                </div>
+                <div class="card-body">
+                    <div class="metrics-grid">
+                        <div><span class="label">현재가</span><span class="value">$354.30</span></div>
+                        <div><span class="label">전일대비</span><span class="value minus">-0.96%</span></div>
+                        <div><span class="label">RSI (14)</span><span class="value">50.9</span></div>
+                        <div><span class="label">MA20 / MA60 / MA120</span><span class="value" style="font-size:0.75rem;">$348.8 / $362.4 / $343.0</span></div>
+                    </div>
+                    <div class="ai-box">
+                        <strong>🤖 Groq AI 시장 진단</strong>
+                        <p>알파벳(GOOGL)의 현재 RSI(14) 지표는 50.93으로 중립적인 영역에 위치해 있어 매수 또는 매도 신호를 명확하게 내리기 어렵습니다. 또한, 20일 이평선($348.76)과 60일 이평선($362.40) 사이에서 주가가 움직이고 있어 단기적으로는 횡보할 가능성이 높은 상황입니다.</p>
+                    </div>
+                </div>
+            </div>
+            
     </div>
-    <h2>🇺🇸 주요 미국 증시 현황</h2>
-            <div class="card">
-                <div class="card-header">
-                    <h3>S&P 500 <span class="ticker">(^GSPC)</span></h3>
-                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">$7,757.64</span></div>
-                    <div><span class="label">전일대비</span><span class="value plus">+0.62%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>현재 S&P 500의 변동률은 양적으로 +0.62%로 상승하고 있어 시장 전망이 좋습니다. 또한 현재가인 $7,757.64는 최근 상승세를 보이고 있어 매수신호가 발생합니다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>나스닥 <span class="ticker">(^IXIC)</span></h3>
-                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">$26,690.62</span></div>
-                    <div><span class="label">전일대비</span><span class="value plus">+1.30%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>나스닥 현재가는 26,690.62로 변동률이 +1.30%로 상승세를 나타내고 있기 때문에 매수 신호를 주는 것이 합리적이며, 이는 기술적 분석과 시장 상황에 기인한 것으로 보입니다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>엔비디아 <span class="ticker">(NVDA)</span></h3>
-                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">$223.96</span></div>
-                    <div><span class="label">전일대비</span><span class="value plus">+2.27%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>현재 엔비디아 주가는 최근 업황에 비추어 상승세를 보이고 있으며, 미래 성장 가능성이 높은 기술 분야에서 강세를 보이고 있기 때문에 매수할 가능성이 크다. 주식의 변동률은 최근 상승세를 보이고 있어 긍정적인 전망이 나와 매수 신호가 발생한다.</p></div>
-            </div>
-            <div class="card">
-                <div class="card-header">
-                    <h3>테슬라 <span class="ticker">(TSLA)</span></h3>
-                    <div class="signal-badge" style="background-color: #2ecc71;">매수 🟢</div>
-                </div>
-                <div class="metrics-grid">
-                    <div><span class="label">현재가</span><span class="value">$328.58</span></div>
-                    <div><span class="label">전일대비</span><span class="value plus">+2.83%</span></div>
-                </div>
-                <div class="ai-box"><strong>🤖 AI 진단</strong><p>테슬라의 주가가 최근 상승세를 보이고 있으며, 변동폭은 2.83%로 상당한 상승세를 보이고 있다. 이는 투자자들의 긍정적인 평가와 함께 장기적인 성장 가능성을 예상할 수 있어 매수 신호가 활발한 것으로 판단된다.</p></div>
-            </div></div></body></html>
+</body>
+</html>
