@@ -182,18 +182,14 @@ def parse_te_summary_val(url):
             summary_elem = soup.select_one('#description') or soup.select_one('.panel-body') or soup.select_one('p')
             if summary_elem:
                 text = summary_elem.text.strip()
-                
-                # 수치 + 단위 + 수치 바로 뒤의 기준 월(in Month [of Year])을 정밀하게 한 번에 포착
                 match = re.search(
                     r'(?:increased|decreased|stood|reached)\s+to\s+([\d,]+\.?\d*)\s*([A-Za-z]+)?\s*(Billion|Million|Trillion)?\s+in\s+([A-Za-z]+(?:\s+of\s+\d{4}|\s+\d{4})?)', 
                     text, 
                     re.IGNORECASE
                 )
-                
                 if match:
                     latest_val = float(match.group(1).replace(',', ''))
                     unit_suffix = (match.group(3) or match.group(2) or "").upper()
-                    
                     raw_date = match.group(4).strip()
                     clean_date = raw_date.replace(" of ", " ")
                     date_str = f"{clean_date} 기준"
@@ -201,7 +197,6 @@ def parse_te_summary_val(url):
                     sub_match = re.search(r'(?:increased|decreased|stood|reached)\s+to\s+([\d,]+\.?\d*)', text, re.IGNORECASE)
                     if sub_match:
                         latest_val = float(sub_match.group(1).replace(',', ''))
-
     except Exception as e:
         print(f"⚠️ {url} 파싱 오류: {e}")
 
@@ -221,25 +216,18 @@ def get_vkospi_naver():
 
 def get_kr_macro_data():
     print("⏳ [국장 매크로] 한국 M2 및 CLI 수치 및 발표 기준 월 수집 중...")
-    
     val_m2, unit_m2, date_m2 = parse_te_summary_val(KR_M2_URL)
     if val_m2:
-        if val_m2 > 1000000:
-            m2_trillion = val_m2 / 1000
-        elif val_m2 > 1000:
-            m2_trillion = val_m2 / 1000 if "BILLION" in unit_m2 else val_m2
-        else:
-            m2_trillion = val_m2
+        if val_m2 > 1000000: m2_trillion = val_m2 / 1000
+        elif val_m2 > 1000: m2_trillion = val_m2 / 1000 if "BILLION" in unit_m2 else val_m2
+        else: m2_trillion = val_m2
         m2_val_str = f"{fmt_num(m2_trillion)}조 원"
-    else:
-        m2_val_str = "4,210.5조 원"
+    else: m2_val_str = "4,210.5조 원"
     
     m2_date_str = date_m2 if date_m2 else "최신 발표 기준 🟢"
-
     val_cli, unit_cli, date_cli = parse_te_summary_val(KR_CLI_URL)
     cli_val_str = f"{fmt_num(val_cli)} Pts" if val_cli else "101.20 Pts"
     cli_date_str = date_cli if date_cli else "최신 발표 기준 🟢"
-
     val_vkospi = get_vkospi_naver()
     vix_val_str = f"{fmt_num(val_vkospi)} Pts" if val_vkospi is not None else "18.50 Pts"
 
@@ -251,16 +239,13 @@ def get_kr_macro_data():
 
 def get_us_macro_data():
     print("⏳ [미장 매크로] 미국 M2 및 CLI 수치 및 발표 기준 월 수집 중...")
-    
     val_m2, unit_m2, date_m2 = parse_te_summary_val(US_M2_URL)
     if val_m2:
         val_trillion = val_m2 / 1000 if val_m2 > 1000 else val_m2
         m2_val_str = f"${fmt_num(val_trillion)} Trillion"
-    else:
-        m2_val_str = "$21.40 Trillion"
+    else: m2_val_str = "$21.40 Trillion"
         
     m2_date_str = date_m2 if date_m2 else "최신 발표 기준 🟢"
-
     val_cli, unit_cli, date_cli = parse_te_summary_val(US_CLI_URL)
     cli_val_str = f"{fmt_num(val_cli)} Pts" if val_cli else "102.10 Pts"
     cli_date_str = date_cli if date_cli else "최신 발표 기준 🟢"
@@ -268,8 +253,7 @@ def get_us_macro_data():
     try:
         vix_tk = yf.Ticker("^VIX").history(period="5d")
         val_vix = float(vix_tk['Close'].iloc[-1]) if (vix_tk is not None and len(vix_tk) > 0) else None
-    except Exception:
-        val_vix = None
+    except Exception: val_vix = None
     vix_val_str = f"{fmt_num(val_vix)} Pts" if val_vix is not None else "15.20 Pts"
 
     return {
@@ -333,21 +317,11 @@ def get_yahoo_7days_news():
                     if len(text) > 10: titles.append(text)
     except Exception: pass
 
-    if len(titles) < 10:
-        try:
-            url = "https://finance.yahoo.com/news/"
-            res = requests.get(url, headers=headers, timeout=7)
-            soup = BeautifulSoup(res.text, 'html.parser')
-            h3_tags = [h3.text.strip() for h3 in soup.find_all(['h3', 'h2']) if len(h3.text.strip()) > 10]
-            titles.extend(h3_tags)
-        except Exception: pass
-
     titles = list(dict.fromkeys(titles))
     return "\n".join(titles[:40]) if titles else "Fed Rate Policy | Tech Earnings Rally | AI Demand Momentum"
 
 def sanitize_text(text):
-    cleaned = re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', text)
-    return cleaned.strip()
+    return re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', text).strip()
 
 def analyze_7days_news_sentiment(market_type, news_text):
     cache_key = f"MARKET_{market_type}"
@@ -370,13 +344,6 @@ def analyze_7days_news_sentiment(market_type, news_text):
     
     [지난 7일간 뉴스 헤드라인]
     {news_text}
-    
-    [분석 요구사항]
-    1. 시장 전체 분위기를 진단하여 종합 상태 [긍정 🟢 OR 보통 🟡 OR 부정 🔴] 중 하나를 선택하라.
-    2. 뉴스 헤드라인에서 확인되는 **🟢 긍정 호재 요소(최대 5개)**를 추출하여 각각 한 줄로 요약하라.
-    3. 뉴스 헤드라인에서 확인되는 **🔴 부정 악재/리스크 요소(최대 5개)**를 추출하여 각각 한 줄로 요약하라.
-    4. 현재 시장을 강하게 이끌고 있는 **🚀 강세/주도 테마(주요 업종 및 섹터)**를 작성하라.
-    5. 7일 누적 뉴스 감성 지수(-100점 ~ +100점)를 산출하라.
     
     [출력 양식]
     상태: <긍정 🟢 OR 보통 🟡 OR 부정 🔴>
@@ -405,40 +372,20 @@ def analyze_7days_news_sentiment(market_type, news_text):
             temperature=0.3, max_tokens=800
         )
         content = res.choices[0].message.content.strip()
-        
         status_val = "보통 🟡"
         status_match = re.search(r'상태:\s*(.*)', content)
-        if status_match: 
-            status_val = status_match.group(1).strip()
+        if status_match: status_val = status_match.group(1).strip()
 
-        extracted_pos = []
-        for i in range(1, 6):
-            m = re.search(rf'긍정{i}:\s*(.*)', content)
-            if m:
-                text = m.group(1).strip()
-                if text and not text.startswith('<') and len(text) > 2:
-                    extracted_pos.append(text)
+        extracted_pos = [re.search(rf'긍정{i}:\s*(.*)', content).group(1).strip() for i in range(1, 6) if re.search(rf'긍정{i}:\s*(.*)', content)]
+        extracted_neg = [re.search(rf'부정{i}:\s*(.*)', content).group(1).strip() for i in range(1, 6) if re.search(rf'부정{i}:\s*(.*)', content)]
 
-        extracted_neg = []
-        for i in range(1, 6):
-            m = re.search(rf'부정{i}:\s*(.*)', content)
-            if m:
-                text = m.group(1).strip()
-                if text and not text.startswith('<') and len(text) > 2:
-                    extracted_neg.append(text)
-
-        theme_val = "특이 테마 미포착"
-        score_val = "0점 (중립)"
-        
         theme_match = re.search(r'강세테마:\s*(.*)', content)
         score_match = re.search(r'감성지수:\s*(.*)', content)
-        if theme_match and len(theme_match.group(1).strip()) > 1: 
-            theme_val = theme_match.group(1).strip()
-        if score_match and len(score_match.group(1).strip()) > 1: 
-            score_val = score_match.group(1).strip()
+        theme_val = theme_match.group(1).strip() if theme_match else "특이 테마 미포착"
+        score_val = score_match.group(1).strip() if score_match else "0점 (중립)"
 
-        pos_html = "<br>".join([f"&nbsp;&nbsp;• {sanitize_text(item)}" for item in extracted_pos]) if extracted_pos else "&nbsp;&nbsp;• 특이 긍정 호재 미포착"
-        neg_html = "<br>".join([f"&nbsp;&nbsp;• {sanitize_text(item)}" for item in extracted_neg]) if extracted_neg else "&nbsp;&nbsp;• 특이 부정 리스크 미포착"
+        pos_html = "<br>".join([f"&nbsp;&nbsp;• {sanitize_text(item)}" for item in extracted_pos if len(item)>2]) or "&nbsp;&nbsp;• 특이 긍정 호재 미포착"
+        neg_html = "<br>".join([f"&nbsp;&nbsp;• {sanitize_text(item)}" for item in extracted_neg if len(item)>2]) or "&nbsp;&nbsp;• 특이 부정 리스크 미포착"
 
         raw_briefing_html = f"""
         🟢 <b>지난 7일 긍정 호재 ({len(extracted_pos)}개):</b><br>{pos_html}<br><br>
@@ -447,55 +394,60 @@ def analyze_7days_news_sentiment(market_type, news_text):
         📊 <b>7일 누적 뉴스 감성 지수:</b> <span class="highlight-val">{sanitize_text(score_val)}</span>
         """
 
-        save_ai_cache(cache_key, {
-            "status": sanitize_text(status_val),
-            "briefing_html": raw_briefing_html
-        })
-
+        save_ai_cache(cache_key, {"status": sanitize_text(status_val), "briefing_html": raw_briefing_html})
         return sanitize_text(status_val), raw_briefing_html
 
     except RateLimitError:
-        if groq_mgr.switch_to_next_key():
-            return analyze_7days_news_sentiment(market_type, news_text)
-        else:
-            return analyze_7days_news_sentiment(market_type, news_text)
+        if groq_mgr.switch_to_next_key(): return analyze_7days_news_sentiment(market_type, news_text)
+        else: return analyze_7days_news_sentiment(market_type, news_text)
     except Exception as e:
         return "보통 🟡", f"뉴스 분석 생성 안내: {e}"
 
 # =========================================================
-# 🛠️ 타이트한 손절가 기반 손익비(Risk-Reward) 우위 가격 산정 유틸리티
+# 🛠️ 기술적 지표 & 파동 마디점 추출 유틸리티 (정량 계산)
 # =========================================================
 def calculate_advanced_tech_levels(latest_close, ma20, kijun, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=True):
     supports = [val for val in [ma20, kijun, bb_low, poc_price] if val < latest_close and val > 0]
     if supports:
         primary_support = max(supports)
-        stop_loss = primary_support - (0.3 * atr) # 리스크 폭 최소화
+        stop_loss = primary_support - (0.3 * atr)
     else:
         stop_loss = latest_close - (1.0 * atr)
 
-    # 1차 익절가는 최소 손절폭 대비 1.5배 이상 구간 설정
     risk_range = latest_close - stop_loss
     min_target = latest_close + (risk_range * 1.5)
 
     resistances = [val for val in [bb_up, cloud_top, poc_price] if val > min_target]
-    if resistances:
-        target_price = min(resistances)
-    else:
-        target_price = max(min_target, latest_close + (1.2 * atr))
+    target_price = min(resistances) if resistances else max(min_target, latest_close + (1.2 * atr))
 
     if is_krw:
-        stop_loss = int(round(stop_loss))
-        target_price = int(round(target_price))
+        return int(round(stop_loss)), int(round(target_price))
     else:
-        stop_loss = round(stop_loss, 2)
-        target_price = round(target_price, 2)
+        return round(stop_loss, 2), round(target_price, 2)
 
-    return stop_loss, target_price
+def extract_peaks_and_troughs(df_60, is_krw=True):
+    """최근 60일 데이터에서 주요 반등 저점과 저항 고점 좌표를 추출하여 파동 요약문 생성"""
+    try:
+        closes = df_60['Close'].values
+        peaks = []
+        troughs = []
+        for i in range(2, len(closes) - 2):
+            if closes[i] > closes[i-1] and closes[i] > closes[i-2] and closes[i] > closes[i+1] and closes[i] > closes[i+2]:
+                peaks.append(closes[i])
+            elif closes[i] < closes[i-1] and closes[i] < closes[i-2] and closes[i] < closes[i+1] and closes[i] < closes[i+2]:
+                troughs.append(closes[i])
+        
+        last_low = fmt_price(troughs[-1], is_krw) if troughs else "데이터 미수집"
+        last_high = fmt_price(peaks[-1], is_krw) if peaks else "데이터 미수집"
+        
+        return f"최근 반등 저점({last_low}) -> 최근 저항 고점({last_high}) / 주요 마디점 {len(troughs)}개 형성"
+    except Exception:
+        return "파동 마디점 안정화 진행 중"
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (손익비 1:1.5 이상 강제 전략)
+# 🤖 일반 종목 AI 정밀 리포트 (RSI Signal & 차트 패턴 프롬프트)
 # =========================================================
-def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, supply_type="", currency_symbol="원"):
+def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
 
@@ -511,37 +463,51 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, 
             return f"수급/모멘텀 모니터링 포착 종목", "AI 상세 전략 리포트 준비 중입니다."
 
     prompt = f"""
-    너는 20년 경력의 수석 기술적 분석 및 트레이딩 전략가이다. {stock_name}({symbol}) 종목에 대해 손익비(Risk-Reward Ratio) 최소 1:1.5 이상이 확보되는 현실적이고 안전한 매매 전략 리포트를 작성하라.
+너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
+제공된 데이터를 바탕으로 손익비(Risk-Reward Ratio) 최소 1:1.5 이상이 확보되는 현실적이고 안전한 매매 전략 리포트를 작성하라.
 
-    [종목 기본 & 기술 데이터]
-    - 수급/테마 특징: {supply_type}
-    - 최근 시장 뉴스 이슈/호재:
-    {news_keywords}
-    - 최근 10일 OHLCV 원본 데이터:
-    {raw_data_str}
-    - 보조지표: RSI({rsi_val}), MACD({macd_status}), 이평선 배열({ma_status})
-    - 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw)})
-    - 복합 기술적 참조가: 1차 목표가 {fmt_price(target_price, is_krw)} / 손절가 {fmt_price(stop_loss, is_krw)}
+[종목 기본 & 수급/뉴스 데이터]
+- 종목명: {stock_name} ({symbol})
+- 수급/테마 특징: {supply_type}
+- 최근 시장 주요 뉴스 이슈/호재:
+{news_keywords}
 
-    [작성 요구사항 & 출력 양식]
-    아래 양식을 엄격히 준수하여 작성하라. 손절폭 대비 익절폭이 최소 1:1.5 이상 확보되도록 눌림목 매수 추천가, 손절가, 목표가를 정확하게 제시할 것.
+[정량적 차트 지표 (파이썬 정밀 계산)]
+- 현재가: {fmt_price(latest_close, is_krw)}
+- 이동평균선: 20일선({fmt_price(ma20_d, is_krw)}), 60일선({fmt_price(ma60_d, is_krw)}), 120일선({fmt_price(ma120_d, is_krw)}) / 배열: {ma_status}
+- 보조지표: RSI({rsi_val}) & RSI Signal({rsi_signal_val}) [{rsi_cross_status}], MACD({macd_status}), 볼린저밴드({bb_status}), 일목구름대({cloud_status})
+- 매물대 & 파동: 최근 120일 최대매물대 POC({fmt_price(poc_price, is_krw)}), 120일 최고가({fmt_price(max_120, is_krw)}), 120일 최저가({fmt_price(min_120, is_krw)})
+- 최근 60일 파동 마디점 (고점/저점): {peaks_and_troughs_summary}
 
-    선정이유: <외인/기관 수급 동향, 최근 뉴스 이슈/호재, 주도 테마/섹터의 강세 배경, 그리고 차트의 기술적 모멘텀을 종합하여 2~3줄로 입체적으로 요약 작성할 것>
-    상세리포트:
-    📌 [차트 구조 & 지표 종합 진단]
-    - <이동평균선 배열, 볼린저밴드 위치, 일목 구름대 상태, 매물대(POC), RSI/MACD 보조지표 종합 진단 2~3줄>
+[단기 캔들 & 거래량 상세 데이터 (최근 15일)]
+{raw_data_str_15days}
 
-    🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-    - 눌림목 매수 추천가 : <가격: 000{currency_symbol}> / 최종 하단 지지선 : <가격: 000{currency_symbol}> / 타이트 손절가 : <가격: 000{currency_symbol}>
-    - <지지가 확인되는 눌림목 매수 타점 근거 작성>. <주요 지지선 직하단으로 손절가를 타이트하게 설정해 리스크 폭을 최소화한 이유 서술>.
+[작성 요구사항 & 분석 지침]
+1. **차트 패턴 & 캔들 심리 진단**:
+   - 120일 파동 마디점과 매물대(POC)를 종합하여 현재 차트가 특정 패턴(쌍바닥, 쌍봉, 헤드앤숄더, 역헤드앤숄더, 삼중바닥, 컵앤핸들, 아담앤이브, 엘리엇파동 등)을 완성했거나 형성 중인지 명확히 진단할 것.
+   - 최근 15일 캔들 형태(장대양봉/음봉, 망치형, 윗꼬리, 도지 등)와 거래량 급증/감소 흐름을 결합하여 세력의 수급 유입/유출 심리를 해석할 것.
+2. **손익비 우위 매매 전략 (1:1.5 이상 강제)**:
+   - 무리한 추격 매수 대신 지지가 검증된 눌림목 매수 추천가를 제시할 것.
+   - 손절가는 주요 지지선 바로 하단(-0.3×ATR)으로 타이트하게 설정하여 손절 폭을 최소화할 것.
+   - 1차 목표가(손익비 1:1.5 이상) 및 2차 목표가(손익비 1:2.5 이상/패턴 상단 목표)를 제시할 것.
 
-    🚀 [현실적 분할 익절 전략]
-    - 1차 안전 익절가 : <가격: 000{currency_symbol}> (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
-    - 2차 추세 익절가 : <가격: 000{currency_symbol}> (손익비 1:2.5~3.0 및 전고점 저항 지점 / 잔량 50% 추세 대응)
-    - <1차 목표가와 2차 목표가까지 상승 가능한 지표적 근거 및 손익비 우위 관점 기술>.
+[출력 양식 - 엄격 준수]
+선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 2~3줄 요약>
+상세리포트:
+📌 [차트 구조 & 패턴/캔들 종합 진단]
+- <이평선/구름대 구조와 함께 현재 포착되는 캔들 형태(거래량 동반 여부) 및 차트 패턴(쌍바닥/역헤드앤숄더/컵앤핸들/엘리엇파동 위치 등)을 2~3줄로 종합 진단>
 
-    [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
-    """
+🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
+- 눌림목 매수 추천가 : <가격: 000{currency_symbol}> / 최종 하단 지지선 : <가격: 000{currency_symbol}> / 타이트 손절가 : <가격: 000{currency_symbol}>
+- <캔들 지지 형태, 매물대(POC), 이평선 및 패턴 지지점 근거 작성. 손절가를 타이트하게 설정해 리스크 폭을 최소화한 이유 서술>.
+
+🚀 [현실적 분할 익절 전략]
+- 1차 안전 익절가 : <가격: 000{currency_symbol}> (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
+- 2차 추세 익절가 : <가격: 000{currency_symbol}> (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
+- <1차/2차 목표가까지 상승 가능한 지표적/패턴적 근거 및 손익비 우위 관점 서술>.
+
+[언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
+"""
     try:
         res = groq_mgr.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -549,7 +515,6 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, 
             temperature=0.3, max_tokens=1000
         )
         content = res.choices[0].message.content.strip()
-        
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등이 강화되는 종목입니다."
         report_val = content
 
@@ -559,52 +524,60 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, 
         if reason_match: reason_val = reason_match.group(1).strip()
         if report_match: report_val = report_match.group(1).strip()
 
-        save_ai_cache(cache_key, {
-            "reason": sanitize_text(reason_val),
-            "report": sanitize_text(report_val)
-        })
-
+        save_ai_cache(cache_key, {"reason": sanitize_text(reason_val), "report": sanitize_text(report_val)})
         return sanitize_text(reason_val), sanitize_text(report_val)
 
     except RateLimitError:
         if groq_mgr.switch_to_next_key():
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, supply_type, currency_symbol)
+            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
         else:
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, supply_type, currency_symbol)
+            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
     except Exception as e:
         return "수급 유입 및 기술적 지지 종목", f"상세 전략 리포트 생성 안내: {e}"
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 냉정한 수익 확정(익절) 및 리스크 관리 프롬프트
+# 🎯 [토스증권 마이 대시보드 전용] AI 트레일링 스탑 & 패턴 대응 프롬프트
 # =========================================================
-def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, is_krw=True):
+def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw=True):
     cache_key = f"TOSS_MY_{symbol}"
 
     if not groq_mgr.is_available():
         return "[테스트 모드] Groq AI 연동 미사용 상태입니다."
 
     prompt = f"""
-    너는 20년 경력의 냉정한 포트폴리오 리스크 관리 전문가이다. 
-    사용자의 [내 보유 평단가, 현재 수익률({return_pct:+.2f}%)]과 [차트 기술적 지표]를 바탕으로, 감정을 배제하고 익절 및 손절 타이밍을 명확히 판단하라.
+너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
+사용자의 [내 보유 평단가, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 포지션 가이드를 작성하라.
 
-    [보유 종목 & 차트 데이터]
-    - 종목명: {stock_name} ({symbol})
-    - 내 보유 평단가: {fmt_price(avg_price, is_krw, show_decimal=is_krw)} (현재 수익률: {return_pct:+.2f}%)
-    - 현재가: {fmt_price(current_price, is_krw)}
-    - 보조지표: RSI({rsi_val}), MACD({macd_status}), 이평선 배열({ma_status})
-    - 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw)})
-    - 참조 가격: 1차 목표가 {fmt_price(target_price, is_krw)} / 손절가 {fmt_price(stop_loss, is_krw)}
+[보유 종목 & 차트 데이터]
+- 종목명: {stock_name} ({symbol})
+- 내 보유 평단가: {fmt_price(avg_price, is_krw, show_decimal=is_krw)} (현재 수익률: {return_pct:+.2f}%)
+- 현재가: {fmt_price(current_price, is_krw)}
+- 정량 보조지표: RSI({rsi_val}) & RSI Signal({rsi_signal_val}) [{rsi_cross_status}], MACD({macd_status}), 이평선 배열({ma_status})
+- 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw)})
+- 매물대 & 파동: 120일 최고가({fmt_price(max_120, is_krw)}), 120일 최저가({fmt_price(min_120, is_krw)}), 최근 파동 마디점({peaks_and_troughs_summary})
 
-    [판단 원칙 - 엄격 준수]
-    1. **수익 구간인 경우**: 차트 추세가 좋아 보여도 단기 과열(RSI 65 이상, 볼린저 상한 근접) 조짐이 있거나 상단 저항선 도달 시 무분별한 매수 시그널을 절대 내지 말고 **[결론: 일부 매도 🔴]** 또는 **[결론: 관망 후 익절 준비 🟡]**를 선택하여 수익 확정을 우선시하라.
-    2. **손실 구간인 경우**: 무작정 물타기(추가 매수)를 권하지 말고, 지지선 이탈 위험 시 **[결론: 손절/비중축소 🔴]**를 명확히 권유하라.
+[단기 캔들 & 거래량 상세 데이터 (최근 15일)]
+{raw_data_str_15days}
 
-    [출력 양식]
-    결론: [매수 🟢 / 관망 🟡 / 일부 매도 🔴 / 손절 🔴] 중 하나 명시
-    - <내 평단가 및 현재 수익률 대비 차트 위치(과열/안정/위험) 진단>
-    - <수익 중이면 '일부 분할 매도(익절) 가격대', 손실 중이면 '손절/비중축소 기준 가격' 구체적 제시>
-    - <내 평단가 위로 손절가를 높여 이미 얻은 수익을 보존하는 트레일링 스탑(Trailing Stop) 가이드 작성>
-    """
+[판단 원칙 - 패턴 & 트레일링 스탑(Trailing Stop) 준수]
+1. 최근 15일 캔들 형태(거래량 동반 여부)와 차트 패턴(쌍바닥, 쌍봉, 컵앤핸들, 헤드앤숄더, 엘리엇파동 등)의 흐름을 반영할 것.
+2. **수익 구간 (+3% 이상) & 상승 추세/패턴 유효 시**: 
+   - 당장 성급히 익절하지 말고 [결론: 관망 및 손절선 상향 🟢]을 내릴 것.
+   - 패턴 상단 저항선까지 단기 목표가를 동적으로 상향 조정할 것.
+   - **이익 보존 규칙**: 주가가 밀리더라도 이미 얻은 수익을 100% 보존할 수 있도록 [손절/스탑로스 기준가]를 내 평단가보다 높은 현재가 직하단 주요 지지선(20일선/POC/일목기준선)으로 대폭 올릴 것.
+3. **수익 구간이지만 패턴 상단 저항 도달 / 음봉 거래량 터진 과열 시 (RSI-Signal 데드크로스 발생 등)**:
+   - [결론: 일부 매도 🔴]를 내리고 물량 30~50% 선제 익절 가이드 작성.
+4. **손실 구간 (-3% 이하) 시**:
+   - 무분별한 물타기를 자제하고, 패턴/지지선 이탈 위험 시 [결론: 손절 및 비중축소 🔴]를 권유할 것.
+
+[출력 양식 - 3줄 이내 작성]
+결론: [관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
+- <현재 평단가 대비 수익률 상황, 캔들/거래량 상태 및 차트 패턴(쌍바닥/컵앤핸들/쌍봉/엘리엇파동 등) 진단>
+- <수익 중 추세 지속 시: '목표가 동적 상향 가격' 안내 / 과열 또는 저항 도달 시: '일부 분할 익절 가격' 안내>
+- <이미 얻은 수익을 확정 보존하기 위해 '내 평단가보다 높게 설정할 트레일링 스탑(손절선) 가격' 명시>
+
+[언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
+"""
     try:
         res = groq_mgr.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -617,9 +590,9 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     except RateLimitError:
         if groq_mgr.switch_to_next_key():
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, is_krw)
+            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw)
         else:
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price, stop_loss, is_krw)
+            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw)
     except Exception as e:
         return "[테스트 모드] Groq AI 연동 미사용 상태입니다."
 
@@ -638,11 +611,8 @@ url_organ = "https://m.stock.naver.com/api/json/sise/siseListJson.nhn?bizType=de
 url_quant = "https://m.stock.naver.com/api/json/sise/siseListJson.nhn?bizType=topAmount&sosok=0"
 
 def get_naver_sise_list(url):
-    try:
-        res = requests.get(url, headers=headers, timeout=10).json()
-        return res.get('result', {}).get('itemList', [])[:15]
-    except Exception:
-        return []
+    try: return requests.get(url, headers=headers, timeout=10).json().get('result', {}).get('itemList', [])[:15]
+    except Exception: return []
 
 foreign_items = get_naver_sise_list(url_foreign)
 organ_items = get_naver_sise_list(url_organ)
@@ -652,23 +622,17 @@ foreign_names = [item.get('nm') for item in foreign_items if item.get('nm')]
 organ_names = [item.get('nm') for item in organ_items if item.get('nm')]
 both_names = [name for name in foreign_names if name in organ_names]
 
-all_items_kr = {}
-for item in foreign_items + organ_items + quant_items:
-    if item.get('nm') and item.get('cd'):
-        all_items_kr[item.get('nm')] = item.get('cd')
-
+all_items_kr = {item.get('nm'): item.get('cd') for item in foreign_items + organ_items + quant_items if item.get('nm') and item.get('cd')}
 selected_kr_targets = {}
 
 for name in both_names:
     if len(selected_kr_targets) >= 2: break
     code = all_items_kr.get(name)
-    if code:
-        selected_kr_targets[name] = (f"{code}.KS", "🔥 외인·기관 동시 순매수(양매수) 주도주")
+    if code: selected_kr_targets[name] = (f"{code}.KS", "🔥 외인·기관 동시 순매수(양매수) 주도주")
 
 for item in quant_items:
     if len(selected_kr_targets) >= 4: break
-    name = item.get('nm')
-    code = item.get('cd')
+    name, code = item.get('nm'), item.get('cd')
     if name and code and name not in selected_kr_targets:
         selected_kr_targets[name] = (f"{code}.KS", "🚀 당일 거래대금 상위 & 강세 테마주")
 
@@ -689,8 +653,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         
         if df_daily is None or df_daily.empty or len(df_daily) < 60:
             symbol = f"{pure_code}.KQ"
-            ticker = yf.Ticker(symbol)
-            df_daily = ticker.history(period="1y", interval="1d")
+            df_daily = yf.Ticker(symbol).history(period="1y", interval="1d")
 
         if df_daily is None or df_daily.empty or len(df_daily) < 60: continue
 
@@ -722,15 +685,30 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
         poc_price = int(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else int(df_recent120['Close'].mean())
 
+        max_120 = int(df_recent120['High'].max())
+        min_120 = int(df_recent120['Low'].min())
+        peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=True)
+
         df_daily = df_daily.bfill().ffill().dropna()
         if df_daily.empty or len(df_daily) == 0: continue
 
+        # ★ [RSI + RSI Signal(9일선) 크로스 정밀 계산] ★
         delta = df_daily['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
         df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
+        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
         
+        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
+        rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+
+        if rsi_val > rsi_signal_val:
+            rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
+        elif rsi_val < rsi_signal_val and rsi_val >= 60:
+            rsi_cross_status = "RSI-Signal 데드크로스 발생 (단기 과열 꺾임 경고) 🔴"
+        else:
+            rsi_cross_status = "RSI 하향 이탈 및 모멘텀 조정 📉"
+
         exp1 = df_daily['Close'].ewm(span=12, adjust=False).mean()
         exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
         df_daily['MACD'] = exp1 - exp2
@@ -759,9 +737,10 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
         cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
-        df_recent10 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(10).copy()
-        raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent10.iterrows()]
-        raw_data_str = "\n".join(raw_lines)
+        # 최근 15일 OHLCV 상세 캔들 데이터 생성
+        df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
+        raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
+        raw_data_str_15days = "\n".join(raw_lines)
 
         rsi_status = f"과매수 ({rsi_val}) ⚠️" if rsi_val >= 70 else (f"과매도 ({rsi_val}) 🟢" if rsi_val <= 30 else f"중립 ({rsi_val}) ⚖️")
         macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
@@ -770,7 +749,9 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
         print(f"  ⚡ [국장] {stock_name} AI 리포트 처리 중...")
-        pick_reason, ai_comment = generate_ai_stock_analysis(stock_name, symbol, kr_7d_news, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price_1, stop_loss, supply_type, "원")
+        pick_reason, ai_comment = generate_ai_stock_analysis(
+            stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
+        )
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -790,13 +771,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['RSI'], line=dict(color='#38bdf8', width=1.2), name='RSI'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['RSI_Signal'], line=dict(color='#facc15', width=1.0, dash='dot'), name='RSI Signal'), row=3, col=1)
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
         fig.update_layout(height=540, margin=dict(l=10, r=10, t=10, b=40), xaxis_rangeslider_visible=False, template="plotly_dark")
         chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
 
-        # 선정 이유 박스를 종목명 헤더 바로 아래 배치
         stock_cards_kr_html += f"""
         <div class="card">
             <div class="console-report">
@@ -861,8 +842,7 @@ for sym in raw_us_symbols:
         tk = yf.Ticker(sym)
         info = tk.info
         if info.get('marketCap', 0) >= 10_000_000_000:
-            stype = "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-            selected_us_targets[info.get('shortName', sym)] = (sym, stype)
+            selected_us_targets[info.get('shortName', sym)] = (sym, "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주")
     except Exception: continue
 
 stock_cards_us_html = ""
@@ -870,9 +850,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     try:
         ticker = yf.Ticker(symbol)
         df_daily = ticker.history(period="1y", interval="1d")
-        df_weekly = ticker.history(period="2y", interval="1wk")
-        
-        if df_daily is None or df_weekly is None or len(df_daily) < 120 or len(df_weekly) == 0: continue
+        if df_daily is None or len(df_daily) < 120: continue
 
         df_daily['MA20'] = df_daily['Close'].rolling(20).mean()
         df_daily['MA60'] = df_daily['Close'].rolling(60).mean()
@@ -902,6 +880,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         poc_bin = vol_by_price.idxmax()
         poc_price = round(float(poc_bin.mid), 2) if pd.notnull(poc_bin) else round(float(df_recent120['Close'].mean()), 2)
 
+        max_120 = round(float(df_recent120['High'].max()), 2)
+        min_120 = round(float(df_recent120['Low'].min()), 2)
+        peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=False)
+
         df_daily = df_daily.bfill().ffill().dropna()
         if df_daily.empty or len(df_daily) == 0: continue
 
@@ -909,8 +891,18 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         gain = (delta.where(delta > 0, 0)).rolling(14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
         df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
+        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
         
+        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
+        rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+
+        if rsi_val > rsi_signal_val:
+            rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
+        elif rsi_val < rsi_signal_val and rsi_val >= 60:
+            rsi_cross_status = "RSI-Signal 데드크로스 발생 (단기 과열 꺾임 경고) 🔴"
+        else:
+            rsi_cross_status = "RSI 하향 이탈 및 모멘텀 조정 📉"
+
         exp1 = df_daily['Close'].ewm(span=12, adjust=False).mean()
         exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
         df_daily['MACD'] = exp1 - exp2
@@ -939,9 +931,9 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
         cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
-        df_recent10 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(10).copy()
-        raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:${row['Open']:.2f} | High:${row['High']:.2f} | Low:${row['Low']:.2f} | Close:${row['Close']:.2f} | Vol:{int(row['Volume']):,}" for idx, row in df_recent10.iterrows()]
-        raw_data_str = "\n".join(raw_lines)
+        df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
+        raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:${row['Open']:.2f} | High:${row['High']:.2f} | Low:${row['Low']:.2f} | Close:${row['Close']:.2f} | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
+        raw_data_str_15days = "\n".join(raw_lines)
 
         rsi_status = f"과매수 ({rsi_val}) ⚠️" if rsi_val >= 70 else (f"과매도 ({rsi_val}) 🟢" if rsi_val <= 30 else f"중립 ({rsi_val}) ⚖️")
         macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
@@ -950,7 +942,9 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
         print(f"  ⚡ [미장] {stock_name} AI 리포트 처리 중...")
-        pick_reason, ai_comment = generate_ai_stock_analysis(stock_name, symbol, us_7d_news, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price_1, stop_loss, supply_type, "$")
+        pick_reason, ai_comment = generate_ai_stock_analysis(
+            stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
+        )
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -970,13 +964,13 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['RSI'], line=dict(color='#38bdf8', width=1.2), name='RSI'), row=3, col=1)
+        fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['RSI_Signal'], line=dict(color='#facc15', width=1.0, dash='dot'), name='RSI Signal'), row=3, col=1)
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
         fig.update_layout(height=540, margin=dict(l=10, r=10, t=10, b=40), xaxis_rangeslider_visible=False, template="plotly_dark")
         chart_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
 
-        # 선정 이유 박스를 종목명 헤더 바로 아래 배치
         stock_cards_us_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1004,7 +998,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) 분석 (요청 레이아웃 100% 적용)
+# PART 3: 🎯 마이 대시보드(index3.html) 분석 (요청 양식 반영)
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 잔고 수집 및 종목별 맞춤 UI 리포트 생성 중...")
@@ -1083,41 +1077,30 @@ for h in toss_holdings:
         is_krw = True if (market == 'KR' or currency == 'KRW') else False
         fx = usd_krw_rate if not is_krw else 1.0
         
-        yf_ticker = ticker
-        if is_krw:
-            if not ticker.endswith(".KS") and not ticker.endswith(".KQ"):
-                yf_ticker = f"{pure_code}.KS"
-        else:
-            yf_ticker = pure_code
-                
+        yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
+        
         df_daily = None
         try:
             stock = yf.Ticker(yf_ticker)
             df_daily = stock.history(period="1y", interval="1d")
-            
-            if (df_daily is None or df_daily.empty or len(df_daily) == 0) and is_krw and yf_ticker.endswith(".KS"):
+            if (df_daily is None or df_daily.empty) and is_krw and yf_ticker.endswith(".KS"):
                 yf_ticker = f"{pure_code}.KQ"
                 df_daily = yf.Ticker(yf_ticker).history(period="1y", interval="1d")
-        except Exception:
-            df_daily = None
+        except Exception: df_daily = None
 
         if df_daily is None or df_daily.empty or len(df_daily) == 0:
             current_price = avg_price
             return_pct = 0.0
             eval_amount_krw = avg_price * quantity * fx
             profit_loss_krw = 0.0
-            
-            short_trend = "단기 데이터 미수집 ⚖️"
-            mid_trend = "중기 데이터 미수집 ⚖️"
-            bb_status = "밴드 미산출 ⚖️"
-            cloud_status = "구름대 미산출 🟡"
-            poc_price = avg_price
-            rsi_status = "중립 (50) ⚖️"
-            macd_status = "중립 ⚖️"
-            stop_loss = avg_price * 0.9
-            target_price_1 = avg_price * 1.1
-            rsi_val = 50.0
-            raw_data_str = "최근 데이터 미수집"
+            short_trend, mid_trend = "단기 데이터 미수집 ⚖️", "중기 데이터 미수집 ⚖️"
+            bb_status, cloud_status = "밴드 미산출 ⚖️", "구름대 미산출 🟡"
+            poc_price, max_120, min_120 = avg_price, avg_price, avg_price
+            rsi_status, macd_status = "중립 (50) ⚖️", "중립 ⚖️"
+            stop_loss, target_price_1 = avg_price * 0.9, avg_price * 1.1
+            rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 미산출"
+            peaks_and_troughs_summary = "마디점 미산출"
+            raw_data_str_15days = "최근 데이터 미수집"
         else:
             latest_close = float(df_daily['Close'].values[-1])
             current_price = latest_close
@@ -1153,31 +1136,45 @@ for h in toss_holdings:
             poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
             poc_price = float(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else float(df_recent120['Close'].mean())
 
+            max_120 = float(df_recent120['High'].max())
+            min_120 = float(df_recent120['Low'].min())
+            peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=is_krw)
+
             df_daily = df_daily.bfill().ffill().dropna()
 
             delta = df_daily['Close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
             df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-            rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2) if ('RSI' in df_daily and len(df_daily['RSI']) > 0) else 50.0
-            
+            df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
+
+            rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
+            rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+
+            if rsi_val > rsi_signal_val:
+                rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
+            elif rsi_val < rsi_signal_val and rsi_val >= 60:
+                rsi_cross_status = "RSI-Signal 데드크로스 발생 (단기 과열 꺾임 경고) 🔴"
+            else:
+                rsi_cross_status = "RSI 하향 이탈 및 모멘텀 조정 📉"
+
             exp1 = df_daily['Close'].ewm(span=12, adjust=False).mean()
             exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
             df_daily['MACD'] = exp1 - exp2
             df_daily['Signal'] = df_daily['MACD'].ewm(span=9, adjust=False).mean()
-            macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1])) if ('MACD' in df_daily and len(df_daily['MACD']) > 0) else 0.0
-            signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1])) if ('Signal' in df_daily and len(df_daily['Signal']) > 0) else 0.0
+            macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1]))
+            signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1]))
             
             tr = pd.concat([df_daily['High']-df_daily['Low'], np.abs(df_daily['High']-df_daily['Close'].shift()), np.abs(df_daily['Low']-df_daily['Close'].shift())], axis=1).max(axis=1)
-            atr = float(np.nan_to_num(tr.rolling(14).mean().values[-1], nan=1000.0 if is_krw else 1.0)) if len(tr) > 0 else (1000.0 if is_krw else 1.0)
+            atr = float(np.nan_to_num(tr.rolling(14).mean().values[-1], nan=1000.0 if is_krw else 1.0))
 
-            ma20_d = float(df_daily['MA20'].values[-1]) if ('MA20' in df_daily and len(df_daily['MA20']) > 0 and not pd.isna(df_daily['MA20'].values[-1])) else latest_close
-            ma60_d = float(df_daily['MA60'].values[-1]) if ('MA60' in df_daily and len(df_daily['MA60']) > 0 and not pd.isna(df_daily['MA60'].values[-1])) else latest_close
-            bb_up = float(df_daily['BB_Upper'].values[-1]) if ('BB_Upper' in df_daily and len(df_daily['BB_Upper']) > 0 and not pd.isna(df_daily['BB_Upper'].values[-1])) else latest_close * 1.05
-            bb_low = float(df_daily['BB_Lower'].values[-1]) if ('BB_Lower' in df_daily and len(df_daily['BB_Lower']) > 0 and not pd.isna(df_daily['BB_Lower'].values[-1])) else latest_close * 0.95
-            cloud_a = float(df_daily['Senkou_A'].values[-1]) if ('Senkou_A' in df_daily and len(df_daily['Senkou_A']) > 0 and not pd.isna(df_daily['Senkou_A'].values[-1])) else latest_close
-            cloud_b = float(df_daily['Senkou_B'].values[-1]) if ('Senkou_B' in df_daily and len(df_daily['Senkou_B']) > 0 and not pd.isna(df_daily['Senkou_B'].values[-1])) else latest_close
-            kijun_d = float(df_daily['Kijun'].values[-1]) if ('Kijun' in df_daily and len(df_daily['Kijun']) > 0 and not pd.isna(df_daily['Kijun'].values[-1])) else latest_close
+            ma20_d = float(df_daily['MA20'].values[-1])
+            ma60_d = float(df_daily['MA60'].values[-1])
+            bb_up = float(df_daily['BB_Upper'].values[-1])
+            bb_low = float(df_daily['BB_Lower'].values[-1])
+            cloud_a = float(df_daily['Senkou_A'].values[-1])
+            cloud_b = float(df_daily['Senkou_B'].values[-1])
+            kijun_d = float(df_daily['Kijun'].values[-1])
             cloud_top = max(cloud_a, cloud_b)
 
             stop_loss, target_price_1 = calculate_advanced_tech_levels(latest_close, ma20_d, kijun_d, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=is_krw)
@@ -1187,12 +1184,12 @@ for h in toss_holdings:
             bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
             cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
-            df_recent10 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(10).copy()
+            df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
             if is_krw:
-                raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent10.iterrows()]
+                raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
             else:
-                raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:${row['Open']:.2f} | High:${row['High']:.2f} | Low:${row['Low']:.2f} | Close:${row['Close']:.2f} | Vol:{int(row['Volume']):,}" for idx, row in df_recent10.iterrows()]
-            raw_data_str = "\n".join(raw_lines)
+                raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:${row['Open']:.2f} | High:${row['High']:.2f} | Low:${row['Low']:.2f} | Close:${row['Close']:.2f} | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
+            raw_data_str_15days = "\n".join(raw_lines)
 
             rsi_status = f"과매수 ({fmt_num(rsi_val)}) ⚠️" if rsi_val >= 70 else (f"과매도 ({fmt_num(rsi_val)}) 🟢" if rsi_val <= 30 else f"중립 ({fmt_num(rsi_val)}) ⚖️")
             macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
@@ -1203,7 +1200,7 @@ for h in toss_holdings:
 
         print(f"  ⚡ [마이] {stock_name} 3줄 요약 AI 가이드 처리 중...")
         ai_3line_comment = generate_ai_toss_3line_analysis(
-            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str, rsi_val, macd_status, ma_status, bb_status, cloud_status, poc_price, target_price_1, stop_loss, is_krw
+            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, is_krw
         )
 
         eval_formatted = f"{int(round(eval_amount_krw)):,}원"
@@ -1213,7 +1210,7 @@ for h in toss_holdings:
         current_price_formatted = fmt_price(current_price, is_krw)
         poc_formatted = fmt_price(poc_price, is_krw)
 
-        # ★ [수정 포인트] 사용자 요청 2열 가로 배치 레이아웃 (불릿 제거, 구분자 | 적용) ★
+        # 토스 대시보드 2열 가로 배치 레이아웃 적용
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1273,11 +1270,7 @@ html_style = """
         transition: all 0.2s ease-in-out;
         cursor: pointer;
     }
-    .macro-card:hover { 
-        transform: translateY(-3px); 
-        border-color: #38bdf8; 
-        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); 
-    }
+    .macro-card:hover { transform: translateY(-3px); border-color: #38bdf8; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); }
     .macro-title { font-size: 13px; color: #94a3b8; font-weight: bold; margin-bottom: 8px; }
     .macro-value { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 6px; }
     .macro-sub { font-size: 11px; color: #4ade80; margin-top: 4px; }
