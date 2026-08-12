@@ -1,5 +1,5 @@
 # 1. 필수 라이브러리 설치 (Colab / 로컬 전용 - GitHub Actions 사용 시 주석 처리)
-#!pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
+#pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
 
 import os
 import json
@@ -406,25 +406,6 @@ def analyze_7days_news_sentiment(market_type, news_text):
 # =========================================================
 # 🛠️ 기술적 지표 & 파동 마디점 추출 유틸리티 (정량 계산)
 # =========================================================
-def calculate_advanced_tech_levels(latest_close, ma20, kijun, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=True):
-    supports = [val for val in [ma20, kijun, bb_low, poc_price] if val < latest_close and val > 0]
-    if supports:
-        primary_support = max(supports)
-        stop_loss = primary_support - (0.3 * atr)
-    else:
-        stop_loss = latest_close - (1.0 * atr)
-
-    risk_range = latest_close - stop_loss
-    min_target = latest_close + (risk_range * 1.5)
-
-    resistances = [val for val in [bb_up, cloud_top, poc_price] if val > min_target]
-    target_price = min(resistances) if resistances else max(min_target, latest_close + (1.2 * atr))
-
-    if is_krw:
-        return int(round(stop_loss)), int(round(target_price))
-    else:
-        return round(stop_loss, 2), round(target_price, 2)
-
 def extract_peaks_and_troughs(df_60, is_krw=True):
     """최근 60일 데이터에서 주요 반등 저점과 저항 고점 좌표를 추출하여 파동 요약문 생성"""
     try:
@@ -444,12 +425,29 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
     except Exception:
         return "파동 마디점 안정화 진행 중"
 
+def parse_price_from_text(text, key_prefix):
+    """AI 출력 텍스트에서 키워드 뒤의 숫자 가격만 추출하는 파서"""
+    try:
+        match = re.search(rf'{key_prefix}\s*:\s*([\$\d,\.]+)', text)
+        if match:
+            clean_str = match.group(1).replace(',', '').replace('$', '').replace('원', '').strip()
+            return float(clean_str)
+    except Exception:
+        pass
+    return None
+
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (RSI Signal & 차트 패턴 프롬프트)
+# 🤖 일반 종목 AI 정밀 리포트 (AI 주도 가격 결정 & 상하단 100% 동기화)
 # =========================================================
-def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
+def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
+
+    # 백업용 기본 가격 (AI 응답 실패 시 사용)
+    default_buy = latest_close * 0.98
+    default_stop = latest_close * 0.95
+    default_target1 = latest_close * 1.05
+    default_target2 = latest_close * 1.10
 
     if not groq_mgr.is_available():
         if cache_key in ai_cache_store:
@@ -458,13 +456,17 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
             reason_msg = get_fallback_reason()
             reason_str = f"⚠️ [비실시간 백업] {cached['reason']}"
             report_str = f"⚠️ [비실시간 백업 리포트 - 생성일: {updated_at} | 📌 사유: {reason_msg}]\n" + cached['report']
-            return reason_str, report_str
+            parsed_prices = cached.get('parsed_prices', {
+                "buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2
+            })
+            return reason_str, report_str, parsed_prices
         else:
-            return f"수급/모멘텀 모니터링 포착 종목", "AI 상세 전략 리포트 준비 중입니다."
+            fallback_prices = {"buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2}
+            return f"수급/모멘텀 모니터링 포착 종목", "AI 상세 전략 리포트 준비 중입니다.", fallback_prices
 
     prompt = f"""
 너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
-제공된 데이터를 바탕으로 손익비(Risk-Reward Ratio) 최소 1:1.5 이상이 확보되는 현실적이고 안전한 매매 전략 리포트를 작성하라.
+120일 파동 마디점, POC 매물대, 15일 캔들 형태를 종합적으로 판단하여 최적의 매매 가격(눌림목가, 손절가, 1차·2차 익절가)과 전략 리포트를 작성하라.
 
 [종목 기본 & 수급/뉴스 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -482,28 +484,29 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
 
-[작성 요구사항 & 분석 지침]
-1. **차트 패턴 & 캔들 심리 진단**:
-   - 120일 파동 마디점과 매물대(POC)를 종합하여 현재 차트가 특정 패턴(쌍바닥, 쌍봉, 헤드앤숄더, 역헤드앤숄더, 삼중바닥, 컵앤핸들, 아담앤이브, 엘리엇파동 등)을 완성했거나 형성 중인지 명확히 진단할 것.
-   - 최근 15일 캔들 형태(장대양봉/음봉, 망치형, 윗꼬리, 도지 등)와 거래량 급증/감소 흐름을 결합하여 세력의 수급 유입/유출 심리를 해석할 것.
-2. **손익비 우위 매매 전략 (1:1.5 이상 강제)**:
-   - 무리한 추격 매수 대신 지지가 검증된 눌림목 매수 추천가를 제시할 것.
-   - 손절가는 주요 지지선 바로 하단(-0.3×ATR)으로 타이트하게 설정하여 손절 폭을 최소화할 것.
-   - 1차 목표가(손익비 1:1.5 이상) 및 2차 목표가(손익비 1:2.5 이상/패턴 상단 목표)를 제시할 것.
+[가격 산정 가이드라인 - AI 정밀 도출]
+1. 눌림목 매수가: 지지가 확인되는 현실적 눌림목 타점 (가격)
+2. 타이트 손절가: 현재가 직하단 주요 지지선(20일선/POC/구름대/마디점) 산정 (가격)
+3. 1차 익절가: 손절 폭 대비 최소 1.5배 이상 확보되는 저항선 (가격)
+4. 2차 익절가: 패턴 상단 및 전고점 저항선 (가격)
 
-[출력 양식 - 엄격 준수]
+[출력 양식 - 규격 엄수]
 선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 2~3줄 요약>
+파싱_눌림목가: <숫자만 입력 ex: 77200>
+파싱_손절가: <숫자만 입력 ex: 75500>
+파싱_1차익절가: <숫자만 입력 ex: 80200>
+파싱_2차익절가: <숫자만 입력 ex: 83800>
 상세리포트:
 📌 [차트 구조 & 패턴/캔들 종합 진단]
 - <이평선/구름대 구조와 함께 현재 포착되는 캔들 형태(거래량 동반 여부) 및 차트 패턴(쌍바닥/역헤드앤숄더/컵앤핸들/엘리엇파동 위치 등)을 2~3줄로 종합 진단>
 
 🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-- 눌림목 매수 추천가 : <가격: 000{currency_symbol}> / 최종 하단 지지선 : <가격: 000{currency_symbol}> / 타이트 손절가 : <가격: 000{currency_symbol}>
+- 눌림목 매수 추천가 : <위 파싱_눌림목가와 동일 가격: 000{currency_symbol}> / 최종 하단 지지선 : <가격> / 타이트 손절가 : <위 파싱_손절가와 동일 가격: 000{currency_symbol}>
 - <캔들 지지 형태, 매물대(POC), 이평선 및 패턴 지지점 근거 작성. 손절가를 타이트하게 설정해 리스크 폭을 최소화한 이유 서술>.
 
 🚀 [현실적 분할 익절 전략]
-- 1차 안전 익절가 : <가격: 000{currency_symbol}> (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
-- 2차 추세 익절가 : <가격: 000{currency_symbol}> (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
+- 1차 안전 익절가 : <위 파싱_1차익절가와 동일 가격: 000{currency_symbol}> (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
+- 2차 추세 익절가 : <위 파싱_2차익절가와 동일 가격: 000{currency_symbol}> (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
 - <1차/2차 목표가까지 상승 가능한 지표적/패턴적 근거 및 손익비 우위 관점 서술>.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
@@ -515,6 +518,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
             temperature=0.3, max_tokens=1000
         )
         content = res.choices[0].message.content.strip()
+        
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등이 강화되는 종목입니다."
         report_val = content
 
@@ -524,21 +528,36 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         if reason_match: reason_val = reason_match.group(1).strip()
         if report_match: report_val = report_match.group(1).strip()
 
-        save_ai_cache(cache_key, {"reason": sanitize_text(reason_val), "report": sanitize_text(report_val)})
-        return sanitize_text(reason_val), sanitize_text(report_val)
+        # AI 응답 내 수치 파싱
+        ai_buy = parse_price_from_text(content, "파싱_눌림목가") or default_buy
+        ai_stop = parse_price_from_text(content, "파싱_손절가") or default_stop
+        ai_target1 = parse_price_from_text(content, "파싱_1차익절가") or default_target1
+        ai_target2 = parse_price_from_text(content, "파싱_2차익절가") or default_target2
+
+        parsed_prices = {
+            "buy": ai_buy, "stop": ai_stop, "target1": ai_target1, "target2": ai_target2
+        }
+
+        save_ai_cache(cache_key, {
+            "reason": sanitize_text(reason_val),
+            "report": sanitize_text(report_val),
+            "parsed_prices": parsed_prices
+        })
+        return sanitize_text(reason_val), sanitize_text(report_val), parsed_prices
 
     except RateLimitError:
         if groq_mgr.switch_to_next_key():
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
+            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
         else:
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
+            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
     except Exception as e:
-        return "수급 유입 및 기술적 지지 종목", f"상세 전략 리포트 생성 안내: {e}"
+        fallback_prices = {"buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2}
+        return "수급 유입 및 기술적 지지 종목", f"상세 전략 리포트 생성 안내: {e}", fallback_prices
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 트레일링 스탑 & 패턴 대응 프롬프트
+# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 (깊이감 + 가독성)
 # =========================================================
-def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw=True):
+def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True):
     cache_key = f"TOSS_MY_{symbol}"
 
     if not groq_mgr.is_available():
@@ -546,7 +565,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 포지션 가이드를 작성하라.
+사용자의 [내 보유 평단가, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 가이드를 작성하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -559,22 +578,22 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
 
-[판단 원칙 - 패턴 & 트레일링 스탑(Trailing Stop) 준수]
-1. 최근 15일 캔들 형태(거래량 동반 여부)와 차트 패턴(쌍바닥, 쌍봉, 컵앤핸들, 헤드앤숄더, 엘리엇파동 등)의 흐름을 반영할 것.
+[판단 원칙 - 깊이 있는 패턴 분석 & 트레일링 스탑 준수]
+1. 단순 추세 언급을 넘어 최근 15일 캔들(거래량 동반 여부)과 차트 패턴(쌍바닥, 컵앤핸들, 헤드앤숄더, 엘리엇파동 등)의 세부 흐름을 구체적으로 진단할 것.
 2. **수익 구간 (+3% 이상) & 상승 추세/패턴 유효 시**: 
-   - 당장 성급히 익절하지 말고 [결론: 관망 및 손절선 상향 🟢]을 내릴 것.
-   - 패턴 상단 저항선까지 단기 목표가를 동적으로 상향 조정할 것.
-   - **이익 보존 규칙**: 주가가 밀리더라도 이미 얻은 수익을 100% 보존할 수 있도록 [손절/스탑로스 기준가]를 내 평단가보다 높은 현재가 직하단 주요 지지선(20일선/POC/일목기준선)으로 대폭 올릴 것.
-3. **수익 구간이지만 패턴 상단 저항 도달 / 음봉 거래량 터진 과열 시 (RSI-Signal 데드크로스 발생 등)**:
-   - [결론: 일부 매도 🔴]를 내리고 물량 30~50% 선제 익절 가이드 작성.
+   - [결론: 관망 및 손절선 상향 🟢]을 내리고, 전고점/패턴 상단 목표치를 반영해 단기 목표가를 동적으로 상향 조정할 것.
+   - 이미 얻은 수익을 100% 보호하도록 **스탑로스(손절가)를 내 평단가보다 높은 현재가 직하단 주요 지지선(20일선/POC/일목기준선)으로 대폭 올릴 것**.
+3. **수익 구간이지만 패턴 상단 저항 도달 / 음봉 거래량 터진 과열 시 (RSI-Signal 데드크로스 등)**:
+   - [결론: 일부 매도 🔴]를 내리고, 저항대 가격과 함께 30~50% 선제 익절 가이드를 작성할 것.
 4. **손실 구간 (-3% 이하) 시**:
-   - 무분별한 물타기를 자제하고, 패턴/지지선 이탈 위험 시 [결론: 손절 및 비중축소 🔴]를 권유할 것.
+   - 지지선 이탈 위험 시 [결론: 손절 및 비중축소 🔴]를 명시할 것.
 
-[출력 양식 - 3줄 이내 작성]
+[출력 양식 - 심도 있는 3줄 가이드]
 결론: [관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
-- <현재 평단가 대비 수익률 상황, 캔들/거래량 상태 및 차트 패턴(쌍바닥/컵앤핸들/쌍봉/엘리엇파동 등) 진단>
-- <수익 중 추세 지속 시: '목표가 동적 상향 가격' 안내 / 과열 또는 저항 도달 시: '일부 분할 익절 가격' 안내>
-- <이미 얻은 수익을 확정 보존하기 위해 '내 평단가보다 높게 설정할 트레일링 스탑(손절선) 가격' 명시>
+
+• [추세/패턴] <평단가 대비 수익률, 최근 15일 캔들/거래량 수급 상태 및 포착된 차트 패턴(쌍바닥/컵앤핸들/N자반등 등)의 구체적 위치 진단>
+• [목표가 대응] <상단 전고점/매물대 저항선 근거로 동적 상향 목표가(또는 과열 시 일부 익절가) 수치 제시>
+• [이익 보존] <내 평단가보다 높게 설정할 Trailing Stop 손절가 수치와 그 지지선 근거(20일선/POC매물대 등) 제시>
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
@@ -582,7 +601,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         res = groq_mgr.client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3, max_tokens=400
+            temperature=0.3, max_tokens=500
         )
         content = res.choices[0].message.content.strip()
         save_ai_cache(cache_key, {"report": sanitize_text(content)})
@@ -590,9 +609,9 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     except RateLimitError:
         if groq_mgr.switch_to_next_key():
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw)
+            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw)
         else:
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price, stop_loss, is_krw)
+            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw)
     except Exception as e:
         return "[테스트 모드] Groq AI 연동 미사용 상태입니다."
 
@@ -692,7 +711,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         df_daily = df_daily.bfill().ffill().dropna()
         if df_daily.empty or len(df_daily) == 0: continue
 
-        # ★ [RSI + RSI Signal(9일선) 크로스 정밀 계산] ★
+        # RSI + RSI Signal(9일선) 크로스 정밀 계산
         delta = df_daily['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
@@ -716,9 +735,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1])) if len(df_daily['MACD'])>0 else 0.0
         signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1])) if len(df_daily['Signal'])>0 else 0.0
         
-        tr = pd.concat([df_daily['High']-df_daily['Low'], np.abs(df_daily['High']-df_daily['Close'].shift()), np.abs(df_daily['Low']-df_daily['Close'].shift())], axis=1).max(axis=1)
-        atr = float(np.nan_to_num(tr.rolling(14).mean().values[-1], nan=1000.0))
-        
         latest_close = int(np.nan_to_num(df_daily['Close'].values[-1]))
         ma20_d = int(np.nan_to_num(df_daily['MA20'].values[-1]))
         ma60_d = int(np.nan_to_num(df_daily['MA60'].values[-1]))
@@ -727,17 +743,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         bb_low = int(np.nan_to_num(df_daily['BB_Lower'].values[-1]))
         cloud_a = int(np.nan_to_num(df_daily['Senkou_A'].values[-1]))
         cloud_b = int(np.nan_to_num(df_daily['Senkou_B'].values[-1]))
-        kijun_d = int(np.nan_to_num(df_daily['Kijun'].values[-1]))
         cloud_top = max(cloud_a, cloud_b)
-
-        stop_loss, target_price_1 = calculate_advanced_tech_levels(latest_close, ma20_d, kijun_d, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=True)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
         mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
         bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
         cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
-        # 최근 15일 OHLCV 상세 캔들 데이터 생성
         df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
         raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
         raw_data_str_15days = "\n".join(raw_lines)
@@ -749,9 +761,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
         print(f"  ⚡ [국장] {stock_name} AI 리포트 처리 중...")
-        pick_reason, ai_comment = generate_ai_stock_analysis(
-            stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
+        pick_reason, ai_comment, ai_prices = generate_ai_stock_analysis(
+            stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
         )
+
+        # AI가 도출한 수치를 상단 요약 박스와 100% 동일하게 연동
+        stop_loss = int(round(ai_prices['stop']))
+        target_price_1 = int(round(ai_prices['target1']))
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -765,8 +781,8 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
         fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, True)}", row=1, col=1)
-        fig.add_hline(y=target_price_1, line_dash="dash", line_color="green", annotation_text=f"목표가: {fmt_price(target_price_1, True)}", row=1, col=1)
-        fig.add_hline(y=stop_loss, line_dash="dash", line_color="red", annotation_text=f"손절가: {fmt_price(stop_loss, True)}", row=1, col=1)
+        fig.add_hline(y=target_price_1, line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {fmt_price(target_price_1, True)}", row=1, col=1)
+        fig.add_hline(y=stop_loss, line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {fmt_price(stop_loss, True)}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -792,8 +808,8 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                 <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, True)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
-                <div class="report-line text-red">🛑 손절가 : {fmt_price(stop_loss, True)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(산정기준: 주요 지지선 하단 - 0.3×ATR 타이트 손절)</span></div>
-                <div class="report-line text-green">🚀 현실적 1차 익절가 : {fmt_price(target_price_1, True)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(산정기준: 손익비 1:1.5 이상 타겟 저항선)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {fmt_price(stop_loss, True)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 120일 차트 구조/POC/지지선 종합 분석)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {fmt_price(target_price_1, True)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 손익비 1:1.5 및 저항선 반영 도출)</span></div>
             </div>
             <div class="ai-opinion-box">
                 <div class="ai-title">⚡ Groq AI 상세 리포트 & 입체 매매 전략</div>
@@ -910,9 +926,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1]))
         signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1]))
         
-        tr = pd.concat([df_daily['High']-df_daily['Low'], np.abs(df_daily['High']-df_daily['Close'].shift()), np.abs(df_daily['Low']-df_daily['Close'].shift())], axis=1).max(axis=1)
-        atr = float(np.nan_to_num(tr.rolling(14).mean().values[-1], nan=1.0))
-        
         latest_close = round(float(np.nan_to_num(df_daily['Close'].values[-1])), 2)
         ma20_d = round(float(np.nan_to_num(df_daily['MA20'].values[-1])), 2)
         ma60_d = round(float(np.nan_to_num(df_daily['MA60'].values[-1])), 2)
@@ -921,10 +934,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         bb_low = round(float(np.nan_to_num(df_daily['BB_Lower'].values[-1])), 2)
         cloud_a = round(float(np.nan_to_num(df_daily['Senkou_A'].values[-1])), 2)
         cloud_b = round(float(np.nan_to_num(df_daily['Senkou_B'].values[-1])), 2)
-        kijun_d = round(float(np.nan_to_num(df_daily['Kijun'].values[-1])), 2)
         cloud_top = max(cloud_a, cloud_b)
-
-        stop_loss, target_price_1 = calculate_advanced_tech_levels(latest_close, ma20_d, kijun_d, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=False)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
         mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
@@ -942,9 +952,12 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
         print(f"  ⚡ [미장] {stock_name} AI 리포트 처리 중...")
-        pick_reason, ai_comment = generate_ai_stock_analysis(
-            stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
+        pick_reason, ai_comment, ai_prices = generate_ai_stock_analysis(
+            stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
         )
+
+        stop_loss = round(ai_prices['stop'], 2)
+        target_price_1 = round(ai_prices['target1'], 2)
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -958,8 +971,8 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
         fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, False)}", row=1, col=1)
-        fig.add_hline(y=target_price_1, line_dash="dash", line_color="green", annotation_text=f"목표가: {fmt_price(target_price_1, False)}", row=1, col=1)
-        fig.add_hline(y=stop_loss, line_dash="dash", line_color="red", annotation_text=f"손절가: {fmt_price(stop_loss, False)}", row=1, col=1)
+        fig.add_hline(y=target_price_1, line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {fmt_price(target_price_1, False)}", row=1, col=1)
+        fig.add_hline(y=stop_loss, line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {fmt_price(stop_loss, False)}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -985,8 +998,8 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                 <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, False)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
-                <div class="report-line text-red">🛑 손절가 : {fmt_price(stop_loss, False)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(산정기준: 주요 지지선 하단 - 0.3×ATR 타이트 손절)</span></div>
-                <div class="report-line text-green">🚀 현실적 1차 익절가 : {fmt_price(target_price_1, False)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(산정기준: 손익비 1:1.5 이상 타겟 저항선)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {fmt_price(stop_loss, False)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 120일 차트 구조/POC/지지선 종합 분석)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {fmt_price(target_price_1, False)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 손익비 1:1.5 및 저항선 반영 도출)</span></div>
             </div>
             <div class="ai-opinion-box">
                 <div class="ai-title">⚡ Groq AI 상세 리포트 & 입체 매매 전략</div>
@@ -1097,7 +1110,6 @@ for h in toss_holdings:
             bb_status, cloud_status = "밴드 미산출 ⚖️", "구름대 미산출 🟡"
             poc_price, max_120, min_120 = avg_price, avg_price, avg_price
             rsi_status, macd_status = "중립 (50) ⚖️", "중립 ⚖️"
-            stop_loss, target_price_1 = avg_price * 0.9, avg_price * 1.1
             rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 미산출"
             peaks_and_troughs_summary = "마디점 미산출"
             raw_data_str_15days = "최근 데이터 미수집"
@@ -1164,9 +1176,6 @@ for h in toss_holdings:
             df_daily['Signal'] = df_daily['MACD'].ewm(span=9, adjust=False).mean()
             macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1]))
             signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1]))
-            
-            tr = pd.concat([df_daily['High']-df_daily['Low'], np.abs(df_daily['High']-df_daily['Close'].shift()), np.abs(df_daily['Low']-df_daily['Close'].shift())], axis=1).max(axis=1)
-            atr = float(np.nan_to_num(tr.rolling(14).mean().values[-1], nan=1000.0 if is_krw else 1.0))
 
             ma20_d = float(df_daily['MA20'].values[-1])
             ma60_d = float(df_daily['MA60'].values[-1])
@@ -1174,10 +1183,7 @@ for h in toss_holdings:
             bb_low = float(df_daily['BB_Lower'].values[-1])
             cloud_a = float(df_daily['Senkou_A'].values[-1])
             cloud_b = float(df_daily['Senkou_B'].values[-1])
-            kijun_d = float(df_daily['Kijun'].values[-1])
             cloud_top = max(cloud_a, cloud_b)
-
-            stop_loss, target_price_1 = calculate_advanced_tech_levels(latest_close, ma20_d, kijun_d, bb_low, bb_up, cloud_top, poc_price, atr, is_krw=is_krw)
 
             short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
             mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
@@ -1198,9 +1204,9 @@ for h in toss_holdings:
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
-        print(f"  ⚡ [마이] {stock_name} 3줄 요약 AI 가이드 처리 중...")
+        print(f"  ⚡ [마이] {stock_name} 심도 3줄 가이드 AI 처리 중...")
         ai_3line_comment = generate_ai_toss_3line_analysis(
-            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, target_price_1, stop_loss, is_krw
+            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw
         )
 
         eval_formatted = f"{int(round(eval_amount_krw)):,}원"
@@ -1210,7 +1216,6 @@ for h in toss_holdings:
         current_price_formatted = fmt_price(current_price, is_krw)
         poc_formatted = fmt_price(poc_price, is_krw)
 
-        # 토스 대시보드 2열 가로 배치 레이아웃 적용
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1229,7 +1234,7 @@ for h in toss_holdings:
                 <div class="report-line">RSI / MACD : {rsi_status} / {macd_status}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ Groq AI 포트폴리오 3줄 대응 가이드</div>
+                <div class="ai-title">⚡ Groq AI 포트폴리오 심도 3줄 대응 가이드</div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_3line_comment}</div>
             </div>
         </div>
