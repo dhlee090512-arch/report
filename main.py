@@ -1,5 +1,5 @@
 # 1. 필수 라이브러리 설치 (Colab / 로컬 전용 - GitHub Actions 사용 시 주석 처리)
-#pip install groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub -q
+#!pip install -q google-genai groq yfinance "pandas==2.2.2" beautifulsoup4 plotly requests PyGithub
 
 import os
 import json
@@ -12,6 +12,7 @@ from plotly.subplots import make_subplots
 from bs4 import BeautifulSoup
 from github import Github, UnknownObjectException
 from groq import Groq, RateLimitError
+from google import genai
 import xml.etree.ElementTree as ET
 import datetime
 import time
@@ -21,9 +22,9 @@ warnings.filterwarnings('ignore')
 
 # =========================================================
 # ⚙️ [테스트 모드 설정 - 기본 TEST_MODE = True 고정]
-# True : Groq AI 및 네이버 뉴스 크롤링 스킵 (Groq 쿼터 100% 보존)
-#        ★ 토스증권 API 연동은 TEST_MODE와 상관없이 항상 실제 데이터를 받아옵니다.
-# False: 실제 뉴스 크롤링, 주간 테마/감성 분석, 토스증권 API, Groq AI 실시간 종목 분석 전체 가동
+# True : AI 호출 스킵 및 캐시/테스트 데이터 사용 (API 쿼터 보존)
+#        ★ 토스증권 API 연동은 TEST_MODE와 상관없이 항상 실제 데이터를 수신합니다.
+# False: Gemini/Groq AI 실시간 종목 분석, 뉴스 크롤링, 감성 분석 전체 가동
 # =========================================================
 TEST_MODE = False
 
@@ -32,6 +33,7 @@ TEST_MODE = False
 # =========================================================
 try:
     from google.colab import userdata
+    GEMINI_API_KEY = userdata.get('GEMINI_API_REPORT')
     GROQ_API_KEY_1 = userdata.get('GROQ_API_KEY')
     GROQ_API_KEY_2 = userdata.get('GROQ_API_KEY2')
     GITHUB_TOKEN = userdata.get('GH_TOKEN')
@@ -39,6 +41,7 @@ try:
     TOSS_CLIENT_SECRET = userdata.get('TOSS_CLIENT_SECRET')
     FIXIE_URL = userdata.get('FIXIE_URL')
 except ImportError:
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_REPORT", "")
     GROQ_API_KEY_1 = os.environ.get("GROQ_API_KEY", "")
     GROQ_API_KEY_2 = os.environ.get("GROQ_API_KEY2", "")
     GITHUB_TOKEN = os.environ.get("GH_TOKEN", "")
@@ -49,9 +52,12 @@ except ImportError:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
-# Webshare 고정 IP 프록시 연동
-DEFAULT_PROXY_URL = "http://rhjkraof:8k6vhgbj4i2h@142.111.67.146:5611"
+# 프록시 및 시스템 환경변수 지정 (Gemini API 프록시 우회)
+DEFAULT_PROXY_URL = "http://rhjkraof:8k6vhgbj4i2h@31.59.20.176:6754"
 PROXY_URL = FIXIE_URL if FIXIE_URL else DEFAULT_PROXY_URL
+
+os.environ["HTTP_PROXY"] = PROXY_URL
+os.environ["HTTPS_PROXY"] = PROXY_URL
 proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else {}
 
 # =========================================================
@@ -81,41 +87,115 @@ def fmt_num(val):
         return f"{val:,.2f}".rstrip('0').rstrip('.')
 
 # =========================================================
-# [멀티 GROQ API Key 관리 클래스]
+# 🏛️ [LLM 다중화 매니저: GEMINI 15 RPM 가드 -> GROQ 우회]
 # =========================================================
-class GroqKeyManager:
-    def __init__(self, key1, key2):
-        self.keys = [k.strip() for k in [key1, key2] if k and k.strip()]
-        self.current_index = 0
-        self.client = None
-        self._init_client()
+class MultiLLMManager:
+    def __init__(self, gemini_key, groq_keys):
+        # 1. Gemini 초기화 (1순위 메인)
+        self.gemini_key = gemini_key.strip() if gemini_key else None
+        self.gemini_client = None
+        self._init_gemini_client()
 
-    def _init_client(self):
-        if self.keys and self.current_index < len(self.keys):
+        # 2. Groq 초기화 (2순위 우회)
+        self.groq_keys = [k.strip() for k in groq_keys if k and k.strip()]
+        self.current_groq_index = 0
+        self.groq_client = None
+        self._init_groq_client()
+
+        # 3. Gemini 15 RPM 방어용 마지막 호출 타임스탬프
+        self.last_gemini_call_time = 0
+
+    def _init_gemini_client(self):
+        if self.gemini_key:
             try:
-                self.client = Groq(api_key=self.keys[self.current_index])
-                print(f"✅ Groq AI 클라이언트 초기화 성공! (현재 {self.current_index + 1}번 API Key 사용 중)")
+                self.gemini_client = genai.Client(api_key=self.gemini_key)
+                print("✅ [1순위 메인] Gemini API Client 초기화 완료 (gemini-3.5-flash-lite)")
             except Exception as e:
-                print(f"⚠️ {self.current_index + 1}번 키 초기화 실패: {e}")
-                self.client = None
-        else:
-            self.client = None
+                print(f"⚠️ Gemini Client 초기화 실패: {e}")
+                self.gemini_client = None
 
-    def switch_to_next_key(self):
-        self.current_index += 1
-        if self.current_index < len(self.keys):
-            print(f"🔄 429 한도 초과 감지 ➔ {self.current_index + 1}번 Groq API Key로 자동 전환합니다...")
-            self._init_client()
+    def _init_groq_client(self):
+        if self.groq_keys and self.current_groq_index < len(self.groq_keys):
+            try:
+                self.groq_client = Groq(api_key=self.groq_keys[self.current_groq_index])
+                print(f"✅ [2순위 백업] Groq Client 초기화 (Key #{self.current_groq_index + 1})")
+            except Exception as e:
+                print(f"⚠️ Groq Key #{self.current_groq_index + 1} 초기화 실패: {e}")
+                self.groq_client = None
+
+    def switch_to_next_groq(self):
+        self.current_groq_index += 1
+        if self.current_groq_index < len(self.groq_keys):
+            print(f"🔄 Groq Key #{self.current_groq_index + 1}로 자동 전환 중...")
+            self._init_groq_client()
             return True
         else:
-            print("🚨 등록된 모든 Groq API Key의 일일 한도가 초과되었습니다.")
-            self.client = None
+            print("🚨 모든 Groq API Key가 소진되었습니다.")
+            self.groq_client = None
             return False
 
     def is_available(self):
-        return self.client is not None and not TEST_MODE
+        return (self.gemini_client is not None or self.groq_client is not None) and not TEST_MODE
 
-groq_mgr = GroqKeyManager(GROQ_API_KEY_1, GROQ_API_KEY_2)
+    def generate_completion(self, prompt, temperature=0.3, max_tokens=1000):
+        """
+        다중화 실행 규칙:
+        1. Gemini (15 RPM 가드: 호출 간격 4.1초 준수)
+        2. Gemini 429/오류 발생 시 즉시 Groq (Key 1 -> Key 2) 우회
+        """
+        if TEST_MODE:
+            raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
+
+        # --------------------------------------------------
+        # 1. Gemini 3.5 Flash-Lite 우선 호출 (RPM 가드 포함)
+        # --------------------------------------------------
+        if self.gemini_client:
+            try:
+                # 15 RPM 초과 방지: 이전 호출로부터 4.1초 미만 경과 시 정교한 슬립
+                elapsed = time.time() - self.last_gemini_call_time
+                if elapsed < 4.1:
+                    wait_time = 4.1 - elapsed
+                    time.sleep(wait_time)
+
+                print("⚡ [1순위 Gemini] gemini-3.5-flash-lite 모델 요청 전송 중...")
+                self.last_gemini_call_time = time.time()
+                res = self.gemini_client.models.generate_content(
+                    model="gemini-3.5-flash-lite",
+                    contents=prompt
+                )
+                if res and res.text:
+                    return res.text.strip()
+            except Exception as e:
+                print(f"⚠️ 1순위 Gemini 429/오류 발생: {e} -> 즉시 2순위 Groq 우회!")
+                # 이번 실행 동안 Gemini 한도 초과 시 Groq로 상시 전환
+                self.gemini_client = None
+
+        # --------------------------------------------------
+        # 2. Groq API 순차 우회 호출 (2순위)
+        # --------------------------------------------------
+        while self.groq_client:
+            try:
+                print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} 모델 요청 전송 중...")
+                res = self.groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=temperature,
+                    max_tokens=max_tokens
+                )
+                return res.choices[0].message.content.strip()
+
+            except RateLimitError:
+                print(f"🔄 Groq Key #{self.current_groq_index + 1} 쿼터 초과!")
+                if not self.switch_to_next_groq():
+                    break
+            except Exception as e:
+                print(f"⚠️ Groq 호출 예외: {e}")
+                if not self.switch_to_next_groq():
+                    break
+
+        raise RuntimeError("모든 AI API(Gemini 및 Groq 1/2번) 호출에 실패했습니다.")
+
+llm_mgr = MultiLLMManager(GEMINI_API_KEY, [GROQ_API_KEY_1, GROQ_API_KEY_2])
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (Chrome/120.0.0.0)',
@@ -127,7 +207,7 @@ now_dt = datetime.datetime.now(kst_timezone)
 now_str = now_dt.strftime("%Y-%m-%d %H:%M KST")
 
 # =========================================================
-# 💾 AI 캐시 매니저 (JSON 파일 읽기/쓰기 함수)
+# 💾 AI 캐시 매니저
 # =========================================================
 def load_ai_cache():
     if os.path.exists(CACHE_FILE_NAME):
@@ -153,11 +233,7 @@ ai_cache_store = load_ai_cache()
 def get_fallback_reason():
     if TEST_MODE:
         return "개발자 시스템 테스트 모드(TEST_MODE) 활성화"
-    if groq_mgr.current_index >= len(groq_mgr.keys):
-        return "모든 Groq API Key (1번 & 2번) 일일 호출 한도 초과(Rate Limit Exceeded)"
-    if not groq_mgr.keys:
-        return "Groq API Key 미설정"
-    return "AI 통신 응답 지연 및 일시적 서버 오류"
+    return "LLM API(Gemini & Groq) 통신 응답 지연 및 일시적 서버 오류"
 
 # =========================================================
 # 🌐 M2 / CLI 수치 & 진짜 기준 월 정밀 추출 모듈
@@ -321,12 +397,13 @@ def get_yahoo_7days_news():
     return "\n".join(titles[:40]) if titles else "Fed Rate Policy | Tech Earnings Rally | AI Demand Momentum"
 
 def sanitize_text(text):
-    return re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', text).strip()
+    if not text: return ""
+    return re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', str(text)).strip()
 
 def analyze_7days_news_sentiment(market_type, news_text):
     cache_key = f"MARKET_{market_type}"
 
-    if not groq_mgr.is_available():
+    if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached_data = ai_cache_store[cache_key]
             updated_at = cached_data.get('updated_at', '일자 미상')
@@ -363,15 +440,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
     [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글과 영문, 숫자만 사용할 것.
     """
     try:
-        res = groq_mgr.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": "너는 한자와 일본어를 절대 사용하지 않고 오직 한글과 영문으로만 뉴스를 분석하는 금융 분석가이다."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3, max_tokens=800
-        )
-        content = res.choices[0].message.content.strip()
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=800)
         status_val = "보통 🟡"
         status_match = re.search(r'상태:\s*(.*)', content)
         if status_match: status_val = status_match.group(1).strip()
@@ -397,9 +466,6 @@ def analyze_7days_news_sentiment(market_type, news_text):
         save_ai_cache(cache_key, {"status": sanitize_text(status_val), "briefing_html": raw_briefing_html})
         return sanitize_text(status_val), raw_briefing_html
 
-    except RateLimitError:
-        if groq_mgr.switch_to_next_key(): return analyze_7days_news_sentiment(market_type, news_text)
-        else: return analyze_7days_news_sentiment(market_type, news_text)
     except Exception as e:
         return "보통 🟡", f"뉴스 분석 생성 안내: {e}"
 
@@ -426,42 +492,45 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
         return "파동 마디점 안정화 진행 중"
 
 def parse_price_from_text(text, key_prefix):
-    """AI 출력 텍스트에서 키워드 뒤의 숫자 가격만 추출하는 파서"""
+    """AI 응답 텍스트에서 가격 숫자를 절대 에러 없이 안전하게 파싱"""
+    if not text:
+        return None
     try:
-        match = re.search(rf'{key_prefix}\s*:\s*([\$\d,\.]+)', text)
+        match = re.search(rf'{key_prefix}\s*:\s*([^\n]+)', text)
         if match:
-            clean_str = match.group(1).replace(',', '').replace('$', '').replace('원', '').strip()
-            return float(clean_str)
+            raw_str = match.group(1).strip()
+            digits = re.findall(r'[\d\.]+', raw_str.replace(',', ''))
+            if digits:
+                val = float(digits[0])
+                if val > 0: return val
     except Exception:
         pass
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (AI 주도 가격 결정 & 상하단 100% 동기화)
+# 🤖 일반 종목 AI 정밀 리포트 (GEMINI 15 RPM 가드 적용)
 # =========================================================
 def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
 
-    # 백업용 기본 가격 (AI 응답 실패 시 사용)
     default_buy = latest_close * 0.98
     default_stop = latest_close * 0.95
     default_target1 = latest_close * 1.05
     default_target2 = latest_close * 1.10
 
-    if not groq_mgr.is_available():
+    fallback_prices = {"buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2}
+
+    if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             updated_at = cached.get('updated_at', '일자 미상')
             reason_msg = get_fallback_reason()
-            reason_str = f"⚠️ [비실시간 백업] {cached['reason']}"
-            report_str = f"⚠️ [비실시간 백업 리포트 - 생성일: {updated_at} | 📌 사유: {reason_msg}]\n" + cached['report']
-            parsed_prices = cached.get('parsed_prices', {
-                "buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2
-            })
+            reason_str = f"⚠️ [비실시간 백업] {cached.get('reason', '')}"
+            report_str = f"⚠️ [비실시간 백업 리포트 - 생성일: {updated_at} | 📌 사유: {reason_msg}]\n" + cached.get('report', '')
+            parsed_prices = cached.get('parsed_prices', fallback_prices)
             return reason_str, report_str, parsed_prices
         else:
-            fallback_prices = {"buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2}
             return f"수급/모멘텀 모니터링 포착 종목", "AI 상세 전략 리포트 준비 중입니다.", fallback_prices
 
     prompt = f"""
@@ -512,12 +581,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        res = groq_mgr.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3, max_tokens=1000
-        )
-        content = res.choices[0].message.content.strip()
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1000)
         
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등이 강화되는 종목입니다."
         report_val = content
@@ -528,7 +592,6 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         if reason_match: reason_val = reason_match.group(1).strip()
         if report_match: report_val = report_match.group(1).strip()
 
-        # AI 응답 내 수치 파싱
         ai_buy = parse_price_from_text(content, "파싱_눌림목가") or default_buy
         ai_stop = parse_price_from_text(content, "파싱_손절가") or default_stop
         ai_target1 = parse_price_from_text(content, "파싱_1차익절가") or default_target1
@@ -545,23 +608,17 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         })
         return sanitize_text(reason_val), sanitize_text(report_val), parsed_prices
 
-    except RateLimitError:
-        if groq_mgr.switch_to_next_key():
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
-        else:
-            return generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, currency_symbol)
     except Exception as e:
-        fallback_prices = {"buy": default_buy, "stop": default_stop, "target1": default_target1, "target2": default_target2}
         return "수급 유입 및 기술적 지지 종목", f"상세 전략 리포트 생성 안내: {e}", fallback_prices
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 (깊이감 + 가독성)
+# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True):
     cache_key = f"TOSS_MY_{symbol}"
 
-    if not groq_mgr.is_available():
-        return "[테스트 모드] Groq AI 연동 미사용 상태입니다."
+    if not llm_mgr.is_available():
+        return "[테스트 모드] AI 연동 미사용 상태입니다."
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
@@ -598,25 +655,14 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        res = groq_mgr.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3, max_tokens=500
-        )
-        content = res.choices[0].message.content.strip()
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=500)
         save_ai_cache(cache_key, {"report": sanitize_text(content)})
         return sanitize_text(content)
-
-    except RateLimitError:
-        if groq_mgr.switch_to_next_key():
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw)
-        else:
-            return generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw)
     except Exception as e:
-        return "[테스트 모드] Groq AI 연동 미사용 상태입니다."
+        return "[테스트 모드] AI 연동 미사용 상태입니다."
 
 # =========================================================
-# PART 1: 🇰🇷 국장(index.html) 분석 (5개 종목)
+# PART 1: 🇰🇷 국장(index.html) 분석
 # =========================================================
 print("\n" + "="*60)
 print("🇰🇷 [PART 1] 한국 증시 수급 & 강세 테마주 동적 스캔 중...")
@@ -670,56 +716,58 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         ticker = yf.Ticker(symbol)
         df_daily = ticker.history(period="1y", interval="1d")
         
-        if df_daily is None or df_daily.empty or len(df_daily) < 60:
+        if df_daily is None or df_daily.empty or len(df_daily) < 1:
             symbol = f"{pure_code}.KQ"
             df_daily = yf.Ticker(symbol).history(period="1y", interval="1d")
 
-        if df_daily is None or df_daily.empty or len(df_daily) < 60: continue
+        if df_daily is None or df_daily.empty or len(df_daily) < 1: continue
 
-        df_daily['MA20'] = df_daily['Close'].rolling(20).mean()
-        df_daily['MA60'] = df_daily['Close'].rolling(60).mean()
-        df_daily['MA120'] = df_daily['Close'].rolling(120).mean()
+        df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
+        df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
+        df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
         
-        std20 = df_daily['Close'].rolling(20).std()
+        std20 = df_daily['Close'].rolling(20, min_periods=1).std().fillna(0)
         df_daily['BB_Upper'] = df_daily['MA20'] + (std20 * 2)
         df_daily['BB_Lower'] = df_daily['MA20'] - (std20 * 2)
         
-        high9 = df_daily['High'].rolling(9).max()
-        low9 = df_daily['Low'].rolling(9).min()
+        high9 = df_daily['High'].rolling(9, min_periods=1).max()
+        low9 = df_daily['Low'].rolling(9, min_periods=1).min()
         df_daily['Tenkan'] = (high9 + low9) / 2
-        high26 = df_daily['High'].rolling(26).max()
-        low26 = df_daily['Low'].rolling(26).min()
+        high26 = df_daily['High'].rolling(26, min_periods=1).max()
+        low26 = df_daily['Low'].rolling(26, min_periods=1).min()
         df_daily['Kijun'] = (high26 + low26) / 2
-        high52 = df_daily['High'].rolling(52).max()
-        low52 = df_daily['Low'].rolling(52).min()
+        high52 = df_daily['High'].rolling(52, min_periods=1).max()
+        low52 = df_daily['Low'].rolling(52, min_periods=1).min()
         senkou_b = (high52 + low52) / 2
         senkou_a = (df_daily['Tenkan'] + df_daily['Kijun']) / 2
         
-        df_daily['Senkou_A'] = senkou_a.shift(26)
-        df_daily['Senkou_B'] = senkou_b.shift(26)
+        df_daily['Senkou_A'] = senkou_a.shift(26).fillna(df_daily['Close'])
+        df_daily['Senkou_B'] = senkou_b.shift(26).fillna(df_daily['Close'])
 
         df_recent120 = df_daily.tail(120).copy()
-        price_bins = pd.cut(df_recent120['Close'], bins=15)
-        vol_by_price = df_recent120.groupby(price_bins)['Volume'].sum()
-        poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
-        poc_price = int(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else int(df_recent120['Close'].mean())
+        try:
+            num_bins = min(15, len(df_recent120))
+            price_bins = pd.cut(df_recent120['Close'], bins=num_bins)
+            vol_by_price = df_recent120.groupby(price_bins, observed=False)['Volume'].sum()
+            poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
+            poc_price = int(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else int(df_recent120['Close'].mean())
+        except Exception:
+            poc_price = int(df_recent120['Close'].mean())
 
         max_120 = int(df_recent120['High'].max())
         min_120 = int(df_recent120['Low'].min())
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=True)
 
-        df_daily = df_daily.bfill().ffill().dropna()
-        if df_daily.empty or len(df_daily) == 0: continue
+        df_daily = df_daily.ffill().bfill()
 
-        # RSI + RSI Signal(9일선) 크로스 정밀 계산
         delta = df_daily['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-        df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
+        gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
+        df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
+        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
         
-        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
-        rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+        rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
+        rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
 
         if rsi_val > rsi_signal_val:
             rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
@@ -732,17 +780,17 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
         df_daily['MACD'] = exp1 - exp2
         df_daily['Signal'] = df_daily['MACD'].ewm(span=9, adjust=False).mean()
-        macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1])) if len(df_daily['MACD'])>0 else 0.0
-        signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1])) if len(df_daily['Signal'])>0 else 0.0
+        macd_val = float(df_daily['MACD'].iloc[-1])
+        signal_val = float(df_daily['Signal'].iloc[-1])
         
-        latest_close = int(np.nan_to_num(df_daily['Close'].values[-1]))
-        ma20_d = int(np.nan_to_num(df_daily['MA20'].values[-1]))
-        ma60_d = int(np.nan_to_num(df_daily['MA60'].values[-1]))
-        ma120_d = int(np.nan_to_num(df_daily['MA120'].values[-1]))
-        bb_up = int(np.nan_to_num(df_daily['BB_Upper'].values[-1]))
-        bb_low = int(np.nan_to_num(df_daily['BB_Lower'].values[-1]))
-        cloud_a = int(np.nan_to_num(df_daily['Senkou_A'].values[-1]))
-        cloud_b = int(np.nan_to_num(df_daily['Senkou_B'].values[-1]))
+        latest_close = int(df_daily['Close'].iloc[-1])
+        ma20_d = int(df_daily['MA20'].iloc[-1])
+        ma60_d = int(df_daily['MA60'].iloc[-1])
+        ma120_d = int(df_daily['MA120'].iloc[-1])
+        bb_up = int(df_daily['BB_Upper'].iloc[-1])
+        bb_low = int(df_daily['BB_Lower'].iloc[-1])
+        cloud_a = int(df_daily['Senkou_A'].iloc[-1])
+        cloud_b = int(df_daily['Senkou_B'].iloc[-1])
         cloud_top = max(cloud_a, cloud_b)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
@@ -765,7 +813,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
             stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
         )
 
-        # AI가 도출한 수치를 상단 요약 박스와 100% 동일하게 연동
         stop_loss = int(round(ai_prices['stop']))
         target_price_1 = int(round(ai_prices['target1']))
 
@@ -812,7 +859,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {fmt_price(target_price_1, True)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 손익비 1:1.5 및 저항선 반영 도출)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ Groq AI 상세 리포트 & 입체 매매 전략</div>
+                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략</div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
             </div>
             <div class="chart-container">{chart_html}</div>
@@ -821,7 +868,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 2: 🇺🇸 미장(us_index.html) 분석 (10개 종목)
+# PART 2: 🇺🇸 미장(us_index.html) 분석
 # =========================================================
 print("\n" + "="*60)
 print("🇺🇸 [PART 2] 미국 증시 스캔 & AI 분석 중...")
@@ -866,51 +913,54 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     try:
         ticker = yf.Ticker(symbol)
         df_daily = ticker.history(period="1y", interval="1d")
-        if df_daily is None or len(df_daily) < 120: continue
+        if df_daily is None or len(df_daily) < 1: continue
 
-        df_daily['MA20'] = df_daily['Close'].rolling(20).mean()
-        df_daily['MA60'] = df_daily['Close'].rolling(60).mean()
-        df_daily['MA120'] = df_daily['Close'].rolling(120).mean()
+        df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
+        df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
+        df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
         
-        std20 = df_daily['Close'].rolling(20).std()
+        std20 = df_daily['Close'].rolling(20, min_periods=1).std().fillna(0)
         df_daily['BB_Upper'] = df_daily['MA20'] + (std20 * 2)
         df_daily['BB_Lower'] = df_daily['MA20'] - (std20 * 2)
         
-        high9 = df_daily['High'].rolling(9).max()
-        low9 = df_daily['Low'].rolling(9).min()
+        high9 = df_daily['High'].rolling(9, min_periods=1).max()
+        low9 = df_daily['Low'].rolling(9, min_periods=1).min()
         df_daily['Tenkan'] = (high9 + low9) / 2
-        high26 = df_daily['High'].rolling(26).max()
-        low26 = df_daily['Low'].rolling(26).min()
+        high26 = df_daily['High'].rolling(26, min_periods=1).max()
+        low26 = df_daily['Low'].rolling(26, min_periods=1).min()
         df_daily['Kijun'] = (high26 + low26) / 2
-        high52 = df_daily['High'].rolling(52).max()
-        low52 = df_daily['Low'].rolling(52).min()
+        high52 = df_daily['High'].rolling(52, min_periods=1).max()
+        low52 = df_daily['Low'].rolling(52, min_periods=1).min()
         senkou_b = (high52 + low52) / 2
         senkou_a = (df_daily['Tenkan'] + df_daily['Kijun']) / 2
         
-        df_daily['Senkou_A'] = senkou_a.shift(26)
-        df_daily['Senkou_B'] = senkou_b.shift(26)
+        df_daily['Senkou_A'] = senkou_a.shift(26).fillna(df_daily['Close'])
+        df_daily['Senkou_B'] = senkou_b.shift(26).fillna(df_daily['Close'])
 
         df_recent120 = df_daily.tail(120).copy()
-        price_bins = pd.cut(df_recent120['Close'], bins=15)
-        vol_by_price = df_recent120.groupby(price_bins)['Volume'].sum()
-        poc_bin = vol_by_price.idxmax()
-        poc_price = round(float(poc_bin.mid), 2) if pd.notnull(poc_bin) else round(float(df_recent120['Close'].mean()), 2)
+        try:
+            num_bins = min(15, len(df_recent120))
+            price_bins = pd.cut(df_recent120['Close'], bins=num_bins)
+            vol_by_price = df_recent120.groupby(price_bins, observed=False)['Volume'].sum()
+            poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
+            poc_price = round(float(poc_bin.mid), 2) if poc_bin is not None and pd.notnull(poc_bin) else round(float(df_recent120['Close'].mean()), 2)
+        except Exception:
+            poc_price = round(float(df_recent120['Close'].mean()), 2)
 
         max_120 = round(float(df_recent120['High'].max()), 2)
         min_120 = round(float(df_recent120['Low'].min()), 2)
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=False)
 
-        df_daily = df_daily.bfill().ffill().dropna()
-        if df_daily.empty or len(df_daily) == 0: continue
+        df_daily = df_daily.ffill().bfill()
 
         delta = df_daily['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-        df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
+        gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
+        df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
+        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
         
-        rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
-        rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+        rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
+        rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
 
         if rsi_val > rsi_signal_val:
             rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
@@ -923,17 +973,17 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
         df_daily['MACD'] = exp1 - exp2
         df_daily['Signal'] = df_daily['MACD'].ewm(span=9, adjust=False).mean()
-        macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1]))
-        signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1]))
+        macd_val = float(df_daily['MACD'].iloc[-1])
+        signal_val = float(df_daily['Signal'].iloc[-1])
         
-        latest_close = round(float(np.nan_to_num(df_daily['Close'].values[-1])), 2)
-        ma20_d = round(float(np.nan_to_num(df_daily['MA20'].values[-1])), 2)
-        ma60_d = round(float(np.nan_to_num(df_daily['MA60'].values[-1])), 2)
-        ma120_d = round(float(np.nan_to_num(df_daily['MA120'].values[-1])), 2)
-        bb_up = round(float(np.nan_to_num(df_daily['BB_Upper'].values[-1])), 2)
-        bb_low = round(float(np.nan_to_num(df_daily['BB_Lower'].values[-1])), 2)
-        cloud_a = round(float(np.nan_to_num(df_daily['Senkou_A'].values[-1])), 2)
-        cloud_b = round(float(np.nan_to_num(df_daily['Senkou_B'].values[-1])), 2)
+        latest_close = round(float(df_daily['Close'].iloc[-1]), 2)
+        ma20_d = round(float(df_daily['MA20'].iloc[-1]), 2)
+        ma60_d = round(float(df_daily['MA60'].iloc[-1]), 2)
+        ma120_d = round(float(df_daily['MA120'].iloc[-1]), 2)
+        bb_up = round(float(df_daily['BB_Upper'].iloc[-1]), 2)
+        bb_low = round(float(df_daily['BB_Lower'].iloc[-1]), 2)
+        cloud_a = round(float(df_daily['Senkou_A'].iloc[-1]), 2)
+        cloud_b = round(float(df_daily['Senkou_B'].iloc[-1]), 2)
         cloud_top = max(cloud_a, cloud_b)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
@@ -1002,7 +1052,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {fmt_price(target_price_1, False)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(AI가 손익비 1:1.5 및 저항선 반영 도출)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ Groq AI 상세 리포트 & 입체 매매 전략</div>
+                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략</div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
             </div>
             <div class="chart-container">{chart_html}</div>
@@ -1011,7 +1061,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) 분석 (요청 양식 반영)
+# PART 3: 🎯 마이 대시보드(index3.html) 분석 (예외 정밀 보완판)
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 잔고 수집 및 종목별 맞춤 UI 리포트 생성 중...")
@@ -1096,10 +1146,11 @@ for h in toss_holdings:
         try:
             stock = yf.Ticker(yf_ticker)
             df_daily = stock.history(period="1y", interval="1d")
-            if (df_daily is None or df_daily.empty) and is_krw and yf_ticker.endswith(".KS"):
+            if (df_daily is None or df_daily.empty or len(df_daily) < 1) and is_krw:
                 yf_ticker = f"{pure_code}.KQ"
                 df_daily = yf.Ticker(yf_ticker).history(period="1y", interval="1d")
-        except Exception: df_daily = None
+        except Exception: 
+            df_daily = None
 
         if df_daily is None or df_daily.empty or len(df_daily) == 0:
             current_price = avg_price
@@ -1114,54 +1165,59 @@ for h in toss_holdings:
             peaks_and_troughs_summary = "마디점 미산출"
             raw_data_str_15days = "최근 데이터 미수집"
         else:
-            latest_close = float(df_daily['Close'].values[-1])
+            latest_close = float(df_daily['Close'].iloc[-1])
             current_price = latest_close
             return_pct = ((current_price - avg_price) / avg_price) * 100 if avg_price > 0 else 0
             eval_amount_krw = (current_price * quantity) * fx
             profit_loss_krw = ((current_price - avg_price) * quantity) * fx
 
-            df_daily['MA20'] = df_daily['Close'].rolling(20).mean()
-            df_daily['MA60'] = df_daily['Close'].rolling(60).mean()
-            df_daily['MA120'] = df_daily['Close'].rolling(120).mean()
+            df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
+            df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
+            df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
             
-            std20 = df_daily['Close'].rolling(20).std()
+            std20 = df_daily['Close'].rolling(20, min_periods=1).std().fillna(0)
             df_daily['BB_Upper'] = df_daily['MA20'] + (std20 * 2)
             df_daily['BB_Lower'] = df_daily['MA20'] - (std20 * 2)
 
-            high9 = df_daily['High'].rolling(9).max()
-            low9 = df_daily['Low'].rolling(9).min()
+            high9 = df_daily['High'].rolling(9, min_periods=1).max()
+            low9 = df_daily['Low'].rolling(9, min_periods=1).min()
             df_daily['Tenkan'] = (high9 + low9) / 2
-            high26 = df_daily['High'].rolling(26).max()
-            low26 = df_daily['Low'].rolling(26).min()
+            high26 = df_daily['High'].rolling(26, min_periods=1).max()
+            low26 = df_daily['Low'].rolling(26, min_periods=1).min()
             df_daily['Kijun'] = (high26 + low26) / 2
-            high52 = df_daily['High'].rolling(52).max()
-            low52 = df_daily['Low'].rolling(52).min()
+            high52 = df_daily['High'].rolling(52, min_periods=1).max()
+            low52 = df_daily['Low'].rolling(52, min_periods=1).min()
             senkou_b = (high52 + low52) / 2
             senkou_a = (df_daily['Tenkan'] + df_daily['Kijun']) / 2
             
-            df_daily['Senkou_A'] = senkou_a.shift(26)
-            df_daily['Senkou_B'] = senkou_b.shift(26)
+            df_daily['Senkou_A'] = senkou_a.shift(26).fillna(df_daily['Close'])
+            df_daily['Senkou_B'] = senkou_b.shift(26).fillna(df_daily['Close'])
 
             df_recent120 = df_daily.tail(120).copy()
-            price_bins = pd.cut(df_recent120['Close'], bins=15)
-            vol_by_price = df_recent120.groupby(price_bins)['Volume'].sum()
-            poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
-            poc_price = float(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else float(df_recent120['Close'].mean())
+            try:
+                num_bins = min(15, len(df_recent120))
+                price_bins = pd.cut(df_recent120['Close'], bins=num_bins)
+                vol_by_price = df_recent120.groupby(price_bins, observed=False)['Volume'].sum()
+                poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
+                poc_price = float(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else float(df_recent120['Close'].mean())
+            except Exception:
+                poc_price = float(df_recent120['Close'].mean())
 
             max_120 = float(df_recent120['High'].max())
             min_120 = float(df_recent120['Low'].min())
             peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=is_krw)
 
-            df_daily = df_daily.bfill().ffill().dropna()
+            # dropna() 대신 안전 결측치 보정 적용
+            df_daily = df_daily.ffill().bfill()
 
             delta = df_daily['Close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-            df_daily['RSI'] = 100 - (100 / (1 + (gain / loss)))
-            df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9).mean()
+            gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
+            df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
+            df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
 
-            rsi_val = round(float(np.nan_to_num(df_daily['RSI'].values[-1], nan=50.0)), 2)
-            rsi_signal_val = round(float(np.nan_to_num(df_daily['RSI_Signal'].values[-1], nan=50.0)), 2)
+            rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
+            rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
 
             if rsi_val > rsi_signal_val:
                 rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
@@ -1174,21 +1230,19 @@ for h in toss_holdings:
             exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
             df_daily['MACD'] = exp1 - exp2
             df_daily['Signal'] = df_daily['MACD'].ewm(span=9, adjust=False).mean()
-            macd_val = float(np.nan_to_num(df_daily['MACD'].values[-1]))
-            signal_val = float(np.nan_to_num(df_daily['Signal'].values[-1]))
+            
+            macd_val = float(df_daily['MACD'].iloc[-1])
+            signal_val = float(df_daily['Signal'].iloc[-1])
 
-            ma20_d = float(df_daily['MA20'].values[-1])
-            ma60_d = float(df_daily['MA60'].values[-1])
-            bb_up = float(df_daily['BB_Upper'].values[-1])
-            bb_low = float(df_daily['BB_Lower'].values[-1])
-            cloud_a = float(df_daily['Senkou_A'].values[-1])
-            cloud_b = float(df_daily['Senkou_B'].values[-1])
-            cloud_top = max(cloud_a, cloud_b)
+            ma20_d = float(df_daily['MA20'].iloc[-1])
+            ma60_d = float(df_daily['MA60'].iloc[-1])
+            bb_up = float(df_daily['BB_Upper'].iloc[-1])
+            bb_low = float(df_daily['BB_Lower'].iloc[-1])
 
-            short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
-            mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
-            bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
-            cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
+            short_trend = "단기 상승 추세 📈" if current_price >= ma20_d else "단기 하락 추세 📉"
+            mid_trend = "중기 상승 추세 📈" if current_price >= ma60_d else "중기 하락 추세 📉"
+            bb_status = "상한선 돌파/근접 🚀" if current_price >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if current_price <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
+            cloud_status = "구름대 상태 유효 🟢"
 
             df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
             if is_krw:
@@ -1199,7 +1253,7 @@ for h in toss_holdings:
 
             rsi_status = f"과매수 ({fmt_num(rsi_val)}) ⚠️" if rsi_val >= 70 else (f"과매도 ({fmt_num(rsi_val)}) 🟢" if rsi_val <= 30 else f"중립 ({fmt_num(rsi_val)}) ⚖️")
             macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
-            ma_status = f"정배열 지지 🟢" if latest_close >= ma20_d else "역배열/혼조세 🔴"
+            ma_status = f"정배열 지지 🟢" if current_price >= ma20_d else "역배열/혼조세 🔴"
 
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
@@ -1234,7 +1288,7 @@ for h in toss_holdings:
                 <div class="report-line">RSI / MACD : {rsi_status} / {macd_status}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ Groq AI 포트폴리오 심도 3줄 대응 가이드</div>
+                <div class="ai-title">⚡ AI 포트폴리오 심도 3줄 대응 가이드</div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_3line_comment}</div>
             </div>
         </div>
@@ -1244,7 +1298,7 @@ for h in toss_holdings:
         total_profit_my += profit_loss_krw
 
     except Exception as e:
-        print(f"⚠️ {stock_name} 처리 중 예외: {e}")
+        print(f"⚠️ {h.get('name', '종목')} 처리 중 예외 발생: {e}")
 
 total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
