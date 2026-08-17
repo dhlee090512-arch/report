@@ -202,10 +202,77 @@ now_str = now_dt.strftime("%Y-%m-%d %H:%M KST")
 today_date = now_dt.date()
 
 # =========================================================
+# 💾 AI 캐시 매니저 & 시간/기준시점 기반 스마트 갱신 로직
+# =========================================================
+def load_ai_cache():
+    if os.path.exists(CACHE_FILE_NAME):
+        try:
+            with open(CACHE_FILE_NAME, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_ai_cache(key, data_dict):
+    cache = load_ai_cache()
+    data_dict['updated_at'] = now_str
+    cache[key] = data_dict
+    try:
+        with open(CACHE_FILE_NAME, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"⚠️ 캐시 저장 실패 ({key}): {e}")
+
+ai_cache_store = load_ai_cache()
+
+def is_cache_valid(cache_key, max_hours):
+    """일반 종목 분석용: max_hours(4시간) 경과 여부 검사"""
+    if cache_key not in ai_cache_store:
+        return False
+    cached_data = ai_cache_store[cache_key]
+    updated_at_str = cached_data.get('updated_at', '')
+    if not updated_at_str:
+        return False
+    try:
+        cached_dt = datetime.datetime.strptime(updated_at_str, "%Y-%m-%d %H:%M KST").replace(tzinfo=kst_timezone)
+        elapsed_hours = (now_dt - cached_dt).total_seconds() / 3600.0
+        return elapsed_hours < max_hours
+    except Exception:
+        return False
+
+def should_refresh_daily_briefing(market_type):
+    """
+    뉴스 브리핑 전용:
+    - 한국장: 매일 08:30 KST 기준 시점 1회 갱신
+    - 미국장: 매일 22:00 KST 기준 시점 1회 갱신
+    """
+    cache_key = f"MARKET_{market_type}"
+    if cache_key not in ai_cache_store:
+        return True
+    
+    cached_data = ai_cache_store[cache_key]
+    updated_at_str = cached_data.get('updated_at', '')
+    if not updated_at_str:
+        return True
+
+    try:
+        cached_dt = datetime.datetime.strptime(updated_at_str, "%Y-%m-%d %H:%M KST").replace(tzinfo=kst_timezone)
+        target_hour, target_minute = (8, 30) if ("국장" in market_type or "한국" in market_type) else (22, 0)
+        today_pivot = now_dt.replace(hour=target_hour, minute=target_minute, second=0, microsecond=0)
+        
+        if now_dt >= today_pivot:
+            return cached_dt < today_pivot
+        else:
+            yesterday_pivot = today_pivot - datetime.timedelta(days=1)
+            return cached_dt < yesterday_pivot
+    except Exception as e:
+        print(f"⚠️ 브리핑 캐시 판별 예외 ({e}) -> 신규 생성 진행")
+        return True
+
+# =========================================================
 # 📅 [증시 휴장일 판별 모듈 - pandas_market_calendars 활용]
 # =========================================================
 def get_market_open_status(market="KR"):
-    """과거/현재/미래 모든 연도의 KRX / NYSE 거래소 휴장 여부를 영구 판별"""
     if today_date.weekday() == 5:
         return False, "주말 휴장 (토요일)"
     elif today_date.weekday() == 6:
@@ -234,7 +301,6 @@ def get_witching_day_alert(market="KR"):
         cal = calendar.monthcalendar(year, month)
         
         if market == "KR":
-            # 3, 6, 9, 12월 2째주 목요일 (index 3)
             thursdays = [week[3] for week in cal if week[3] != 0]
             if len(thursdays) >= 2:
                 target_day = thursdays[1]
@@ -249,7 +315,6 @@ def get_witching_day_alert(market="KR"):
                     alerts.append(f"🚨 <b>[{d_str}]</b> {target_date.strftime('%m/%d')} 한국 {event_name} - 동시호가 변동성 주의")
 
         elif market == "US":
-            # 3, 6, 9, 12월 3째주 금요일 (index 4)
             fridays = [week[4] for week in cal if week[4] != 0]
             if len(fridays) >= 3:
                 target_day = fridays[2]
@@ -271,7 +336,6 @@ def get_witching_day_alert(market="KR"):
 def get_economic_calendar_events(market="KR"):
     events_list = []
     try:
-        # ForexFactory 공식 공개 주간 JSON 피드
         url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
         res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
@@ -285,7 +349,6 @@ def get_economic_calendar_events(market="KR"):
                 date_str = item.get("date", "")[:10]
                 time_str = item.get("time", "")
                 
-                # 미장인 경우 USD High Impact 지표 추출, 국장도 글로벌 매크로(USD High) 공유 노출
                 if (country == "USD" and impact == "High") or (country == target_country and impact in ["High", "Medium"]):
                     try:
                         event_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -299,35 +362,6 @@ def get_economic_calendar_events(market="KR"):
         print(f"⚠️ 경제 캘린더 수집 예외: {e}")
         
     return events_list[:4]
-
-# =========================================================
-# 💾 AI 캐시 매니저
-# =========================================================
-def load_ai_cache():
-    if os.path.exists(CACHE_FILE_NAME):
-        try:
-            with open(CACHE_FILE_NAME, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def save_ai_cache(key, data_dict):
-    cache = load_ai_cache()
-    data_dict['updated_at'] = now_str
-    cache[key] = data_dict
-    try:
-        with open(CACHE_FILE_NAME, "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"⚠️ 캐시 저장 실패 ({key}): {e}")
-
-ai_cache_store = load_ai_cache()
-
-def get_fallback_reason():
-    if TEST_MODE:
-        return "개발자 시스템 테스트 모드(TEST_MODE) 활성화"
-    return "LLM API(Gemini & Groq) 통신 응답 지연 및 일시적 서버 오류"
 
 # =========================================================
 # 🌐 M2 / CLI 수치 & 진짜 기준 월 정밀 추출 모듈
@@ -447,7 +481,7 @@ us_macro = get_us_macro_data()
 usd_krw_rate = get_usd_krw_rate()
 
 # =========================================================
-# 📰 뉴스 헤드라인 수집 및 7일 감성 분석
+# 📰 뉴스 헤드라인 수집 및 7일 감성 분석 (한국 08:30 / 미국 22:00 갱신)
 # =========================================================
 def get_naver_7days_news():
     if TEST_MODE:
@@ -495,19 +529,19 @@ def sanitize_text(text):
 def analyze_7days_news_sentiment(market_type, news_text):
     cache_key = f"MARKET_{market_type}"
 
+    # ★ 기준 시점(한국 08:30 / 미국 22:00) 갱신 조건 미충족 시 캐시 100% 재사용
+    if not should_refresh_daily_briefing(market_type):
+        print(f"📦 [뉴스 브리핑] {market_type} 당일 기준 시점 캐시 재사용 (AI 호출 스킵)")
+        cached = ai_cache_store[cache_key]
+        return cached['status'], cached['briefing_html']
+
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached_data = ai_cache_store[cache_key]
-            updated_at = cached_data.get('updated_at', '일자 미상')
-            reason_msg = get_fallback_reason()
-            briefing_html = f"""
-            <div style="color:#fbbf24; font-size:12px; margin-bottom:6px; font-weight:bold;">⚠️ [비실시간 백업 리포트] 백업 생성일: {updated_at} | 📌 사유: {reason_msg}</div>
-            {cached_data['briefing_html']}
-            """
-            return cached_data['status'], briefing_html
-        else:
-            return "보통 🟡", "분석 데이터를 불러올 수 없습니다."
+            return cached_data['status'], cached_data['briefing_html']
+        return "보통 🟡", "분석 데이터를 불러올 수 없습니다."
 
+    print(f"⚡ [뉴스 브리핑] {market_type} 신규 AI 종합 분석 요청 생성 중...")
     prompt = f"""
     너는 수석 마켓 분석가이다. 아래 제공된 지난 7일간의 {market_type} 주요 뉴스 헤드라인 모음을 종합 분석하라.
     
@@ -597,11 +631,17 @@ def parse_price_from_text(text, key_prefix):
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (국장/미장)
+# 🤖 일반 종목 AI 정밀 리포트 (직전 업데이트 4시간 이내 캐시 재사용)
 # =========================================================
 def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
+
+    # ★ 직전 업데이트 4시간 이내 캐시가 있다면 AI 호출 100% 스킵
+    if is_cache_valid(cache_key, max_hours=4):
+        print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
+        cached = ai_cache_store[cache_key]
+        return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {})
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
@@ -689,11 +729,17 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 + 불타기/물타기
+# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 + 불타기/물타기 (4시간 캐싱)
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True):
     cache_key = f"TOSS_MY_{symbol}"
     currency_symbol = "원" if is_krw else "$"
+
+    # ★ 직전 업데이트 4시간 이내 캐시가 있다면 AI 호출 100% 스킵
+    if is_cache_valid(cache_key, max_hours=4):
+        print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
+        cached = ai_cache_store[cache_key]
+        return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type')
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
@@ -777,7 +823,6 @@ kr_econ_events = get_economic_calendar_events("KR")
 kr_7d_news = get_naver_7days_news()
 kr_market_status, kr_sentiment_briefing = analyze_7days_news_sentiment("대한민국 주식시장(국장)", kr_7d_news)
 
-# 상단 변동성 배너 생성
 kr_banner_items = kr_witching_alerts + kr_econ_events
 if not kr_is_open:
     kr_banner_items.insert(0, f"🛑 <b>[오늘 휴장일]</b> {kr_open_msg} (시세는 직전 거래일 종가 기준입니다)")
@@ -929,7 +974,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
-        print(f"  ⚡ [국장] {stock_name} AI 리포트 처리 중...")
         pick_reason, ai_comment, ai_prices = generate_ai_stock_analysis(
             stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
         )
@@ -964,7 +1008,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
-        # 모바일 터치 고정 가드
         fig.update_layout(
             height=540, 
             margin=dict(l=10, r=10, t=10, b=40), 
@@ -1161,7 +1204,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
-        print(f"  ⚡ [미장] {stock_name} AI 리포트 처리 중...")
         pick_reason, ai_comment, ai_prices = generate_ai_stock_analysis(
             stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
         )
@@ -1437,7 +1479,6 @@ for h in toss_holdings:
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
-        print(f"  ⚡ [마이] {stock_name} 심도 3줄 가이드 AI 처리 중...")
         ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type = generate_ai_toss_3line_analysis(
             stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw
         )
@@ -1452,7 +1493,6 @@ for h in toss_holdings:
         my_stop_str = fmt_price(my_stop_val, is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
         my_target_str = fmt_price(my_target_val, is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
 
-        # 1안: 추매 타점 포착 시에만 해당 행 추가
         pyramid_row_html = ""
         if my_pyramid_val and my_pyramid_type:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
