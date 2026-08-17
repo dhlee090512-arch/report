@@ -60,9 +60,9 @@
     "updated_at": "2026-08-17 20:30 KST"
   },
   "MARKET_미국 주식시장(미장)": {
-    "status": "보통 🟡",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• S&P 500 지수가 연이은 사상 최고가(Record high)를 경신하며 강한 상승 모멘텀을 증명함<br>&nbsp;&nbsp;• 인플레이션 압력이 점차 완화되면서 연방준비제도(Fed)의 추가 금리 인상 우려가 크게 약화됨<br>&nbsp;&nbsp;• 기술주(Technology Stocks)와 인공지능(AI) 관련 실적이 전체 주식 시장의 상승세를 견인하고 있음<br>&nbsp;&nbsp;• 월스트리트 투자자들의 심리가 다시 낙관론으로 돌아서며 증시 유입 자금(Margin debt)이 역대 최고 수준을 기록함<br>&nbsp;&nbsp;• 원유 가격 안정세와 긍정적인 기업 실적 발표가 투자자들의 매수 심리를 자극함<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 호르무즈 해협 및 중동 지역 긴장감 고조로 인한 국제 유가(Crude oil)의 변동성 확대<br>&nbsp;&nbsp;• 미국의 소매판매 데이터 부진 등 일부 거시경제 지표가 경기 둔화 우려를 자극함<br>&nbsp;&nbsp;• 미국과 이란 간의 평화 협상 기대감 약화로 인한 지정학적 리스크 지속<br>&nbsp;&nbsp;• 일부 전문가들(Peter Schiff 등)이 현재 시장을 시한폭탄에 비유하며 대폭락(Ultimate crash) 가능성을 경고함<br>&nbsp;&nbsp;• 사상 최고가 경신에 따른 피로감과 함께 역사적 경고 신호들이 포착되어 헷지(Hedging) 필요성이 대두됨<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI), 기술주(Tech), 대형 S&P 500 ETF, 우량 성장주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+25점 (역대 최고가 행진과 인플레이션 완화라는 긍정적 요인과 유가 불안 및 고점 경계감이 팽팽히 맞서는 국면)</span>\n        ",
-    "updated_at": "2026-08-17 20:30 KST"
+    "status": "🟡 보통",
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• S&P 500 지수가 연이은 사상 최고가(Record-high)를 경신하며 강한 상승 모멘텀을 과시함<br>&nbsp;&nbsp;• 연방준비제도(Fed)의 추가 금리 인상 우려가 완화되면서 시장에 안도감을 제공함<br>&nbsp;&nbsp;• 유가 하락 및 인플레이션 압력 완화 조짐이 증시에 긍정적인 신호로 작용함<br>&nbsp;&nbsp;• 기술주 중심의 매수세가 유입되며 지수 하방을 견조하게 지지함<br>&nbsp;&nbsp;• 투자자들의 위험 자산 선호가 이어지며 주식 거래를 위한 차입금(Margin Debt)이 역대 최고 수준을 기록함<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 중동 지역 긴장감 및 호르무즈 해협 관련 지정학적 리스크로 인한 유가 변동성 확대<br>&nbsp;&nbsp;• 미국의 소매판매 부진 및 인플레이션 지표 발표에 따른 경기 둔화 우려<br>&nbsp;&nbsp;• 피터 쉬프 등 일부 비관론자들의 '시한폭탄' 경고 및 역대급 증시 과열에 대한 경계감 대두<br>&nbsp;&nbsp;• 미국-이란 평화 협상 기대감 약화 및 지정학적 불안 재부각<br>&nbsp;&nbsp;• 역사적으로 드문 증시 경고 신호(Warning Flash) 등장으로 인한 조정 압력 증가<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">대형 기술주 및 S&P 500 지수 연동 인덱스/ETF 테마</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (사상 최고가 경신과 금리 우려 완화라는 긍정적 요인과 유가 불안 및 인플레이션 경계감이라는 부정적 요인이 팽팽히 맞서는 혼조세)</span>\n        ",
+    "updated_at": "2026-08-17 22:01 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 및 빅테크 AI 핵심주인 SPCX는 최근 강력한 거래량을 동반한 저점 탈피와 함께 RSI 상향 돌파 및 MACD 골든크로스를 기록하며 단기 상승 모멘텀을 강하게 유지하고 있습니다.",
@@ -557,6 +557,49 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-08-17 21:30 KST"
+    "updated_at": "2026-08-17 22:01 KST"
+  },
+  "RECOMMEND_DAYS_TRACKER": {
+    "NU": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "updated_at": "2026-08-17 22:01 KST",
+    "SPCX": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "INTC": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "NVDA": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "NOK": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "SMCI": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "F": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "TSLA": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "IREN": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    },
+    "HL": {
+      "days": 1,
+      "last_pivot_date": "2026-08-17"
+    }
   }
 }
