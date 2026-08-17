@@ -2,7 +2,10 @@
 import sys
 import subprocess
 
-for pkg in ["google-genai", "groq", "yfinance", "pandas==2.2.2", "beautifulsoup4", "plotly", "requests", "PyGithub"]:
+for pkg in [
+    "google-genai", "groq", "yfinance", "pandas==2.2.2", 
+    "beautifulsoup4", "plotly", "requests", "PyGithub", "pandas_market_calendars"
+]:
     try:
         mod_name = pkg.split("==")[0].replace("-", "_")
         __import__(mod_name)
@@ -23,9 +26,12 @@ from groq import Groq, RateLimitError
 from google import genai
 import xml.etree.ElementTree as ET
 import datetime
+import calendar
 import time
 import re
 import warnings
+import pandas_market_calendars as mcal
+
 warnings.filterwarnings('ignore')
 
 # =========================================================
@@ -57,7 +63,6 @@ except Exception:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
-# 프록시 및 시스템 환경변수 지정
 DEFAULT_PROXY_URL = "http://rhjkraof:8k6vhgbj4i2h@31.59.20.176:6754"
 PROXY_URL = FIXIE_URL if FIXIE_URL else DEFAULT_PROXY_URL
 
@@ -194,6 +199,106 @@ headers = {
 kst_timezone = datetime.timezone(datetime.timedelta(hours=9))
 now_dt = datetime.datetime.now(kst_timezone)
 now_str = now_dt.strftime("%Y-%m-%d %H:%M KST")
+today_date = now_dt.date()
+
+# =========================================================
+# 📅 [증시 휴장일 판별 모듈 - pandas_market_calendars 활용]
+# =========================================================
+def get_market_open_status(market="KR"):
+    """과거/현재/미래 모든 연도의 KRX / NYSE 거래소 휴장 여부를 영구 판별"""
+    if today_date.weekday() == 5:
+        return False, "주말 휴장 (토요일)"
+    elif today_date.weekday() == 6:
+        return False, "주말 휴장 (일요일)"
+
+    cal_name = 'XKRX' if market == "KR" else 'NYSE'
+    try:
+        exchange_cal = mcal.get_calendar(cal_name)
+        schedule = exchange_cal.schedule(start_date=today_date, end_date=today_date)
+        if schedule.empty:
+            return False, "증시 공식 휴장일 🛑"
+        return True, "정상 개장일 🟢"
+    except Exception:
+        return True, "개장일 🟢"
+
+# =========================================================
+# 🧙‍♀️ [만기일 D-Day 연산 모듈 - 네 마녀/세 마녀의 날]
+# =========================================================
+def get_witching_day_alert(market="KR"):
+    alerts = []
+    for m_offset in range(2):
+        month = today_date.month + m_offset
+        year = today_date.year + (month - 1) // 12
+        month = (month - 1) % 12 + 1
+        
+        cal = calendar.monthcalendar(year, month)
+        
+        if market == "KR":
+            # 3, 6, 9, 12월 2째주 목요일 (index 3)
+            thursdays = [week[3] for week in cal if week[3] != 0]
+            if len(thursdays) >= 2:
+                target_day = thursdays[1]
+                target_date = datetime.date(year, month, target_day)
+                d_day = (target_date - today_date).days
+                
+                is_quad = month in [3, 6, 9, 12]
+                event_name = "네 마녀의 날 (선물·옵션 동시 만기일) 🧙‍♀️" if is_quad else "월별 옵션 만기일"
+                
+                if 0 <= d_day <= 7:
+                    d_str = "오늘(D-Day)" if d_day == 0 else f"D-{d_day}"
+                    alerts.append(f"🚨 <b>[{d_str}]</b> {target_date.strftime('%m/%d')} 한국 {event_name} - 동시호가 변동성 주의")
+
+        elif market == "US":
+            # 3, 6, 9, 12월 3째주 금요일 (index 4)
+            fridays = [week[4] for week in cal if week[4] != 0]
+            if len(fridays) >= 3:
+                target_day = fridays[2]
+                target_date = datetime.date(year, month, target_day)
+                d_day = (target_date - today_date).days
+                
+                is_triple = month in [3, 6, 9, 12]
+                event_name = "세/네 마녀의 날 (Triple/Quadruple Witching Day) 🧙‍♀️" if is_triple else "월별 옵션 만기일"
+                
+                if 0 <= d_day <= 7:
+                    d_str = "오늘(D-Day)" if d_day == 0 else f"D-{d_day}"
+                    alerts.append(f"🚨 <b>[{d_str}]</b> {target_date.strftime('%m/%d')} 미국 {event_name} - 파생상품 결제 변동성 주의")
+
+    return alerts
+
+# =========================================================
+# 📅 [글로벌 경제 캘린더 실시간 수집 모듈]
+# =========================================================
+def get_economic_calendar_events(market="KR"):
+    events_list = []
+    try:
+        # ForexFactory 공식 공개 주간 JSON 피드
+        url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            target_country = "USD" if market == "US" else "KRW"
+            
+            for item in data:
+                country = item.get("country", "")
+                impact = item.get("impact", "")
+                title = item.get("title", "")
+                date_str = item.get("date", "")[:10]
+                time_str = item.get("time", "")
+                
+                # 미장인 경우 USD High Impact 지표 추출, 국장도 글로벌 매크로(USD High) 공유 노출
+                if (country == "USD" and impact == "High") or (country == target_country and impact in ["High", "Medium"]):
+                    try:
+                        event_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+                        d_diff = (event_date - today_date).days
+                        if 0 <= d_diff <= 5:
+                            d_tag = "오늘" if d_diff == 0 else f"D-{d_diff}"
+                            events_list.append(f"• <b>[{d_tag}]</b> {date_str[5:]} {time_str} {country} {title} [중요 🔴]")
+                    except Exception:
+                        pass
+    except Exception as e:
+        print(f"⚠️ 경제 캘린더 수집 예외: {e}")
+        
+    return events_list[:4]
 
 # =========================================================
 # 💾 AI 캐시 매니저
@@ -477,7 +582,6 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
         return "파동 마디점 안정화 진행 중"
 
 def parse_price_from_text(text, key_prefix):
-    """AI 텍스트에서 가격 숫자를 추출 (실패 시 None)"""
     if not text:
         return None
     try:
@@ -585,7 +689,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 + 손절/목표가 추출
+# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 + 불타기/물타기
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True):
     cache_key = f"TOSS_MY_{symbol}"
@@ -594,8 +698,8 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
-            return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price')
-        return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None
+            return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type')
+        return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
@@ -612,19 +716,23 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
 
-[판단 원칙]
-1. 수익 구간 (+3% 이상) 시: 스탑로스(손절가)를 내 평단가보다 높은 주요 지지선(20일선/POC/기준선)으로 상향하여 이익 보존선 설정. 목표가는 전고점/패턴 상단으로 상향 제시.
-2. 손실 구간 시: 최종 지지선 가격을 손절가로 설정.
+[판단 원칙 - 엄격한 추매/손절/목표가 규격]
+1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 확보 & RSI 70 미만 & 20일선/구름대 눌림목 지지 반등 시 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
+2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 다이버전스/쌍바닥 & POC 매물대 지지 확인 시 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
+3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
+4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
 
 [출력 양식 - 규격 엄수]
+파싱_추매타입: <불타기 OR 물타기 OR 없음>
+파싱_추매추천가: <숫자만 입력 ex: 74200 (없을 시 0)>
 파싱_Trailing손절가: <숫자만 입력 ex: 73500>
 파싱_동적목표가: <숫자만 입력 ex: 79000>
 상세가이드:
-결론: [관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
+결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
 
-• [추세/패턴] <평단가 대비 수익률, 최근 15일 캔들/거래량 수급 상태 및 포착된 차트 패턴(쌍바닥/컵앤핸들/N자반등 등)의 구체적 위치 진단>
+• [추세/패턴] <평단가 대비 수익률, 최근 15일 캔들/거래량 수급 상태 및 포착된 차트 패턴의 구체적 위치 진단>
 • [목표가 대응] <상단 전고점/매물대 저항선 근거로 동적 상향 목표가(또는 과열 시 일부 익절가) 수치 제시>
-• [이익 보존] <내 평단가보다 높게 설정할 Trailing Stop 손절가 수치와 그 지지선 근거(20일선/POC매물대 등) 제시>
+• [이익 보존] <Trailing Stop 손절가 수치와 그 지지선 근거 제시>
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
@@ -633,21 +741,27 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         
         stop_val = parse_price_from_text(content, "파싱_Trailing손절가")
         target_val = parse_price_from_text(content, "파싱_동적목표가")
+        pyramid_val = parse_price_from_text(content, "파싱_추매추천가")
         
+        type_match = re.search(r'파싱_추매타입:\s*(불타기|물타기)', content)
+        pyramid_type = type_match.group(1) if (type_match and pyramid_val and pyramid_val > 0) else None
+
         guide_match = re.search(r'상세가이드:\s*([\s\S]*)', content)
         guide_text = guide_match.group(1).strip() if guide_match else content
 
         save_ai_cache(cache_key, {
             "report": sanitize_text(guide_text),
             "stop_price": stop_val,
-            "target_price": target_val
+            "target_price": target_val,
+            "pyramid_price": pyramid_val if pyramid_type else None,
+            "pyramid_type": pyramid_type
         })
-        return sanitize_text(guide_text), stop_val, target_val
+        return sanitize_text(guide_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 오류 발생: {e}"
         print(f"⚠️ {stock_name} 마이 대시보드 AI 가이드 실패: {e}")
-        return err_msg, None, None
+        return err_msg, None, None, None, None
 
 # =========================================================
 # PART 1: 🇰🇷 국장(index.html) 분석
@@ -656,8 +770,27 @@ print("\n" + "="*60)
 print("🇰🇷 [PART 1] 한국 증시 수급 & 강세 테마주 동적 스캔 중...")
 print("="*60)
 
+kr_is_open, kr_open_msg = get_market_open_status("KR")
+kr_witching_alerts = get_witching_day_alert("KR")
+kr_econ_events = get_economic_calendar_events("KR")
+
 kr_7d_news = get_naver_7days_news()
 kr_market_status, kr_sentiment_briefing = analyze_7days_news_sentiment("대한민국 주식시장(국장)", kr_7d_news)
+
+# 상단 변동성 배너 생성
+kr_banner_items = kr_witching_alerts + kr_econ_events
+if not kr_is_open:
+    kr_banner_items.insert(0, f"🛑 <b>[오늘 휴장일]</b> {kr_open_msg} (시세는 직전 거래일 종가 기준입니다)")
+
+if kr_banner_items:
+    kr_banner_html = f"""
+    <div class="event-banner">
+        <div class="event-banner-title">🚨 [시장 변동성 주의] 주요 일정 & 만기일 캘린더</div>
+        <div class="event-banner-content">{'<br>'.join(kr_banner_items)}</div>
+    </div>
+    """
+else:
+    kr_banner_html = ""
 
 url_foreign = "https://m.stock.naver.com/api/json/sise/siseListJson.nhn?bizType=dealForeign&sosok=0"
 url_organ = "https://m.stock.naver.com/api/json/sise/siseListJson.nhn?bizType=dealOrgan&sosok=0"
@@ -805,7 +938,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         stop_loss_str = f"{int(round(ai_prices['stop'])):,}원" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
         target_price_str = f"{int(round(ai_prices['target1'])):,}원" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
-        # 차트 생성
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['BB_Upper'], line=dict(color='rgba(147, 51, 234, 0.3)', width=1), showlegend=False), row=1, col=1)
@@ -832,7 +964,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
-        # 모바일 터치 가드 레이아웃 설정
+        # 모바일 터치 고정 가드
         fig.update_layout(
             height=540, 
             margin=dict(l=10, r=10, t=10, b=40), 
@@ -884,8 +1016,26 @@ print("\n" + "="*60)
 print("🇺🇸 [PART 2] 미국 증시 스캔 & AI 분석 중...")
 print("="*60)
 
+us_is_open, us_open_msg = get_market_open_status("US")
+us_witching_alerts = get_witching_day_alert("US")
+us_econ_events = get_economic_calendar_events("US")
+
 us_7d_news = get_yahoo_7days_news()
 us_market_status, us_sentiment_briefing = analyze_7days_news_sentiment("미국 주식시장(미장)", us_7d_news)
+
+us_banner_items = us_witching_alerts + us_econ_events
+if not us_is_open:
+    us_banner_items.insert(0, f"🛑 <b>[오늘 휴장일]</b> {us_open_msg} (시세는 직전 거래일 종가 기준입니다)")
+
+if us_banner_items:
+    us_banner_html = f"""
+    <div class="event-banner">
+        <div class="event-banner-title">🚨 [시장 변동성 주의] 주요 일정 & 만기일 캘린더</div>
+        <div class="event-banner-content">{'<br>'.join(us_banner_items)}</div>
+    </div>
+    """
+else:
+    us_banner_html = ""
 
 def get_us_active_stocks():
     if TEST_MODE:
@@ -1020,7 +1170,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         stop_loss_str = f"${ai_prices['stop']:.2f}" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
         target_price_str = f"${ai_prices['target1']:.2f}" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
-        # 차트 생성
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['BB_Upper'], line=dict(color='rgba(147, 51, 234, 0.3)', width=1), showlegend=False), row=1, col=1)
@@ -1047,7 +1196,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
-        # 모바일 터치 가드 레이아웃 설정
         fig.update_layout(
             height=540, 
             margin=dict(l=10, r=10, t=10, b=40), 
@@ -1290,7 +1438,7 @@ for h in toss_holdings:
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
         print(f"  ⚡ [마이] {stock_name} 심도 3줄 가이드 AI 처리 중...")
-        ai_3line_comment, my_stop_val, my_target_val = generate_ai_toss_3line_analysis(
+        ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type = generate_ai_toss_3line_analysis(
             stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw
         )
 
@@ -1303,6 +1451,12 @@ for h in toss_holdings:
 
         my_stop_str = fmt_price(my_stop_val, is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
         my_target_str = fmt_price(my_target_val, is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+
+        # 1안: 추매 타점 포착 시에만 해당 행 추가
+        pyramid_row_html = ""
+        if my_pyramid_val and my_pyramid_type:
+            pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
+            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
 
         my_stock_cards_html += f"""
         <div class="card">
@@ -1320,6 +1474,7 @@ for h in toss_holdings:
                 <div class="report-line">차트 구조 : {bb_status} &nbsp;&nbsp;|&nbsp;&nbsp; {cloud_status}</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">{poc_formatted}</span></div>
                 <div class="report-line">RSI / MACD : {rsi_status} / {macd_status}</div>
+                {pyramid_row_html}
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : {my_stop_str}</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
@@ -1351,6 +1506,9 @@ html_style = """
     .btn-active { background: #2563eb; color: #ffffff; }
     .btn-inactive { background: #334155; color: #94a3b8; }
     .header { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
+    
+    .event-banner { background: #3b0764; border: 1px solid #a855f7; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13.5px; line-height: 1.7; color: #f3e8ff; }
+    .event-banner-title { font-weight: bold; color: #facc15; font-size: 15px; margin-bottom: 6px; }
     
     .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .macro-card { 
@@ -1430,9 +1588,9 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div>{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑]</div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑]</div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div>{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑]</div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑]</div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
 
 full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: {usd_krw_rate:,.1f} 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
 
