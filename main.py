@@ -270,7 +270,7 @@ def should_refresh_daily_pivot(market_type):
         return True
 
 # =========================================================
-# 📅 [증시 휴장일 판별 모듈 - pandas_market_calendars 활용]
+# 📅 [증시 휴장일 판별 모듈 (신호등 이모지 제거)]
 # =========================================================
 def get_market_open_status(market="KR"):
     if today_date.weekday() == 5:
@@ -283,10 +283,10 @@ def get_market_open_status(market="KR"):
         exchange_cal = mcal.get_calendar(cal_name)
         schedule = exchange_cal.schedule(start_date=today_date, end_date=today_date)
         if schedule.empty:
-            return False, "증시 공식 휴장일 🛑"
-        return True, "정상 개장일 🟢"
+            return False, "증시 공식 휴장일"
+        return True, "정상 개장일"
     except Exception:
-        return True, "개장일 🟢"
+        return True, "개장일"
 
 # =========================================================
 # 🧙‍♀️ [만기일 D-Day 연산 모듈 - 네 마녀/세 마녀의 날]
@@ -426,10 +426,10 @@ def get_kr_macro_data():
         m2_val_str = f"{fmt_num(m2_trillion)}조 원"
     else: m2_val_str = "4,210.5조 원"
     
-    m2_date_str = date_m2 if date_m2 else "최신 발표 기준 🟢"
+    m2_date_str = date_m2 if date_m2 else "최신 발표 기준"
     val_cli, unit_cli, date_cli = parse_te_summary_val(KR_CLI_URL)
     cli_val_str = f"{fmt_num(val_cli)} Pts" if val_cli else "101.20 Pts"
-    cli_date_str = date_cli if date_cli else "최신 발표 기준 🟢"
+    cli_date_str = date_cli if date_cli else "최신 발표 기준"
     val_vkospi = get_vkospi_naver()
     vix_val_str = f"{fmt_num(val_vkospi)} Pts" if val_vkospi is not None else "18.50 Pts"
 
@@ -447,10 +447,10 @@ def get_us_macro_data():
         m2_val_str = f"${fmt_num(val_trillion)} Trillion"
     else: m2_val_str = "$21.40 Trillion"
         
-    m2_date_str = date_m2 if date_m2 else "최신 발표 기준 🟢"
+    m2_date_str = date_m2 if date_m2 else "최신 발표 기준"
     val_cli, unit_cli, date_cli = parse_te_summary_val(US_CLI_URL)
     cli_val_str = f"{fmt_num(val_cli)} Pts" if val_cli else "102.10 Pts"
-    cli_date_str = date_cli if date_cli else "최신 발표 기준 🟢"
+    cli_date_str = date_cli if date_cli else "최신 발표 기준"
 
     try:
         vix_tk = yf.Ticker("^VIX").history(period="5d")
@@ -541,7 +541,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
             cached_data = ai_cache_store[cache_key]
             brief_time = cached_data.get('updated_at', now_str)
             return cached_data['status'], cached_data['briefing_html'], brief_time
-        return "보통 🟡", "분석 데이터를 불러올 수 없습니다.", now_str
+        return "보통", "분석 데이터를 불러올 수 없습니다.", now_str
 
     print(f"⚡ [뉴스 브리핑] {market_type} 신규 AI 종합 분석 요청 생성 중...")
     prompt = f"""
@@ -551,7 +551,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
     {news_text}
     
     [출력 양식]
-    상태: <긍정 🟢 OR 보통 🟡 OR 부정 🔴>
+    상태: <긍정 OR 보통 OR 부정>
     긍정1: <첫 번째 긍정 요소 요약>
     긍정2: <두 번째 긍정 요소 요약>
     긍정3: <세 번째 긍정 요소 요약>
@@ -569,7 +569,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
     """
     try:
         content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=800)
-        status_val = "보통 🟡"
+        status_val = "보통"
         status_match = re.search(r'상태:\s*(.*)', content)
         if status_match: status_val = status_match.group(1).strip()
 
@@ -595,7 +595,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
         return sanitize_text(status_val), raw_briefing_html, now_str
 
     except Exception as e:
-        return "보통 🟡", f"뉴스 분석 생성 안내: {e}", now_str
+        return "보통", f"뉴스 분석 생성 안내: {e}", now_str
 
 # =========================================================
 # 🛠️ 기술적 지표 & 파동 마디점 추출 유틸리티
@@ -867,7 +867,7 @@ kr_market_status, kr_sentiment_briefing, kr_briefing_time = analyze_7days_news_s
 
 kr_banner_items = kr_witching_alerts + kr_econ_events
 if not kr_is_open:
-    kr_banner_items.insert(0, f"🛑 <b>[오늘 휴장일]</b> {kr_open_msg} (시세는 직전 거래일 종가 기준입니다)")
+    kr_banner_items.insert(0, f"<b>[오늘 휴장일]</b> {kr_open_msg} (시세는 직전 거래일 종가 기준입니다)")
 
 if kr_banner_items:
     kr_banner_html = f"""
@@ -879,7 +879,6 @@ if kr_banner_items:
 else:
     kr_banner_html = ""
 
-# 한국장 08:30 기준 종목 리스트 갱신 여부 판단
 kr_needs_refresh = should_refresh_daily_pivot("대한민국 주식시장(국장)")
 kr_selected_cache_key = "SELECTED_KR_TARGETS"
 
@@ -924,11 +923,11 @@ else:
                 continue
             
             last_close = float(df_hist['Close'].iloc[-1])
-            if last_close < 1000: continue # 동전주 제외
+            if last_close < 1000: continue
                 
             avg_vol_5d = df_hist['Volume'].tail(5).mean()
             avg_trade_val_5d = avg_vol_5d * last_close
-            if avg_trade_val_5d < 10_000_000_000: continue # 100억 미만 컷
+            if avg_trade_val_5d < 10_000_000_000: continue
 
             last_high = float(df_hist['High'].iloc[-1])
             last_low = float(df_hist['Low'].iloc[-1])
@@ -936,7 +935,7 @@ else:
             candle_range = last_high - last_low
             upper_tail = last_high - max(last_close, last_open)
             
-            if candle_range > 0 and (upper_tail / candle_range) > 0.5: continue # 윗꼬리 설거지 캔들 제외
+            if candle_range > 0 and (upper_tail / candle_range) > 0.5: continue
 
             ma5 = df_hist['Close'].rolling(5).mean().iloc[-1]
             ma20 = df_hist['Close'].rolling(20).mean().iloc[-1]
@@ -1181,7 +1180,7 @@ us_market_status, us_sentiment_briefing, us_briefing_time = analyze_7days_news_s
 
 us_banner_items = us_witching_alerts + us_econ_events
 if not us_is_open:
-    us_banner_items.insert(0, f"🛑 <b>[오늘 휴장일]</b> {us_open_msg} (시세는 직전 거래일 종가 기준입니다)")
+    us_banner_items.insert(0, f"<b>[오늘 휴장일]</b> {us_open_msg} (시세는 직전 거래일 종가 기준입니다)")
 
 if us_banner_items:
     us_banner_html = f"""
@@ -1309,7 +1308,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         ma60_d = round(float(df_daily['MA60'].iloc[-1]), 2)
         ma120_d = round(float(df_daily['MA120'].iloc[-1]), 2)
         bb_up = round(float(df_daily['BB_Upper'].iloc[-1]), 2)
-        bb_low = round(float(df_daily['BB_Lower'].iloc[-1]), 2)
+        bb_low = round(float(df_daily['BB_Lower'].iloc[-1]) , 2)
         cloud_a = round(float(df_daily['Senkou_A'].iloc[-1]), 2)
         cloud_b = round(float(df_daily['Senkou_B'].iloc[-1]), 2)
         cloud_top = max(cloud_a, cloud_b)
@@ -1408,14 +1407,13 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 다중 계좌 및 해외주식 안전 수집
+# PART 3: 🎯 마이 대시보드(index3.html) - 미국 주식 파라미터 정밀 분리 연동
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 전 계좌(국내/해외) 잔고 수집 및 종목별 리포트 생성 중...")
 print("="*60)
 
 def sanitize_us_ticker(raw_ticker):
-    """토스 미국주식 티커 정제 (AAPL.US, TSLA_US, NVDA.O -> AAPL, TSLA, NVDA)"""
     if not raw_ticker: return ""
     t = str(raw_ticker).strip().upper()
     t = re.sub(r'[\._](US|O|N|A|K)$', '', t)
@@ -1435,65 +1433,67 @@ def get_toss_holdings():
             access_token = token_res.json().get("access_token")
             base_headers = {"Authorization": f"Bearer {access_token}", "x-api-key": TOSS_CLIENT_ID, "Content-Type": "application/json"}
             
-            # 1. 모든 계좌 리스트(국내/해외) 취득
+            # 1. 모든 계좌 리스트 취득
             acc_res = requests.get("https://openapi.tossinvest.com/api/v1/accounts", headers=base_headers, proxies=proxies, timeout=15)
             account_seqs = [1]
             if acc_res.status_code == 200:
                 acc_list = acc_res.json().get("result", [])
                 if isinstance(acc_list, list) and len(acc_list) > 0:
                     account_seqs = [acc.get("accountSeq", 1) for acc in acc_list if acc.get("accountSeq") is not None]
-                    account_seqs = list(dict.fromkeys(account_seqs)) # 중복 제거
+                    account_seqs = list(dict.fromkeys(account_seqs))
 
-            print(f"🔍 토스증권 연동 계좌 총 {len(account_seqs)}개 발견: {account_seqs}")
+            print(f"🔍 토스증권 연동 계좌 총 {len(account_seqs)}개: {account_seqs}")
             
             all_holdings = []
             seen_tickers = set()
 
-            # 2. 모든 계좌를 순회하며 국내/해외 종목 취합
+            # 2. 각 계좌별로 국내(KR)와 해외(US)를 각각 명시적 쿼리로 호출하여 합산
             for a_seq in account_seqs:
-                holdings_headers = base_headers.copy()
-                holdings_headers["X-Tossinvest-Account"] = str(a_seq)
-                
-                res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, proxies=proxies, timeout=15)
-                if res.status_code == 200:
-                    result_obj = res.json().get("result", {})
-                    items = []
-                    if isinstance(result_obj, dict):
-                        items = result_obj.get("items", []) or result_obj.get("holdings", [])
-                    elif isinstance(result_obj, list):
-                        items = result_obj
+                for target_mkt in ["KR", "US"]:
+                    holdings_headers = base_headers.copy()
+                    holdings_headers["X-Tossinvest-Account"] = str(a_seq)
+                    params = {"marketCountry": target_mkt}
+                    
+                    res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, params=params, proxies=proxies, timeout=15)
+                    if res.status_code == 200:
+                        result_obj = res.json().get("result", {})
+                        items = []
+                        if isinstance(result_obj, dict):
+                            items = result_obj.get("items", []) or result_obj.get("holdings", [])
+                        elif isinstance(result_obj, list):
+                            items = result_obj
 
-                    for item in items:
-                        raw_sym = str(item.get("symbol") or item.get("stockCode") or item.get("ticker") or "")
-                        name = str(item.get("name") or item.get("stockName") or raw_sym)
-                        avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or item.get("purchasePrice") or 0)
-                        qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
-                        curr = str(item.get("currency") or "").upper()
-                        mkt = str(item.get("marketCountry") or item.get("market") or "").upper()
+                        for item in items:
+                            raw_sym = str(item.get("symbol") or item.get("stockCode") or item.get("ticker") or "")
+                            name = str(item.get("name") or item.get("stockName") or raw_sym)
+                            avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or item.get("purchasePrice") or 0)
+                            qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
+                            curr = str(item.get("currency") or "").upper()
+                            mkt = str(item.get("marketCountry") or item.get("market") or target_mkt).upper()
 
-                        if not raw_sym or qty <= 0:
-                            continue
+                            if not raw_sym or qty <= 0:
+                                continue
 
-                        # 국내/해외 판별 강화
-                        is_kr_stock = True
-                        if curr == "USD" or mkt in ["US", "USA", "NASDAQ", "NYSE", "AMEX"]:
-                            is_kr_stock = False
-                        elif re.search(r'[A-Za-z]', raw_sym) and not raw_sym.endswith(('.KS', '.KQ')):
-                            is_kr_stock = False
-                        
-                        clean_sym = sanitize_us_ticker(raw_sym) if not is_kr_stock else raw_sym
-                        unique_key = f"{clean_sym}_{is_kr_stock}"
-                        
-                        if unique_key not in seen_tickers:
-                            seen_tickers.add(unique_key)
-                            all_holdings.append({
-                                "ticker": clean_sym,
-                                "name": name,
-                                "avg_price": avg_p,
-                                "quantity": qty,
-                                "market": "KR" if is_kr_stock else "US",
-                                "currency": "KRW" if is_kr_stock else "USD"
-                            })
+                            # 국내/해외 종목 여부 판별
+                            is_kr_stock = True
+                            if target_mkt == "US" or curr == "USD" or mkt in ["US", "USA", "NASDAQ", "NYSE", "AMEX"]:
+                                is_kr_stock = False
+                            elif re.search(r'[A-Za-z]', raw_sym) and not raw_sym.endswith(('.KS', '.KQ')):
+                                is_kr_stock = False
+                            
+                            clean_sym = sanitize_us_ticker(raw_sym) if not is_kr_stock else raw_sym
+                            unique_key = f"{clean_sym}_{is_kr_stock}"
+                            
+                            if unique_key not in seen_tickers:
+                                seen_tickers.add(unique_key)
+                                all_holdings.append({
+                                    "ticker": clean_sym,
+                                    "name": name,
+                                    "avg_price": avg_p,
+                                    "quantity": qty,
+                                    "market": "KR" if is_kr_stock else "US",
+                                    "currency": "KRW" if is_kr_stock else "USD"
+                                })
 
             if all_holdings:
                 print(f"🎉 토스증권 전 계좌 잔고 합산 성공! 총 {len(all_holdings)}개 종목 수신 완료:")
@@ -1537,7 +1537,7 @@ for h in toss_holdings:
         if is_krw:
             yf_ticker = f"{pure_code}.KS" if not ticker.endswith((".KS", ".KQ")) else ticker
         else:
-            yf_ticker = pure_code # 미국 주식은 순수 영문 티커 사용
+            yf_ticker = pure_code
         
         df_daily = None
         try:
