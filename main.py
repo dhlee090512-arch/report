@@ -819,12 +819,6 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 # 🏷️ [N일 연속 추천 뱃지 계산 모듈]
 # =========================================================
 def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
-    """
-    종목별 연속 추천 일수 추적:
-    - 08:30 / 22:00 신규 주기(is_new_pivot_cycle=True) 도래 시:
-      기존 연속 선정 여부에 따라 카운트 +1 또는 1로 세팅
-    - 장중 수시 실행 시: 기존 카운트 유지
-    """
     tracker_key = "RECOMMEND_DAYS_TRACKER"
     tracker = ai_cache_store.get(tracker_key, {})
     item_info = tracker.get(symbol, {"days": 1, "last_pivot_date": ""})
@@ -837,7 +831,6 @@ def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
             try:
                 last_dt = datetime.datetime.strptime(last_date_str, "%Y-%m-%d").date()
                 delta_days = (today_date - last_dt).days
-                # 주말 포함 1~3일 이내 연속 유지 시 +1
                 if 1 <= delta_days <= 3:
                     item_info["days"] = item_info.get("days", 1) + 1
                 elif delta_days > 3:
@@ -1415,11 +1408,18 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) 분석
+# PART 3: 🎯 마이 대시보드(index3.html) - 다중 계좌 및 해외주식 안전 수집
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 잔고 수집 및 종목별 맞춤 UI 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 전 계좌(국내/해외) 잔고 수집 및 종목별 리포트 생성 중...")
 print("="*60)
+
+def sanitize_us_ticker(raw_ticker):
+    """토스 미국주식 티커 정제 (AAPL.US, TSLA_US, NVDA.O -> AAPL, TSLA, NVDA)"""
+    if not raw_ticker: return ""
+    t = str(raw_ticker).strip().upper()
+    t = re.sub(r'[\._](US|O|N|A|K)$', '', t)
+    return t
 
 def get_toss_holdings():
     if not TOSS_CLIENT_ID or not TOSS_CLIENT_SECRET:
@@ -1435,34 +1435,72 @@ def get_toss_holdings():
             access_token = token_res.json().get("access_token")
             base_headers = {"Authorization": f"Bearer {access_token}", "x-api-key": TOSS_CLIENT_ID, "Content-Type": "application/json"}
             
+            # 1. 모든 계좌 리스트(국내/해외) 취득
             acc_res = requests.get("https://openapi.tossinvest.com/api/v1/accounts", headers=base_headers, proxies=proxies, timeout=15)
-            account_seq = 1
+            account_seqs = [1]
             if acc_res.status_code == 200:
                 acc_list = acc_res.json().get("result", [])
                 if isinstance(acc_list, list) and len(acc_list) > 0:
-                    account_seq = acc_list[0].get("accountSeq", 1)
+                    account_seqs = [acc.get("accountSeq", 1) for acc in acc_list if acc.get("accountSeq") is not None]
+                    account_seqs = list(dict.fromkeys(account_seqs)) # 중복 제거
 
-            holdings_headers = base_headers.copy()
-            holdings_headers["X-Tossinvest-Account"] = str(account_seq)
+            print(f"🔍 토스증권 연동 계좌 총 {len(account_seqs)}개 발견: {account_seqs}")
             
-            res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, proxies=proxies, timeout=15)
-            if res.status_code == 200:
-                result_obj = res.json().get("result", {})
-                items = result_obj.get("items", []) if isinstance(result_obj, dict) else []
+            all_holdings = []
+            seen_tickers = set()
+
+            # 2. 모든 계좌를 순회하며 국내/해외 종목 취합
+            for a_seq in account_seqs:
+                holdings_headers = base_headers.copy()
+                holdings_headers["X-Tossinvest-Account"] = str(a_seq)
                 
-                holdings = []
-                for item in items:
-                    holdings.append({
-                        "ticker": str(item.get("symbol", "")),
-                        "name": str(item.get("name", "")),
-                        "avg_price": float(item.get("averagePurchasePrice", 0)),
-                        "quantity": float(item.get("quantity", 0)),
-                        "market": str(item.get("marketCountry", "KR")),
-                        "currency": str(item.get("currency", "KRW"))
-                    })
-                if holdings:
-                    print(f"🎉 토스증권 API 연동 성공! 실제 보유 종목 총 {len(holdings)}개 수신 완료")
-                    return holdings
+                res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, proxies=proxies, timeout=15)
+                if res.status_code == 200:
+                    result_obj = res.json().get("result", {})
+                    items = []
+                    if isinstance(result_obj, dict):
+                        items = result_obj.get("items", []) or result_obj.get("holdings", [])
+                    elif isinstance(result_obj, list):
+                        items = result_obj
+
+                    for item in items:
+                        raw_sym = str(item.get("symbol") or item.get("stockCode") or item.get("ticker") or "")
+                        name = str(item.get("name") or item.get("stockName") or raw_sym)
+                        avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or item.get("purchasePrice") or 0)
+                        qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
+                        curr = str(item.get("currency") or "").upper()
+                        mkt = str(item.get("marketCountry") or item.get("market") or "").upper()
+
+                        if not raw_sym or qty <= 0:
+                            continue
+
+                        # 국내/해외 판별 강화
+                        is_kr_stock = True
+                        if curr == "USD" or mkt in ["US", "USA", "NASDAQ", "NYSE", "AMEX"]:
+                            is_kr_stock = False
+                        elif re.search(r'[A-Za-z]', raw_sym) and not raw_sym.endswith(('.KS', '.KQ')):
+                            is_kr_stock = False
+                        
+                        clean_sym = sanitize_us_ticker(raw_sym) if not is_kr_stock else raw_sym
+                        unique_key = f"{clean_sym}_{is_kr_stock}"
+                        
+                        if unique_key not in seen_tickers:
+                            seen_tickers.add(unique_key)
+                            all_holdings.append({
+                                "ticker": clean_sym,
+                                "name": name,
+                                "avg_price": avg_p,
+                                "quantity": qty,
+                                "market": "KR" if is_kr_stock else "US",
+                                "currency": "KRW" if is_kr_stock else "USD"
+                            })
+
+            if all_holdings:
+                print(f"🎉 토스증권 전 계좌 잔고 합산 성공! 총 {len(all_holdings)}개 종목 수신 완료:")
+                for h in all_holdings:
+                    print(f"   • [{h['market']}] {h['name']} ({h['ticker']}) - {h['quantity']}주 @ {h['avg_price']} {h['currency']}")
+                return all_holdings
+
     except Exception as e:
         print(f"⚠️ 토스 API 호출 오류: {e}")
     return get_mock_holdings()
@@ -1490,11 +1528,16 @@ for h in toss_holdings:
         currency = h['currency']
         quantity = h['quantity']
         
-        pure_code = ticker.split('.')[0]
         is_krw = True if (market == 'KR' or currency == 'KRW') else False
         fx = usd_krw_rate if not is_krw else 1.0
         
-        yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
+        pure_code = ticker.split('.')[0] if is_krw else ticker
+        
+        # yfinance 티커 안전 매핑
+        if is_krw:
+            yf_ticker = f"{pure_code}.KS" if not ticker.endswith((".KS", ".KQ")) else ticker
+        else:
+            yf_ticker = pure_code # 미국 주식은 순수 영문 티커 사용
         
         df_daily = None
         try:
@@ -1608,7 +1651,7 @@ for h in toss_holdings:
             macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
             ma_status = f"정배열 지지 🟢" if current_price >= ma20_d else "역배열/혼조세 🔴"
 
-        tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
+        tv_prefix = f"KRX-{pure_code}" if is_krw else pure_code
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
         ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
@@ -1630,11 +1673,14 @@ for h in toss_holdings:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
             pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
 
+        display_symbol = pure_code if is_krw else ticker
+        country_badge = "🇰🇷" if is_krw else "🇺🇸"
+
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{stock_name} ({pure_code}) - {fmt_num(quantity)}주</div>
+                    <div class="report-header">{country_badge} {stock_name} ({display_symbol}) - {fmt_num(quantity)}주</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
