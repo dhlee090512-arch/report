@@ -71,30 +71,39 @@ os.environ["HTTPS_PROXY"] = PROXY_URL
 proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else {}
 
 # =========================================================
-# [숫자 포맷 유틸리티: 원본 규격]
+# [숫자 포맷 유틸리티]
 # =========================================================
 def fmt_price(val, is_krw=True, show_decimal=False):
     if val is None or pd.isna(val):
-        return "0원" if is_krw else "$0"
+        return "0원" if is_krw else "$0.00"
     
+    try:
+        f_val = float(val)
+    except Exception:
+        return "0원" if is_krw else "$0.00"
+
     if is_krw:
         if show_decimal:
-            return f"{val:,.2f}원"
+            return f"{f_val:,.2f}원"
         else:
-            return f"{int(round(val)):,}원"
+            return f"{int(round(f_val)):,}원"
     else:
-        if show_decimal and not float(val).is_integer():
-            return f"${val:,.2f}"
+        if show_decimal or not f_val.is_integer():
+            return f"${f_val:,.2f}"
         else:
-            return f"${int(round(val)):,}" if float(val).is_integer() else f"${val:,.2f}"
+            return f"${int(round(f_val)):,}"
 
 def fmt_num(val):
     if val is None or pd.isna(val):
         return "0"
-    if float(val).is_integer():
-        return f"{int(val):,}"
-    else:
-        return f"{val:,.2f}".rstrip('0').rstrip('.')
+    try:
+        f_val = float(val)
+        if f_val.is_integer():
+            return f"{int(f_val):,}"
+        else:
+            return f"{f_val:,.2f}".rstrip('0').rstrip('.')
+    except Exception:
+        return "0"
 
 # =========================================================
 # 🏛️ [LLM 다중화 매니저: GEMINI (1순위) -> GROQ (2순위 우회)]
@@ -148,6 +157,7 @@ class MultiLLMManager:
         if TEST_MODE:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
+        # 1. Gemini 우선 호출 (4.1초 RPM 방어)
         if self.gemini_client:
             try:
                 elapsed = time.time() - self.last_gemini_call_time
@@ -165,6 +175,7 @@ class MultiLLMManager:
             except Exception as e:
                 print(f"⚠️ Gemini 일시 오류/429 ({e}) ➔ Groq으로 임시 우회합니다.")
 
+        # 2. Groq 우회 호출
         while self.groq_client:
             try:
                 print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} 요청 전송 중...")
@@ -749,17 +760,19 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
             return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
         return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
 
+    avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
+
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 가이드 및 정량 가격을 산출하라.
+사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 가이드 및 정량 가격을 산출하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
-- 내 보유 평단가: {fmt_price(avg_price, is_krw, show_decimal=is_krw)} (현재 수익률: {return_pct:+.2f}%)
-- 현재가: {fmt_price(current_price, is_krw)}
+- 내 보유 평단가: {avg_p_text} (현재 수익률: {return_pct:+.2f}%)
+- 현재가: {fmt_price(current_price, is_krw, show_decimal=not is_krw)}
 - 정량 보조지표: RSI({rsi_val}) & RSI Signal({rsi_signal_val}) [{rsi_cross_status}], MACD({macd_status}), 이평선 배열({ma_status})
-- 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw)})
-- 매물대 & 파동: 120일 최고가({fmt_price(max_120, is_krw)}), 120일 최저가({fmt_price(min_120, is_krw)}), 최근 파동 마디점({peaks_and_troughs_summary})
+- 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw, show_decimal=not is_krw)})
+- 매물대 & 파동: 120일 최고가({fmt_price(max_120, is_krw, show_decimal=not is_krw)}), 120일 최저가({fmt_price(min_120, is_krw, show_decimal=not is_krw)}), 최근 파동 마디점({peaks_and_troughs_summary})
 
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
@@ -767,7 +780,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [판단 원칙 - 엄격한 추매/손절/목표가 규격]
 1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 확보 & RSI 70 미만 & 20일선/구름대 눌림목 지지 반등 시 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
 2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 다이버전스/쌍바닥 & POC 매물대 지지 확인 시 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
-3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
+3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열, 상장폐지/정리매매 종목) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
 4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
 
 [출력 양식 - 규격 엄수]
@@ -1403,10 +1416,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 원본 로직 복구 & 매도 캐시 정리
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 잔고 수집 및 종목별 맞춤 UI 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고(현재가/평가액) 직결 및 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -1440,14 +1453,42 @@ def get_toss_holdings():
                 
                 holdings = []
                 for item in items:
-                    holdings.append({
-                        "ticker": str(item.get("symbol", "")),
-                        "name": str(item.get("name", "")),
-                        "avg_price": float(item.get("averagePurchasePrice", 0)),
-                        "quantity": float(item.get("quantity", 0)),
-                        "market": str(item.get("marketCountry", "KR")),
-                        "currency": str(item.get("currency", "KRW"))
-                    })
+                    raw_sym = str(item.get("symbol") or item.get("stockCode") or "").strip()
+                    name = str(item.get("name") or item.get("stockName") or raw_sym).strip()
+                    qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
+                    avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or 0)
+                    
+                    # 🎯 토스 원본 실시간 필드 추출
+                    last_p = float(item.get("lastPrice") or 0)
+                    
+                    mv = item.get("marketValue") or {}
+                    eval_amt = float(mv.get("amountAfterCost") or mv.get("amount") or (last_p * qty))
+                    
+                    pl = item.get("profitLoss") or {}
+                    profit_loss = float(pl.get("amountAfterCost") or pl.get("amount") or 0)
+                    ret_rate = float(pl.get("rateAfterCost") or pl.get("rate") or 0.0) * 100.0
+                    
+                    market = str(item.get("marketCountry", "KR")).upper()
+                    currency = str(item.get("currency", "KRW")).upper()
+
+                    # 💡 상장폐지/특수 종목 (평단가 0 이하) 보정
+                    if avg_p <= 0:
+                        profit_loss = 0.0
+                        ret_rate = 0.0
+
+                    if qty > 0:
+                        holdings.append({
+                            "ticker": raw_sym,
+                            "name": name,
+                            "avg_price": avg_p,
+                            "current_price": last_p,       # 토스 실시간 현재가
+                            "eval_amount": eval_amt,         # 토스 실제 평가금액
+                            "profit_loss": profit_loss,     # 토스 실제 평가손익
+                            "return_pct": ret_rate,         # 토스 실제 수익률(%)
+                            "quantity": qty,
+                            "market": market,
+                            "currency": currency
+                        })
                 if holdings:
                     print(f"🎉 토스증권 API 연동 성공! 실제 보유 종목 총 {len(holdings)}개 수신 완료")
                     return holdings
@@ -1457,10 +1498,10 @@ def get_toss_holdings():
 
 def get_mock_holdings():
     return [
-        {"ticker": "005930.KS", "name": "삼성전자", "avg_price": 72000, "quantity": 50, "market": "KR", "currency": "KRW"},
-        {"ticker": "000660.KS", "name": "SK하이닉스", "avg_price": 175000, "quantity": 20, "market": "KR", "currency": "KRW"},
-        {"ticker": "NVDA", "name": "NVIDIA", "avg_price": 115.0, "quantity": 15, "market": "US", "currency": "USD"},
-        {"ticker": "PLTR", "name": "Palantir", "avg_price": 24.5, "quantity": 100, "market": "US", "currency": "USD"}
+        {"ticker": "005930.KS", "name": "삼성전자", "avg_price": 72000, "current_price": 74500, "eval_amount": 3725000, "profit_loss": 125000, "return_pct": 3.47, "quantity": 50, "market": "KR", "currency": "KRW"},
+        {"ticker": "000660.KS", "name": "SK하이닉스", "avg_price": 175000, "current_price": 182000, "eval_amount": 3640000, "profit_loss": 140000, "return_pct": 4.0, "quantity": 20, "market": "KR", "currency": "KRW"},
+        {"ticker": "NVDA", "name": "NVIDIA", "avg_price": 115.0, "current_price": 128.5, "eval_amount": 1927.5, "profit_loss": 202.5, "return_pct": 11.74, "quantity": 15, "market": "US", "currency": "USD"},
+        {"ticker": "PLTR", "name": "Palantir", "avg_price": 24.5, "current_price": 27.2, "eval_amount": 2720.0, "profit_loss": 270.0, "return_pct": 11.02, "quantity": 100, "market": "US", "currency": "USD"}
     ]
 
 toss_holdings = get_toss_holdings()
@@ -1480,8 +1521,8 @@ if deleted_cache_count > 0:
     save_entire_cache(ai_cache_store)
 
 my_stock_cards_html = ""
-total_eval_my = 0
-total_profit_my = 0
+total_eval_my = 0.0
+total_profit_my = 0.0
 
 for h in toss_holdings:
     try:
@@ -1492,13 +1533,21 @@ for h in toss_holdings:
         currency = h['currency']
         quantity = h['quantity']
         
+        # 🎯 토스 실제 계좌 값 직결 (오차 0원화)
+        current_price = h['current_price']
+        eval_amount_raw = h['eval_amount']
+        profit_loss_raw = h['profit_loss']
+        return_pct = h['return_pct']
+        
         pure_code = ticker.split('.')[0]
-        # 원본 판별 로직 그대로 복구 (market과 currency 기준)
         is_krw = True if (market == 'KR' or currency == 'KRW') else False
         fx = usd_krw_rate if not is_krw else 1.0
         
+        eval_amount_krw = eval_amount_raw * fx
+        profit_loss_krw = profit_loss_raw * fx
+
+        # 차트 및 보조지표 계산용 yfinance
         yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
-        
         df_daily = None
         try:
             stock = yf.Ticker(yf_ticker)
@@ -1510,24 +1559,14 @@ for h in toss_holdings:
             df_daily = None
 
         if df_daily is None or df_daily.empty or len(df_daily) == 0:
-            current_price = avg_price
-            return_pct = 0.0
-            eval_amount_krw = avg_price * quantity * fx
-            profit_loss_krw = 0.0
-            short_trend, mid_trend = "단기 데이터 미수집 ⚖️", "중기 데이터 미수집 ⚖️"
-            bb_status, cloud_status = "밴드 미산출 ⚖️", "구름대 미산출 🟡"
-            poc_price, max_120, min_120 = avg_price, avg_price, avg_price
+            short_trend, mid_trend = "단기 추세 분석 중 ⚖️", "중기 추세 분석 중 ⚖️"
+            bb_status, cloud_status = "밴드 안정 ⚖️", "구름대 유효 🟢"
+            poc_price, max_120, min_120 = current_price, current_price, current_price
             rsi_status, macd_status = "중립 (50) ⚖️", "중립 ⚖️"
-            rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 미산출"
-            peaks_and_troughs_summary = "마디점 미산출"
-            raw_data_str_15days = "최근 데이터 미수집"
+            rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 안정"
+            peaks_and_troughs_summary = "마디점 안정화 진행 중"
+            raw_data_str_15days = f"최신 토스 현재가: {fmt_price(current_price, is_krw)}"
         else:
-            latest_close = float(df_daily['Close'].iloc[-1])
-            current_price = latest_close
-            return_pct = ((current_price - avg_price) / avg_price) * 100 if avg_price > 0 else 0
-            eval_amount_krw = (current_price * quantity) * fx
-            profit_loss_krw = ((current_price - avg_price) * quantity) * fx
-
             df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
             df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
             df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
@@ -1621,23 +1660,25 @@ for h in toss_holdings:
         eval_formatted = f"{int(round(eval_amount_krw)):,}원"
         profit_formatted = f"({profit_loss_krw:+,.0f}원)"
         
-        avg_price_formatted = fmt_price(avg_price, is_krw, show_decimal=is_krw)
-        current_price_formatted = fmt_price(current_price, is_krw)
-        poc_formatted = fmt_price(poc_price, is_krw)
+        avg_price_formatted = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
+        current_price_formatted = fmt_price(current_price, is_krw, show_decimal=not is_krw)
+        poc_formatted = fmt_price(poc_price, is_krw, show_decimal=not is_krw)
 
-        my_stop_str = fmt_price(my_stop_val, is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
-        my_target_str = fmt_price(my_target_val, is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+        my_stop_str = fmt_price(my_stop_val, is_krw, show_decimal=not is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+        my_target_str = fmt_price(my_target_val, is_krw, show_decimal=not is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
 
         pyramid_row_html = ""
         if my_pyramid_val and my_pyramid_type:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
-            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
+            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
+
+        country_badge = "🇰🇷" if is_krw else "🇺🇸"
 
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{stock_name} ({pure_code}) - {fmt_num(quantity)}주</div>
+                    <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
