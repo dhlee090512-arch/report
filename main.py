@@ -71,7 +71,7 @@ os.environ["HTTPS_PROXY"] = PROXY_URL
 proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else {}
 
 # =========================================================
-# [숫자 포맷 유틸리티: NaN 완전 방어 및 소수점 안전 처리]
+# [숫자 포맷 및 판별 유틸리티: NaN 안전 방어]
 # =========================================================
 def fmt_price(val, is_krw=True, show_decimal=False):
     if val is None or pd.isna(val):
@@ -106,7 +106,7 @@ def fmt_num(val):
         return "0"
 
 def is_korean_ticker(raw_sym):
-    """한국 거래소 단축코드 판별 (6자리 숫자 또는 영문혼합 e.g. 005930, 0036D0, 0118S0)"""
+    """한국 거래소 단축코드 판별 (6자리 숫자/영문혼합 e.g. 005930, 0036D0, 0118S0)"""
     if not raw_sym: return False
     clean = str(raw_sym).strip().upper()
     if clean.endswith(('.KS', '.KQ')): return True
@@ -238,6 +238,13 @@ def save_ai_cache(key, data_dict):
             json.dump(cache, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"⚠️ 캐시 저장 실패 ({key}): {e}")
+
+def save_entire_cache(full_cache_dict):
+    try:
+        with open(CACHE_FILE_NAME, "w", encoding="utf-8") as f:
+            json.dump(full_cache_dict, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"⚠️ 전체 캐시 파일 저장 실패: {e}")
 
 ai_cache_store = load_ai_cache()
 
@@ -1414,10 +1421,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 미국/국내 완전 무결 판별 및 렌더링
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 잔고 동기화 & 캐시 정리
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 전 계좌(국내/해외) 잔고 수집 및 종목별 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 잔고 수집 및 AI 캐시 스마트 동기화 중...")
 print("="*60)
 
 def sanitize_us_ticker(raw_ticker):
@@ -1459,13 +1466,13 @@ def get_toss_holdings():
                 
                 # 일반 holdings 및 overseas holdings 엔드포인트 전수 시도
                 endpoints = [
-                    ("https://openapi.tossinvest.com/api/v1/holdings", None),
-                    ("https://openapi.tossinvest.com/api/v1/overseas/holdings", None)
+                    "https://openapi.tossinvest.com/api/v1/holdings",
+                    "https://openapi.tossinvest.com/api/v1/overseas/holdings"
                 ]
                 
-                for ep_url, ep_params in endpoints:
+                for ep_url in endpoints:
                     try:
-                        res = requests.get(ep_url, headers=holdings_headers, params=ep_params, proxies=proxies, timeout=15)
+                        res = requests.get(ep_url, headers=holdings_headers, proxies=proxies, timeout=15)
                         if res.status_code == 200:
                             result_obj = res.json().get("result", {})
                             items = []
@@ -1483,7 +1490,6 @@ def get_toss_holdings():
                                 if not raw_sym or qty <= 0:
                                     continue
 
-                                # 💡 [절대 기준 판별] 한국 거래소 표준 코드 규격이면 무조건 KR, 아니면 US
                                 is_kr_stock = is_korean_ticker(raw_sym)
                                 clean_sym = raw_sym if is_kr_stock else sanitize_us_ticker(raw_sym)
                                 
@@ -1521,8 +1527,22 @@ def get_mock_holdings():
     ]
 
 toss_holdings = get_toss_holdings()
-my_stock_cards_html = ""
 
+# 💡 [매도 종목 캐시 자동 정리]: 현재 계좌에 없는 종목은 ai_cache에서 제거
+currently_held_symbols = set(h['ticker'] for h in toss_holdings)
+deleted_cache_count = 0
+for key in list(ai_cache_store.keys()):
+    if key.startswith("TOSS_MY_"):
+        cached_sym = key.replace("TOSS_MY_", "")
+        if cached_sym not in currently_held_symbols:
+            print(f"🗑️ [매도 감지] 계좌에 없는 종목 캐시 삭제: {cached_sym}")
+            del ai_cache_store[key]
+            deleted_cache_count += 1
+
+if deleted_cache_count > 0:
+    save_entire_cache(ai_cache_store)
+
+my_stock_cards_html = ""
 total_eval_my = 0.0
 total_profit_my = 0.0
 
@@ -1535,13 +1555,11 @@ for h in toss_holdings:
         currency = h['currency']
         quantity = float(h['quantity'])
         
-        # 한국/미국 주식 구분 절대 보장
         is_krw = is_korean_ticker(ticker)
         fx = 1.0 if is_krw else usd_krw_rate
         
         pure_code = ticker.split('.')[0] if is_krw else ticker
         
-        # yfinance 티커 안전 매핑 (.KS / .KQ 자동 탐색)
         df_daily = None
         if is_krw:
             for suffix in [".KS", ".KQ"]:
