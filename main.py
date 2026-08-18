@@ -71,30 +71,46 @@ os.environ["HTTPS_PROXY"] = PROXY_URL
 proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else {}
 
 # =========================================================
-# [숫자 포맷 유틸리티: 원화/달러 철저한 분리 표기]
+# [숫자 포맷 유틸리티: NaN 완전 방어 및 소수점 안전 처리]
 # =========================================================
 def fmt_price(val, is_krw=True, show_decimal=False):
     if val is None or pd.isna(val):
-        return "0원" if is_krw else "$0"
+        return "0원" if is_krw else "$0.00"
     
+    try:
+        f_val = float(val)
+    except Exception:
+        return "0원" if is_krw else "$0.00"
+
     if is_krw:
         if show_decimal:
-            return f"{val:,.2f}원"
+            return f"{f_val:,.2f}원"
         else:
-            return f"{int(round(val)):,}원"
+            return f"{int(round(f_val)):,}원"
     else:
-        if show_decimal and not float(val).is_integer():
-            return f"${val:,.2f}"
+        if show_decimal or not f_val.is_integer():
+            return f"${f_val:,.2f}"
         else:
-            return f"${int(round(val)):,}" if float(val).is_integer() else f"${val:,.2f}"
+            return f"${int(round(f_val)):,}"
 
 def fmt_num(val):
     if val is None or pd.isna(val):
         return "0"
-    if float(val).is_integer():
-        return f"{int(val):,}"
-    else:
-        return f"{val:,.2f}".rstrip('0').rstrip('.')
+    try:
+        f_val = float(val)
+        if f_val.is_integer():
+            return f"{int(f_val):,}"
+        else:
+            return f"{f_val:,.2f}".rstrip('0').rstrip('.')
+    except Exception:
+        return "0"
+
+def is_korean_ticker(raw_sym):
+    """한국 거래소 단축코드 판별 (6자리 숫자 또는 영문혼합 e.g. 005930, 0036D0, 0118S0)"""
+    if not raw_sym: return False
+    clean = str(raw_sym).strip().upper()
+    if clean.endswith(('.KS', '.KQ')): return True
+    return bool(re.match(r'^[0-9]{5}[0-9A-Za-z]$', clean))
 
 # =========================================================
 # 🏛️ [LLM 다중화 매니저: GEMINI (1순위) -> GROQ (2순위 우회)]
@@ -226,7 +242,6 @@ def save_ai_cache(key, data_dict):
 ai_cache_store = load_ai_cache()
 
 def is_cache_valid(cache_key, max_hours):
-    """일반 종목 분석용: max_hours(4시간) 경과 여부 검사"""
     if cache_key not in ai_cache_store:
         return False
     cached_data = ai_cache_store[cache_key]
@@ -241,11 +256,6 @@ def is_cache_valid(cache_key, max_hours):
         return False
 
 def should_refresh_daily_pivot(market_type):
-    """
-    한국장: 매일 08:30 KST 기준 1회 갱신
-    미국장: 매일 22:00 KST 기준 1회 갱신
-    (뉴스 브리핑과 종목 리스트 갱신에 공통 적용)
-    """
     cache_key = f"MARKET_{market_type}"
     if cache_key not in ai_cache_store:
         return True
@@ -270,7 +280,7 @@ def should_refresh_daily_pivot(market_type):
         return True
 
 # =========================================================
-# 📅 [증시 휴장일 판별 모듈 (신호등 이모지 제거)]
+# 📅 [증시 휴장일 판별 모듈 (신호등 이모지 완전 제거)]
 # =========================================================
 def get_market_open_status(market="KR"):
     if today_date.weekday() == 5:
@@ -529,7 +539,6 @@ def sanitize_text(text):
 def analyze_7days_news_sentiment(market_type, news_text):
     cache_key = f"MARKET_{market_type}"
 
-    # 기준 시점(한국 08:30 / 미국 22:00) 갱신 조건 미충족 시 캐시 100% 재사용
     if not should_refresh_daily_pivot(market_type):
         print(f"📦 [뉴스 브리핑] {market_type} 당일 기준 시점 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
@@ -639,7 +648,6 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
 
-    # 직전 업데이트 4시간 이내 캐시가 있다면 AI 호출 100% 스킵
     if is_cache_valid(cache_key, max_hours=4):
         print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
@@ -739,7 +747,6 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
     cache_key = f"TOSS_MY_{symbol}"
     currency_symbol = "원" if is_krw else "$"
 
-    # 직전 업데이트 4시간 이내 캐시가 있다면 AI 호출 100% 스킵
     if is_cache_valid(cache_key, max_hours=4):
         print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
@@ -759,11 +766,11 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
-- 내 보유 평단가: {fmt_price(avg_price, is_krw, show_decimal=is_krw)} (현재 수익률: {return_pct:+.2f}%)
-- 현재가: {fmt_price(current_price, is_krw)}
+- 내 보유 평단가: {fmt_price(avg_price, is_krw, show_decimal=True)} (현재 수익률: {return_pct:+.2f}%)
+- 현재가: {fmt_price(current_price, is_krw, show_decimal=not is_krw)}
 - 정량 보조지표: RSI({rsi_val}) & RSI Signal({rsi_signal_val}) [{rsi_cross_status}], MACD({macd_status}), 이평선 배열({ma_status})
-- 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw)})
-- 매물대 & 파동: 120일 최고가({fmt_price(max_120, is_krw)}), 120일 최저가({fmt_price(min_120, is_krw)}), 최근 파동 마디점({peaks_and_troughs_summary})
+- 차트 구조: 볼린저 밴드({bb_status}), 일목 구름대({cloud_status}), 매물대 POC({fmt_price(poc_price, is_krw, show_decimal=not is_krw)})
+- 매물대 & 파동: 120일 최고가({fmt_price(max_120, is_krw, show_decimal=not is_krw)}), 120일 최저가({fmt_price(min_120, is_krw, show_decimal=not is_krw)}), 최근 파동 마디점({peaks_and_troughs_summary})
 
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
@@ -1028,12 +1035,12 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
             price_bins = pd.cut(df_recent120['Close'], bins=num_bins)
             vol_by_price = df_recent120.groupby(price_bins, observed=False)['Volume'].sum()
             poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
-            poc_price = int(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else int(df_recent120['Close'].mean())
+            poc_price = float(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else float(df_recent120['Close'].mean())
         except Exception:
-            poc_price = int(df_recent120['Close'].mean())
+            poc_price = float(df_recent120['Close'].mean())
 
-        max_120 = int(df_recent120['High'].max())
-        min_120 = int(df_recent120['Low'].min())
+        max_120 = float(df_recent120['High'].max())
+        min_120 = float(df_recent120['Low'].min())
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=True)
 
         df_daily = df_daily.ffill().bfill()
@@ -1061,14 +1068,14 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         macd_val = float(df_daily['MACD'].iloc[-1])
         signal_val = float(df_daily['Signal'].iloc[-1])
         
-        latest_close = int(df_daily['Close'].iloc[-1])
-        ma20_d = int(df_daily['MA20'].iloc[-1])
-        ma60_d = int(df_daily['MA60'].iloc[-1])
-        ma120_d = int(df_daily['MA120'].iloc[-1])
-        bb_up = int(df_daily['BB_Upper'].iloc[-1])
-        bb_low = int(df_daily['BB_Lower'].iloc[-1])
-        cloud_a = int(df_daily['Senkou_A'].iloc[-1])
-        cloud_b = int(df_daily['Senkou_B'].iloc[-1])
+        latest_close = float(df_daily['Close'].iloc[-1])
+        ma20_d = float(df_daily['MA20'].iloc[-1])
+        ma60_d = float(df_daily['MA60'].iloc[-1])
+        ma120_d = float(df_daily['MA120'].iloc[-1])
+        bb_up = float(df_daily['BB_Upper'].iloc[-1])
+        bb_low = float(df_daily['BB_Lower'].iloc[-1])
+        cloud_a = float(df_daily['Senkou_A'].iloc[-1])
+        cloud_b = float(df_daily['Senkou_B'].iloc[-1])
         cloud_top = max(cloud_a, cloud_b)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
@@ -1090,9 +1097,9 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
             stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
         )
 
-        buy_price_str = f"{int(round(ai_prices['buy'])):,}원" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
-        stop_loss_str = f"{int(round(ai_prices['stop'])):,}원" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
-        target_price_str = f"{int(round(ai_prices['target1'])):,}원" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        buy_price_str = fmt_price(ai_prices.get('buy'), True) if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        stop_loss_str = fmt_price(ai_prices.get('stop'), True) if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        target_price_str = fmt_price(ai_prices.get('target1'), True) if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -1270,12 +1277,12 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
             price_bins = pd.cut(df_recent120['Close'], bins=num_bins)
             vol_by_price = df_recent120.groupby(price_bins, observed=False)['Volume'].sum()
             poc_bin = vol_by_price.idxmax() if not vol_by_price.empty else None
-            poc_price = round(float(poc_bin.mid), 2) if poc_bin is not None and pd.notnull(poc_bin) else round(float(df_recent120['Close'].mean()), 2)
+            poc_price = float(poc_bin.mid) if poc_bin is not None and pd.notnull(poc_bin) else float(df_recent120['Close'].mean())
         except Exception:
-            poc_price = round(float(df_recent120['Close'].mean()), 2)
+            poc_price = float(df_recent120['Close'].mean())
 
-        max_120 = round(float(df_recent120['High'].max()), 2)
-        min_120 = round(float(df_recent120['Low'].min()), 2)
+        max_120 = float(df_recent120['High'].max())
+        min_120 = float(df_recent120['Low'].min())
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=False)
 
         df_daily = df_daily.ffill().bfill()
@@ -1303,14 +1310,14 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         macd_val = float(df_daily['MACD'].iloc[-1])
         signal_val = float(df_daily['Signal'].iloc[-1])
         
-        latest_close = round(float(df_daily['Close'].iloc[-1]), 2)
-        ma20_d = round(float(df_daily['MA20'].iloc[-1]), 2)
-        ma60_d = round(float(df_daily['MA60'].iloc[-1]), 2)
-        ma120_d = round(float(df_daily['MA120'].iloc[-1]), 2)
-        bb_up = round(float(df_daily['BB_Upper'].iloc[-1]), 2)
-        bb_low = round(float(df_daily['BB_Lower'].iloc[-1]) , 2)
-        cloud_a = round(float(df_daily['Senkou_A'].iloc[-1]), 2)
-        cloud_b = round(float(df_daily['Senkou_B'].iloc[-1]), 2)
+        latest_close = float(df_daily['Close'].iloc[-1])
+        ma20_d = float(df_daily['MA20'].iloc[-1])
+        ma60_d = float(df_daily['MA60'].iloc[-1])
+        ma120_d = float(df_daily['MA120'].iloc[-1])
+        bb_up = float(df_daily['BB_Upper'].iloc[-1])
+        bb_low = float(df_daily['BB_Lower'].iloc[-1])
+        cloud_a = float(df_daily['Senkou_A'].iloc[-1])
+        cloud_b = float(df_daily['Senkou_B'].iloc[-1])
         cloud_top = max(cloud_a, cloud_b)
 
         short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
@@ -1332,9 +1339,9 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
             stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
         )
 
-        buy_price_str = f"${ai_prices['buy']:.2f}" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
-        stop_loss_str = f"${ai_prices['stop']:.2f}" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
-        target_price_str = f"${ai_prices['target1']:.2f}" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        buy_price_str = fmt_price(ai_prices.get('buy'), False) if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        stop_loss_str = fmt_price(ai_prices.get('stop'), False) if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        target_price_str = fmt_price(ai_prices.get('target1'), False) if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -1407,7 +1414,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 미국 주식 파라미터 정밀 분리 연동
+# PART 3: 🎯 마이 대시보드(index3.html) - 미국/국내 완전 무결 판별 및 렌더링
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 전 계좌(국내/해외) 잔고 수집 및 종목별 리포트 생성 중...")
@@ -1433,7 +1440,6 @@ def get_toss_holdings():
             access_token = token_res.json().get("access_token")
             base_headers = {"Authorization": f"Bearer {access_token}", "x-api-key": TOSS_CLIENT_ID, "Content-Type": "application/json"}
             
-            # 1. 모든 계좌 리스트 취득
             acc_res = requests.get("https://openapi.tossinvest.com/api/v1/accounts", headers=base_headers, proxies=proxies, timeout=15)
             account_seqs = [1]
             if acc_res.status_code == 200:
@@ -1447,45 +1453,44 @@ def get_toss_holdings():
             all_holdings = []
             seen_tickers = set()
 
-            # 2. 각 계좌별로 국내(KR)와 해외(US)를 각각 명시적 쿼리로 호출하여 합산
             for a_seq in account_seqs:
-                for target_mkt in ["KR", "US"]:
-                    holdings_headers = base_headers.copy()
-                    holdings_headers["X-Tossinvest-Account"] = str(a_seq)
-                    params = {"marketCountry": target_mkt}
-                    
-                    res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, params=params, proxies=proxies, timeout=15)
-                    if res.status_code == 200:
-                        result_obj = res.json().get("result", {})
-                        items = []
-                        if isinstance(result_obj, dict):
-                            items = result_obj.get("items", []) or result_obj.get("holdings", [])
-                        elif isinstance(result_obj, list):
-                            items = result_obj
+                holdings_headers = base_headers.copy()
+                holdings_headers["X-Tossinvest-Account"] = str(a_seq)
+                
+                # 일반 holdings 및 overseas holdings 엔드포인트 전수 시도
+                endpoints = [
+                    ("https://openapi.tossinvest.com/api/v1/holdings", None),
+                    ("https://openapi.tossinvest.com/api/v1/overseas/holdings", None)
+                ]
+                
+                for ep_url, ep_params in endpoints:
+                    try:
+                        res = requests.get(ep_url, headers=holdings_headers, params=ep_params, proxies=proxies, timeout=15)
+                        if res.status_code == 200:
+                            result_obj = res.json().get("result", {})
+                            items = []
+                            if isinstance(result_obj, dict):
+                                items = result_obj.get("items", []) or result_obj.get("holdings", [])
+                            elif isinstance(result_obj, list):
+                                items = result_obj
 
-                        for item in items:
-                            raw_sym = str(item.get("symbol") or item.get("stockCode") or item.get("ticker") or "")
-                            name = str(item.get("name") or item.get("stockName") or raw_sym)
-                            avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or item.get("purchasePrice") or 0)
-                            qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
-                            curr = str(item.get("currency") or "").upper()
-                            mkt = str(item.get("marketCountry") or item.get("market") or target_mkt).upper()
+                            for item in items:
+                                raw_sym = str(item.get("symbol") or item.get("stockCode") or item.get("ticker") or "").strip()
+                                name = str(item.get("name") or item.get("stockName") or raw_sym).strip()
+                                avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or item.get("purchasePrice") or 0)
+                                qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
+                                
+                                if not raw_sym or qty <= 0:
+                                    continue
 
-                            if not raw_sym or qty <= 0:
-                                continue
+                                # 💡 [절대 기준 판별] 한국 거래소 표준 코드 규격이면 무조건 KR, 아니면 US
+                                is_kr_stock = is_korean_ticker(raw_sym)
+                                clean_sym = raw_sym if is_kr_stock else sanitize_us_ticker(raw_sym)
+                                
+                                if clean_sym in seen_tickers:
+                                    continue
+                                seen_tickers.add(clean_sym)
 
-                            # 국내/해외 종목 여부 판별
-                            is_kr_stock = True
-                            if target_mkt == "US" or curr == "USD" or mkt in ["US", "USA", "NASDAQ", "NYSE", "AMEX"]:
-                                is_kr_stock = False
-                            elif re.search(r'[A-Za-z]', raw_sym) and not raw_sym.endswith(('.KS', '.KQ')):
-                                is_kr_stock = False
-                            
-                            clean_sym = sanitize_us_ticker(raw_sym) if not is_kr_stock else raw_sym
-                            unique_key = f"{clean_sym}_{is_kr_stock}"
-                            
-                            if unique_key not in seen_tickers:
-                                seen_tickers.add(unique_key)
                                 all_holdings.append({
                                     "ticker": clean_sym,
                                     "name": name,
@@ -1494,9 +1499,11 @@ def get_toss_holdings():
                                     "market": "KR" if is_kr_stock else "US",
                                     "currency": "KRW" if is_kr_stock else "USD"
                                 })
+                    except Exception:
+                        pass
 
             if all_holdings:
-                print(f"🎉 토스증권 전 계좌 잔고 합산 성공! 총 {len(all_holdings)}개 종목 수신 완료:")
+                print(f"🎉 토스증권 잔고 취합 완료! 총 {len(all_holdings)}개 종목:")
                 for h in all_holdings:
                     print(f"   • [{h['market']}] {h['name']} ({h['ticker']}) - {h['quantity']}주 @ {h['avg_price']} {h['currency']}")
                 return all_holdings
@@ -1516,38 +1523,45 @@ def get_mock_holdings():
 toss_holdings = get_toss_holdings()
 my_stock_cards_html = ""
 
-total_eval_my = 0
-total_profit_my = 0
+total_eval_my = 0.0
+total_profit_my = 0.0
 
 for h in toss_holdings:
     try:
         ticker = h['ticker']
         stock_name = h['name']
-        avg_price = h['avg_price']
+        avg_price = float(h['avg_price'])
         market = h['market']
         currency = h['currency']
-        quantity = h['quantity']
+        quantity = float(h['quantity'])
         
-        is_krw = True if (market == 'KR' or currency == 'KRW') else False
-        fx = usd_krw_rate if not is_krw else 1.0
+        # 한국/미국 주식 구분 절대 보장
+        is_krw = is_korean_ticker(ticker)
+        fx = 1.0 if is_krw else usd_krw_rate
         
         pure_code = ticker.split('.')[0] if is_krw else ticker
         
-        # yfinance 티커 안전 매핑
-        if is_krw:
-            yf_ticker = f"{pure_code}.KS" if not ticker.endswith((".KS", ".KQ")) else ticker
-        else:
-            yf_ticker = pure_code
-        
+        # yfinance 티커 안전 매핑 (.KS / .KQ 자동 탐색)
         df_daily = None
-        try:
-            stock = yf.Ticker(yf_ticker)
-            df_daily = stock.history(period="1y", interval="1d")
-            if (df_daily is None or df_daily.empty or len(df_daily) < 1) and is_krw:
-                yf_ticker = f"{pure_code}.KQ"
-                df_daily = yf.Ticker(yf_ticker).history(period="1y", interval="1d")
-        except Exception: 
-            df_daily = None
+        if is_krw:
+            for suffix in [".KS", ".KQ"]:
+                try:
+                    yf_sym = f"{pure_code}{suffix}"
+                    t_obj = yf.Ticker(yf_sym)
+                    temp_df = t_obj.history(period="1y", interval="1d")
+                    if temp_df is not None and not temp_df.empty and len(temp_df) > 0:
+                        df_daily = temp_df
+                        break
+                except Exception:
+                    pass
+        else:
+            try:
+                t_obj = yf.Ticker(pure_code)
+                temp_df = t_obj.history(period="1y", interval="1d")
+                if temp_df is not None and not temp_df.empty and len(temp_df) > 0:
+                    df_daily = temp_df
+            except Exception:
+                pass
 
         if df_daily is None or df_daily.empty or len(df_daily) == 0:
             current_price = avg_price
@@ -1564,7 +1578,7 @@ for h in toss_holdings:
         else:
             latest_close = float(df_daily['Close'].iloc[-1])
             current_price = latest_close
-            return_pct = ((current_price - avg_price) / avg_price) * 100 if avg_price > 0 else 0
+            return_pct = ((current_price - avg_price) / avg_price) * 100 if avg_price > 0 else 0.0
             eval_amount_krw = (current_price * quantity) * fx
             profit_loss_krw = ((current_price - avg_price) * quantity) * fx
 
@@ -1661,26 +1675,25 @@ for h in toss_holdings:
         eval_formatted = f"{int(round(eval_amount_krw)):,}원"
         profit_formatted = f"({profit_loss_krw:+,.0f}원)"
         
-        avg_price_formatted = fmt_price(avg_price, is_krw, show_decimal=is_krw)
-        current_price_formatted = fmt_price(current_price, is_krw)
-        poc_formatted = fmt_price(poc_price, is_krw)
+        avg_price_formatted = fmt_price(avg_price, is_krw, show_decimal=not is_krw)
+        current_price_formatted = fmt_price(current_price, is_krw, show_decimal=not is_krw)
+        poc_formatted = fmt_price(poc_price, is_krw, show_decimal=not is_krw)
 
-        my_stop_str = fmt_price(my_stop_val, is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
-        my_target_str = fmt_price(my_target_val, is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+        my_stop_str = fmt_price(my_stop_val, is_krw, show_decimal=not is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+        my_target_str = fmt_price(my_target_val, is_krw, show_decimal=not is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
 
         pyramid_row_html = ""
         if my_pyramid_val and my_pyramid_type:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
-            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
+            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
 
-        display_symbol = pure_code if is_krw else ticker
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
 
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{country_badge} {stock_name} ({display_symbol}) - {fmt_num(quantity)}주</div>
+                    <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
@@ -1771,17 +1784,17 @@ macro_html_kr = f"""
     <a href="{kr_macro['m2_url']}" target="_blank" class="macro-card">
         <div class="macro-title">💵 원화 통화량 (M2) ↗</div>
         <div class="macro-value">{kr_macro['m2']}</div>
-        <div class="macro-sub">{kr_macro['m2_date']} 🟢</div>
+        <div class="macro-sub">{kr_macro['m2_date']}</div>
     </a>
     <a href="{kr_macro['cli_url']}" target="_blank" class="macro-card">
         <div class="macro-title">🌐 한국 경기선행지수 (CLI) ↗</div>
         <div class="macro-value">{kr_macro['cli']}</div>
-        <div class="macro-sub">{kr_macro['cli_date']} 🟢</div>
+        <div class="macro-sub">{kr_macro['cli_date']}</div>
     </a>
     <a href="{kr_macro['vix_url']}" target="_blank" class="macro-card">
         <div class="macro-title">⚡ 한국 VKOSPI ↗</div>
         <div class="macro-value" style="color:#facc15;">{kr_macro['vix']}</div>
-        <div class="macro-sub">네이버 금융 원본 연동 🟢</div>
+        <div class="macro-sub">네이버 금융 원본 연동</div>
     </a>
 </div>
 """
@@ -1791,17 +1804,17 @@ macro_html_us = f"""
     <a href="{us_macro['m2_url']}" target="_blank" class="macro-card">
         <div class="macro-title">💵 달러 통화량 (US M2) ↗</div>
         <div class="macro-value">{us_macro['m2']}</div>
-        <div class="macro-sub">{us_macro['m2_date']} 🟢</div>
+        <div class="macro-sub">{us_macro['m2_date']}</div>
     </a>
     <a href="{us_macro['cli_url']}" target="_blank" class="macro-card">
         <div class="macro-title">🌐 미국 경기선행지수 (CLI) ↗</div>
         <div class="macro-value">{us_macro['cli']}</div>
-        <div class="macro-sub">{us_macro['cli_date']} 🟢</div>
+        <div class="macro-sub">{us_macro['cli_date']}</div>
     </a>
     <a href="{us_macro['vix_url']}" target="_blank" class="macro-card">
         <div class="macro-title">⚡ 미국 VIX 지수 ↗</div>
         <div class="macro-value" style="color:#facc15;">{us_macro['vix']}</div>
-        <div class="macro-sub">TradingView 원본 연동 🟢</div>
+        <div class="macro-sub">TradingView 원본 연동</div>
     </a>
 </div>
 """
