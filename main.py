@@ -216,7 +216,7 @@ class MultiLLMManager:
     def is_available(self):
         return (self.gemini_client is not None or self.groq_client is not None) and not TEST_MODE
 
-    def generate_completion(self, prompt, temperature=0.3, max_tokens=1000):
+    def generate_completion(self, prompt, temperature=0.3, max_tokens=1500):
         if TEST_MODE:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
@@ -759,7 +759,7 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
     except Exception:
         return "파동 마디점 안정화 진행 중"
 
-# 🎯 [소수점 오차 정밀 파서 및 안전 스케일링]
+# 🎯 [소수점 오차 정밀 파서]
 def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     if not text:
         return None
@@ -771,17 +771,13 @@ def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
             if digits:
                 val = float(digits[0])
                 if val > 0:
-                    # 미장 종목 소수점 누락(예: 72.91 -> 7291) 자동 보정
-                    if not is_krw and current_price > 0:
-                        if val > (current_price * 10):
-                            val = val / 100.0
                     return adjust_to_tick_size(val, is_krw)
     except Exception:
         pass
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (4시간 캐싱 / 급락 시 강제갱신)
+# 🤖 일반 종목 AI 정밀 리포트 (심도 있는 상세 서술 & 동적 예시)
 # =========================================================
 def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val=0.0, supply_type="", currency_symbol="원", force_refresh=False):
     cache_key = f"STOCK_{symbol}"
@@ -801,11 +797,22 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         else:
             return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
-    example_format = "77200" if is_krw else "72.91 (달러 기준 소수점 2자리)"
+    if is_krw:
+        ex_buy = f"{int(latest_close * 0.98)}"
+        ex_stop = f"{int(latest_close * 0.95)}"
+        ex_t1 = f"{int(latest_close * 1.05)}"
+        ex_t2 = f"{int(latest_close * 1.10)}"
+        price_rule = "- 원화 가격이므로 콤마(,) 및 '원' 단위 없이 순수 정수 숫자로만 출력하라."
+    else:
+        ex_buy = f"{latest_close * 0.98:.2f}"
+        ex_stop = f"{latest_close * 0.95:.2f}"
+        ex_t1 = f"{latest_close * 1.05:.2f}"
+        ex_t2 = f"{latest_close * 1.10:.2f}"
+        price_rule = f"- 현재 주가가 ${latest_close:.2f} 이므로, 반드시 달러($) 기호 없이 소수점 2자리 마침표(.)를 포함한 형태로만 출력하라. (예: {ex_buy}, {ex_t1})\n- 절대 소수점을 생략하거나 100을 곱한 정수 형태로 출력하지 말 것."
 
     prompt = f"""
 너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
-120일 파동 마디점, POC 매물대, 15일 캔들 형태를 종합적으로 판단하여 최적의 매매 가격(눌림목가, 손절가, 1차·2차 익절가)과 전략 리포트를 작성하라.
+단순 요약이나 짧은 결론에 그치지 말고, 120일 파동 마디점, POC 매물대, 15일 캔들 형태, 보조지표를 종합적으로 심도 있게 판단하여 전문적이고 상세한 매매 전략 리포트를 작성하라.
 
 [종목 기본 & 수급/뉴스 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -823,35 +830,35 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
 
-[가격 산정 가이드라인 - AI 정밀 도출]
-1. 눌림목 매수가: 지지가 확인되는 현실적 눌림목 타점 (가격)
-2. 타이트 손절가: 현재가 직하단 주요 지지선(20일선/POC/구름대/마디점) 산정 (가격)
-3. 1차 익절가: 손절 폭 대비 최소 1.5배 이상 확보되는 저항선 (가격)
-4. 2차 익절가: 패턴 상단 및 전고점 저항선 (가격)
+[가격 출력 규칙 - 엄수]
+{price_rule}
 
-[출력 양식 - 규격 엄수]
-선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 2~3줄 요약>
-파싱_눌림목가: <숫자만 입력 ex: {example_format}>
-파싱_손절가: <숫자만 입력 ex: {example_format}>
-파싱_1차익절가: <숫자만 입력 ex: {example_format}>
-파싱_2차익절가: <숫자만 입력 ex: {example_format}>
+[출력 양식 - 규격 엄수 (상세리포트는 각 항목별로 구체적인 기술적 근거를 들어 풍부하게 서술할 것)]
+선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 3~4줄로 심도 있게 서술>
+파싱_눌림목가: <{ex_buy}>
+파싱_손절가: <{ex_stop}>
+파싱_1차익절가: <{ex_t1}>
+파싱_2차익절가: <{ex_t2}>
 상세리포트:
 📌 [차트 구조 & 패턴/캔들 종합 진단]
-- <이평선/구름대 구조와 함께 현재 포착되는 캔들 형태(거래량 동반 여부) 및 차트 패턴(쌍바닥/역헤드앤숄더/컵앤핸들/엘리엇파동 위치 등)을 2~3줄로 종합 진단>
+• 이평선 배열 상태({ma_status})와 일목균형표 구름대 지지 여부를 바탕으로 현재 추세의 강도를 구체적으로 진단.
+• 최근 15일간의 일봉 캔들 형태(장대양봉, 밑꼬리 형성 등) 및 거래량 증감 추이를 통해 세력 수급 유입 및 매집 흔적을 상세히 분석.
+• 포착되는 차트 패턴(쌍바닥, 역헤드앤숄더, 컵앤핸들, 깃발형 등) 및 엘리엇 파동 상의 현재 위치를 심도 있게 설명.
 
 🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-- 눌림목 매수 추천가 : <위 파싱_눌림목가와 동일 가격: 000{currency_symbol}> / 최종 하단 지지선 : <가격> / 타이트 손절가 : <위 파싱_손절가와 동일 가격: 000{currency_symbol}>
-- <캔들 지지 형태, 매물대(POC), 이평선 및 패턴 지지점 근거 작성. 손절가를 타이트하게 설정해 리스크 폭을 최소화한 이유 서술>.
+• 추천 진입 타점: 파싱_눌림목가({ex_buy}{currency_symbol}) 부근 눌림목 분할 매수 전략 제시.
+• 손절선 및 지지선: 파싱_손절가({ex_stop}{currency_symbol}) 설정 근거(주요 이평선, 매물대 POC, 파동 저점 이탈 기준)를 명확히 제시하고, 장중 노이즈에 털리지 않으면서도 리스크 폭을 최소화한 이유를 서술.
+• 진입 시 비중 관리 및 매수 체결 후 캔들 확인 요령을 상세히 설명.
 
 🚀 [현실적 분할 익절 전략]
-- 1차 안전 익절가 : <위 파싱_1차익절가와 동일 가격: 000{currency_symbol}> (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
-- 2차 추세 익절가 : <위 파싱_2차익절가와 동일 가격: 000{currency_symbol}> (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
-- <1차/2차 목표가까지 상승 가능한 지표적/패턴적 근거 및 손익비 우위 관점 서술>.
+• 1차 안전 익절가: 파싱_1차익절가({ex_t1}{currency_symbol}) (손익비 1:1.5 이상 달성 지점 / 물량 50% 분할 익절 전략 및 단기 저항 매물대 근거 제시).
+• 2차 추세 익절가: 파싱_2차익절가({ex_t2}{currency_symbol}) (패턴 상단 목표치 및 전고점 저항 지점 / 잔량 50% 추세 홀딩 및 Trailing Stop 전략 서술).
+• 목표가 도달 시 예상되는 호가창/거래량 반응과 대응 가이드를 상세히 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1000)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1500)
         
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등 종목입니다."
         report_val = content
@@ -886,7 +893,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 [토스 마이 대시보드 전용] AI 심도 가이드 (4시간 캐싱 / 급락 시 강제갱신)
+# 🎯 [토스 마이 대시보드 전용] AI 심도 가이드 (상세 서술 & 동적 예시)
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -906,11 +913,21 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
 
     avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
-    example_format = "74200" if is_krw else "72.91 (달러 소수점 2자리)"
+    
+    if is_krw:
+        ex_pyramid = f"{int(current_price * 0.98)}"
+        ex_stop = f"{int(current_price * 0.95)}"
+        ex_target = f"{int(current_price * 1.08)}"
+        price_rule = "- 원화 가격이므로 콤마(,) 및 '원' 단위 없이 순수 정수 숫자로만 출력하라."
+    else:
+        ex_pyramid = f"{current_price * 0.98:.2f}"
+        ex_stop = f"{current_price * 0.95:.2f}"
+        ex_target = f"{current_price * 1.08:.2f}"
+        price_rule = f"- 현재 주가가 ${current_price:.2f} 이므로, 반드시 달러($) 기호 없이 소수점 2자리 마침표(.)를 포함한 형태로만 출력하라. (예: {ex_stop}, {ex_target})\n- 절대 소수점을 생략하거나 100을 곱한 정수 형태로 출력하지 말 것."
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 가이드 및 정량 가격을 산출하라.
+단순 요약이 아닌, 사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 대응 전략을 작성하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -923,28 +940,31 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [단기 캔들 & 거래량 상세 데이터 (최근 15일)]
 {raw_data_str_15days}
 
+[가격 출력 규칙 - 엄수]
+{price_rule}
+
 [판단 원칙 - 엄격한 추매/손절/목표가 규격]
 1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 확보 & RSI 70 미만 & 20일선/구름대 눌림목 지지 반등 시 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
 2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 다이버전스/쌍바닥 & POC 매물대 지지 확인 시 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
 3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열, 상장폐지/정리매매 종목) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
 4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
 
-[출력 양식 - 규격 엄수]
+[출력 양식 - 규격 엄수 (상세가이드는 각 항목별로 구체적인 기술적/수급적 근거를 들어 풍부하게 서술할 것)]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
-파싱_추매추천가: <숫자만 입력 ex: {example_format} (없을 시 0)>
-파싱_Trailing손절가: <숫자만 입력 ex: {example_format}>
-파싱_동적목표가: <숫자만 입력 ex: {example_format}>
+파싱_추매추천가: <{ex_pyramid} (없을 시 0)>
+파싱_Trailing손절가: <{ex_stop}>
+파싱_동적목표가: <{ex_target}>
 상세가이드:
 결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
 
-• [추세/패턴] <평단가 대비 수익률, 최근 15일 캔들/거래량 수급 상태 및 포착된 차트 패턴의 구체적 위치 진단>
-• [목표가 대응] <상단 전고점/매물대 저항선 근거로 동적 상향 목표가(또는 과열 시 일부 익절가) 수치 제시>
-• [이익 보존] <Trailing Stop 손절가 수치와 그 지지선 근거 제시>
+• [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 상세히 분석.
+• [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 파싱_동적목표가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
+• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 파싱_Trailing손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=600)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1000)
         
         stop_val = parse_price_from_text(content, "파싱_Trailing손절가", is_krw, current_price)
         target_val = parse_price_from_text(content, "파싱_동적목표가", is_krw, current_price)
@@ -1171,7 +1191,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         badge_html = update_and_get_consecutive_days(symbol, kr_needs_refresh)
 
-        # 당일 등락률 계산 & 방어력 태그 산출
         if len(df_daily) >= 2:
             kr_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
         else:
@@ -1323,7 +1342,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                     <div class="report-header">{stock_name} ({pure_code}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
+                <div class="stock-reason-box">💡 <b>선정 이유:</b><br>{pick_reason}</div>
                 <div class="report-divider"></div>
                 <div class="report-line">• 종가 기준 현재가 : <span class="highlight-val">{fmt_price(latest_close, True)}</span></div>
                 <div class="report-line">• 추세 진단 : {short_trend} / {mid_trend}</div>
@@ -1425,7 +1444,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         badge_html = update_and_get_consecutive_days(symbol, us_needs_refresh)
 
-        # 당일 등락률 계산 & 방어력 태그 산출
         if len(df_daily) >= 2:
             us_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
         else:
@@ -1577,7 +1595,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                     <div class="report-header">{stock_name} ({symbol}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
+                <div class="stock-reason-box">💡 <b>선정 이유:</b><br>{pick_reason}</div>
                 <div class="report-divider"></div>
                 <div class="report-line">• 종가 기준 현재가 : <span class="highlight-val">{fmt_price(latest_close, False)}</span></div>
                 <div class="report-line">• 추세 진단 : {short_trend} / {mid_trend}</div>
@@ -1752,7 +1770,6 @@ for h in toss_holdings:
             raw_data_str_15days = f"최신 토스 현재가: {fmt_price(current_price, is_krw)}"
             defense_badge = ""
         else:
-            # 상대 방어력 계산
             if len(df_daily) >= 2:
                 my_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
             else:
@@ -1890,7 +1907,7 @@ for h in toss_holdings:
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 심도 3줄 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 심도 포지션 대응 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
                 <div class="ai-content" style="white-space: pre-line;">{ai_3line_comment}</div>
             </div>
         </div>
