@@ -106,7 +106,7 @@ def fmt_num(val):
         return "0"
 
 # =========================================================
-# 🎯 KRX/US 호가 단위(Tick Size) 자동 보정 함수
+# 🎯 [아이템 1] KRX/US 호가 단위(Tick Size) 자동 보정 함수
 # =========================================================
 def adjust_to_tick_size(price, is_krw=True):
     if price is None or price <= 0:
@@ -137,7 +137,7 @@ def adjust_to_tick_size(price, is_krw=True):
     return int(round(p / tick) * tick)
 
 # =========================================================
-# 🛡️ ATR(14) 기반 최소 손절 버퍼 검증 함수
+# 🛡️ [아이템 2] ATR(14) 기반 최소 손절 버퍼 검증 함수
 # =========================================================
 def calculate_atr(df, period=14):
     try:
@@ -169,7 +169,7 @@ def validate_stop_loss_with_atr(entry_price, stop_loss_price, atr_val, is_krw=Tr
     return adjust_to_tick_size(stop_loss_price, is_krw)
 
 # =========================================================
-# 🏛️ LLM 다중화 매니저
+# 🏛️ [LLM 다중화 매니저: GEMINI (1순위) -> GROQ (2순위 우회)]
 # =========================================================
 class MultiLLMManager:
     def __init__(self, gemini_key, groq_keys):
@@ -216,10 +216,11 @@ class MultiLLMManager:
     def is_available(self):
         return (self.gemini_client is not None or self.groq_client is not None) and not TEST_MODE
 
-    def generate_completion(self, prompt, temperature=0.3, max_tokens=1600):
+    def generate_completion(self, prompt, temperature=0.3, max_tokens=1500):
         if TEST_MODE:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
+        # 1. Gemini 우선 호출 (4.1초 RPM 방어)
         if self.gemini_client:
             try:
                 elapsed = time.time() - self.last_gemini_call_time
@@ -237,6 +238,7 @@ class MultiLLMManager:
             except Exception as e:
                 print(f"⚠️ Gemini 일시 오류/429 ({e}) ➔ Groq으로 임시 우회합니다.")
 
+        # 2. Groq 우회 호출
         while self.groq_client:
             try:
                 print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} 요청 전송 중...")
@@ -341,7 +343,7 @@ def should_refresh_daily_pivot(market_type):
         return True
 
 # =========================================================
-# 🚨 시장 급락(-2.5%) / 반등(-0.5%) 상태 머신
+# 🚨 [핵심 아이템 3] 시장 급락(-2.5%) / 반등(-0.5%) 상태 머신 & 롤러코스터 잠금
 # =========================================================
 def get_index_change_rate(ticker_symbol):
     try:
@@ -379,6 +381,7 @@ def check_market_volatility_trigger(market_type="KR"):
     banner_msg = None
     defense_mode = False
 
+    # 1. 급락 감지 (-2.5% 이하)
     if avg_chg <= -2.5:
         defense_mode = True
         if state["status"] == "NORMAL" and state["crash_count"] == 0:
@@ -392,6 +395,7 @@ def check_market_volatility_trigger(market_type="KR"):
             state["status"] = "HIGH_VOLATILITY_LOCKED"
             banner_msg = f"🚨 <b>[초고변동성 롤러코스터 경보 ({avg_chg:+.2f}%)]</b> 장중 잦은 급변동 발생. 신규 진입을 멈추고 관망 및 현금 비중 유지를 권장합니다."
 
+    # 2. 반등 감지 (-0.5% 이상)
     elif avg_chg >= -0.5 and state["status"] == "CRASH_HANDLED" and state["recovery_count"] == 0:
         print(f"🟢 [{market_type}] 1차 시장 급반등 감지 ({avg_chg:+.2f}%) ➔ 긴급 복구 풀 업데이트 1회 실행!")
         state["status"] = "RECOVERY_HANDLED"
@@ -404,7 +408,7 @@ def check_market_volatility_trigger(market_type="KR"):
     return is_emergency_refresh, banner_msg, defense_mode, avg_chg
 
 # =========================================================
-# 📅 증시 휴장일 판별 모듈
+# 📅 [증시 휴장일 판별 모듈]
 # =========================================================
 def get_market_open_status(market="KR"):
     if today_date.weekday() == 5:
@@ -423,7 +427,7 @@ def get_market_open_status(market="KR"):
         return True, "개장일"
 
 # =========================================================
-# 🧙‍♀️ 만기일 D-Day 연산 모듈
+# 🧙‍♀️ [만기일 D-Day 연산 모듈]
 # =========================================================
 def get_witching_day_alert(market="KR"):
     alerts = []
@@ -465,7 +469,7 @@ def get_witching_day_alert(market="KR"):
     return alerts
 
 # =========================================================
-# 📅 글로벌 경제 캘린더 실시간 수집 모듈
+# 📅 [글로벌 경제 캘린더 실시간 수집 모듈]
 # =========================================================
 def get_economic_calendar_events(market="KR"):
     events_list = []
@@ -706,6 +710,7 @@ def analyze_7days_news_sentiment(market_type, news_text, force_refresh=False):
         status_match = re.search(r'상태:\s*(.*)', content)
         if status_match: raw_status = status_match.group(1).strip()
 
+        # 🚥 [신호등 이모지 복원]
         if "긍정" in raw_status: status_val = "긍정 🟢"
         elif "부정" in raw_status: status_val = "부정 🔴"
         else: status_val = "보통 🟡"
@@ -754,6 +759,7 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
     except Exception:
         return "파동 마디점 안정화 진행 중"
 
+# 🎯 [소수점 오차 정밀 파서]
 def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     if not text:
         return None
@@ -771,7 +777,7 @@ def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 2단 리포트 (기본 리포트 + 심도 아코디언 더보기)
+# 🤖 일반 종목 AI 정밀 리포트 (심도 있는 상세 서술 & 동적 예시)
 # =========================================================
 def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val=0.0, supply_type="", currency_symbol="원", force_refresh=False):
     cache_key = f"STOCK_{symbol}"
@@ -781,15 +787,15 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         report_time = cached.get('updated_at', now_str)
-        return cached.get('reason', ''), cached.get('basic_report', ''), cached.get('deep_report', ''), cached.get('parsed_prices', {}), report_time
+        return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {}), report_time
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             report_time = cached.get('updated_at', now_str)
-            return cached.get('reason', ''), cached.get('basic_report', ''), cached.get('deep_report', ''), cached.get('parsed_prices', {}), report_time
+            return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {}), report_time
         else:
-            return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
+            return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
     if is_krw:
         ex_buy = f"{int(latest_close * 0.98)}"
@@ -806,7 +812,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 
     prompt = f"""
 너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
-사용자가 한눈에 읽기 좋은 [기본 리포트]와 전문가용 세부 분석이 담긴 [심도 리포트]를 작성하라.
+단순 요약이나 짧은 결론에 그치지 말고, 120일 파동 마디점, POC 매물대, 15일 캔들 형태, 보조지표를 종합적으로 심도 있게 판단하여 전문적이고 상세한 매매 전략 리포트를 작성하라.
 
 [종목 기본 & 수급/뉴스 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -827,54 +833,48 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [가격 출력 규칙 - 엄수]
 {price_rule}
 
-[출력 양식 - 규격 엄수]
-선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마 강세를 종합하여 2~3줄 요약>
+[출력 양식 - 규격 엄수 (상세리포트는 각 항목별로 구체적인 기술적 근거를 들어 풍부하게 서술할 것)]
+선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 3~4줄로 심도 있게 서술>
 파싱_눌림목가: <{ex_buy}>
 파싱_손절가: <{ex_stop}>
 파싱_1차익절가: <{ex_t1}>
 파싱_2차익절가: <{ex_t2}>
-기본리포트:
+상세리포트:
 📌 [차트 구조 & 패턴/캔들 종합 진단]
-- <이평선/구름대 구조와 함께 현재 포착되는 캔들 형태 및 차트 패턴을 2~3줄로 정갈하게 진단>
+• 이평선 배열 상태({ma_status})와 일목균형표 구름대 지지 여부를 바탕으로 현재 추세의 강도를 구체적으로 진단.
+• 최근 15일간의 일봉 캔들 형태(장대양봉, 밑꼬리 형성 등) 및 거래량 증감 추이를 통해 세력 수급 유입 및 매집 흔적을 상세히 분석.
+• 포착되는 차트 패턴(쌍바닥, 역헤드앤숄더, 컵앤핸들, 깃발형 등) 및 엘리엇 파동 상의 현재 위치를 심도 있게 설명.
 
 🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-- 눌림목 매수 추천가 : {ex_buy}{currency_symbol} / 타이트 손절가 : {ex_stop}{currency_symbol}
-- <매물대(POC), 이평선 및 지지선 근거와 손절가를 타이트하게 설정해 리스크를 최소화한 이유를 2~3줄로 서술>
+• 추천 진입 타점: 파싱_눌림목가({ex_buy}{currency_symbol}) 부근 눌림목 분할 매수 전략 제시.
+• 손절선 및 지지선: 파싱_손절가({ex_stop}{currency_symbol}) 설정 근거(주요 이평선, 매물대 POC, 파동 저점 이탈 기준)를 명확히 제시하고, 장중 노이즈에 털리지 않으면서도 리스크 폭을 최소화한 이유를 서술.
+• 진입 시 비중 관리 및 매수 체결 후 캔들 확인 요령을 상세히 설명.
 
 🚀 [현실적 분할 익절 전략]
-- 1차 안전 익절가 : {ex_t1}{currency_symbol} (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
-- 2차 추세 익절가 : {ex_t2}{currency_symbol} (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
-- <1차/2차 목표가 근거 및 손익비 우위 관점을 2~3줄로 서술>
-
-심도리포트:
-• [차트/캔들 세력 수급 정밀 해설] <최근 15일간 일봉 캔들 형태, 거래량 증감, 엘리엇 파동 위치 및 세력 매집 흔적을 4~5줄로 심도 있게 서술>
-• [입체 리스크 관리 및 캔들 확정 요령] <손절선 설정의 기술적 배경, 진입 비중 조절 및 반등 캔들 확정 확인법을 3~4줄로 서술>
-• [호가창 반응 및 Trailing Stop 전략] <1차/2차 목표가 도달 시 예상되는 호가창/거래량 반응과 분할 익절 및 트레일링 스탑 실전 대응법을 3~4줄로 서술>
+• 1차 안전 익절가: 파싱_1차익절가({ex_t1}{currency_symbol}) (손익비 1:1.5 이상 달성 지점 / 물량 50% 분할 익절 전략 및 단기 저항 매물대 근거 제시).
+• 2차 추세 익절가: 파싱_2차익절가({ex_t2}{currency_symbol}) (패턴 상단 목표치 및 전고점 저항 지점 / 잔량 50% 추세 홀딩 및 Trailing Stop 전략 서술).
+• 목표가 도달 시 예상되는 호가창/거래량 반응과 대응 가이드를 상세히 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1600)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1500)
         
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등 종목입니다."
-        basic_report_val = ""
-        deep_report_val = ""
+        report_val = content
 
         reason_match = re.search(r'선정이유:\s*(.*)', content)
+        report_match = re.search(r'상세리포트:\s*([\s\S]*)', content)
+
         if reason_match: reason_val = reason_match.group(1).strip()
-
-        basic_match = re.search(r'기본리포트:\s*([\s\S]*?)(?=심도리포트:|$)', content)
-        if basic_match: basic_report_val = basic_match.group(1).strip()
-        else: basic_report_val = content
-
-        deep_match = re.search(r'심도리포트:\s*([\s\S]*)', content)
-        if deep_match: deep_report_val = deep_match.group(1).strip()
+        if report_match: report_val = report_match.group(1).strip()
 
         ai_buy = parse_price_from_text(content, "파싱_눌림목가", is_krw, latest_close)
         ai_stop = parse_price_from_text(content, "파싱_손절가", is_krw, latest_close)
         ai_target1 = parse_price_from_text(content, "파싱_1차익절가", is_krw, latest_close)
         ai_target2 = parse_price_from_text(content, "파싱_2차익절가", is_krw, latest_close)
 
+        # 🛡️ [아이템 2] ATR 손절가 최소 버퍼 검증
         if ai_stop and atr_val > 0 and ai_buy:
             ai_stop = validate_stop_loss_with_atr(ai_buy, ai_stop, atr_val, is_krw)
 
@@ -882,19 +882,18 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 
         save_ai_cache(cache_key, {
             "reason": sanitize_text(reason_val),
-            "basic_report": sanitize_text(basic_report_val),
-            "deep_report": sanitize_text(deep_report_val),
+            "report": sanitize_text(report_val),
             "parsed_prices": parsed_prices
         })
-        return sanitize_text(reason_val), sanitize_text(basic_report_val), sanitize_text(deep_report_val), parsed_prices, now_str
+        return sanitize_text(reason_val), sanitize_text(report_val), parsed_prices, now_str
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 통신 오류 발생: {e}"
         print(f"⚠️ {stock_name} AI 리포트 생성 오류: {e}")
-        return "AI 분석 호출 실패", err_msg, "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
+        return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 토스 마이 대시보드 전용 AI 2단 가이드
+# 🎯 [토스 마이 대시보드 전용] AI 심도 가이드 (상세 서술 & 동적 예시)
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -904,14 +903,14 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         guide_time = cached.get('updated_at', now_str)
-        return cached.get('basic_report', ''), cached.get('deep_report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             guide_time = cached.get('updated_at', now_str)
-            return cached.get('basic_report', ''), cached.get('deep_report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
-        return "[테스트 모드] AI 연동 미사용 상태입니다.", "", None, None, None, None, now_str
+            return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
 
     avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
     
@@ -928,7 +927,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 가독성이 뛰어난 [기본 가이드]와 전문가용 [심도 가이드]를 작성하라.
+단순 요약이 아닌, 사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 대응 전략을 작성하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -944,32 +943,28 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [가격 출력 규칙 - 엄수]
 {price_rule}
 
-[판단 원칙]
-1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 & RSI 70 미만 & 20일선/구름대 눌림 지지 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
-2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 & POC 매물대 지지 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
-3. 조건 미충족 시 ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
-4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop), 손실권 시 직전 최저점 이탈선.
+[판단 원칙 - 엄격한 추매/손절/목표가 규격]
+1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 확보 & RSI 70 미만 & 20일선/구름대 눌림목 지지 반등 시 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
+2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 다이버전스/쌍바닥 & POC 매물대 지지 확인 시 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
+3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열, 상장폐지/정리매매 종목) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
+4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
 
-[출력 양식 - 규격 엄수]
+[출력 양식 - 규격 엄수 (상세가이드는 각 항목별로 구체적인 기술적/수급적 근거를 들어 풍부하게 서술할 것)]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
 파싱_추매추천가: <{ex_pyramid} (없을 시 0)>
 파싱_Trailing손절가: <{ex_stop}>
 파싱_동적목표가: <{ex_target}>
-기본가이드:
+상세가이드:
 결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
 
-• [추세/패턴] <평단가 대비 수익률, 최근 15일 캔들/거래량 수급 및 포착된 패턴을 2~3줄로 진단>
-• [목표가 대응] <상단 저항선(POC) 근거로 동적 목표가 수치 및 익절 요령을 2~3줄 제시>
-• [이익 보존] <Trailing Stop 손절가 수치와 지지선 근거를 2줄로 제시>
-
-심도가이드:
-• [포지션 및 수급/세력 심도 진단] <평단가 대비 위치, 캔들 수급 공방 및 세력 이탈 여부를 3~4줄로 서술>
-• [Trailing Stop 및 비중 대응 세부 전략] <수익 극대화를 위한 트레일링 스탑 상세 대응법과 비중 조절 팁을 3~4줄로 서술>
+• [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 상세히 분석.
+• [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 파싱_동적목표가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
+• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 파싱_Trailing손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1200)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1000)
         
         stop_val = parse_price_from_text(content, "파싱_Trailing손절가", is_krw, current_price)
         target_val = parse_price_from_text(content, "파싱_동적목표가", is_krw, current_price)
@@ -978,29 +973,25 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         type_match = re.search(r'파싱_추매타입:\s*(불타기|물타기)', content)
         pyramid_type = type_match.group(1) if (type_match and pyramid_val and pyramid_val > 0) else None
 
-        basic_match = re.search(r'기본가이드:\s*([\s\S]*?)(?=심도가이드:|$)', content)
-        basic_text = basic_match.group(1).strip() if basic_match else content
-
-        deep_match = re.search(r'심도가이드:\s*([\s\S]*)', content)
-        deep_text = deep_match.group(1).strip() if deep_match else ""
+        guide_match = re.search(r'상세가이드:\s*([\s\S]*)', content)
+        guide_text = guide_match.group(1).strip() if guide_match else content
 
         save_ai_cache(cache_key, {
-            "basic_report": sanitize_text(basic_text),
-            "deep_report": sanitize_text(deep_text),
+            "report": sanitize_text(guide_text),
             "stop_price": stop_val,
             "target_price": target_val,
             "pyramid_price": pyramid_val if pyramid_type else None,
             "pyramid_type": pyramid_type
         })
-        return sanitize_text(basic_text), sanitize_text(deep_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
+        return sanitize_text(guide_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 오류 발생: {e}"
         print(f"⚠️ {stock_name} 마이 대시보드 AI 가이드 실패: {e}")
-        return err_msg, "", None, None, None, None, now_str
+        return err_msg, None, None, None, None, now_str
 
 # =========================================================
-# 🏷️ N일 연속 추천 뱃지 계산 모듈
+# 🏷️ [N일 연속 추천 뱃지 계산 모듈]
 # =========================================================
 def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
     tracker_key = "RECOMMEND_DAYS_TRACKER"
@@ -1031,27 +1022,27 @@ def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
 
     cnt = item_info.get("days", 1)
     if cnt > 1:
-        return f'<span style="background:#dc2626; color:#ffffff; font-size:11px; padding:2px 6px; border-radius:10px; margin-left:4px; font-weight:bold;">{cnt}일 연속 🔥</span>'
+        return f'<span style="background:#dc2626; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">{cnt}일 연속 추천 🔥</span>'
     else:
-        return '<span style="background:#2563eb; color:#ffffff; font-size:11px; padding:2px 6px; border-radius:10px; margin-left:4px; font-weight:bold;">1일차 🆕</span>'
+        return '<span style="background:#2563eb; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">1일차 🆕</span>'
 
 # =========================================================
-# 🛡️ 급락 시 지수 대비 상대 방어력 라벨링 함수
+# 🛡️ [아이템 4] 급락 시 지수 대비 상대 방어력 라벨링 함수
 # =========================================================
 def get_crash_defense_badge(stock_daily_chg, market_avg_chg, defense_mode):
     if not defense_mode:
         return ""
     if stock_daily_chg >= (market_avg_chg + 1.5):
-        return '<span style="background:#15803d; color:#ffffff; font-size:11px; padding:2px 6px; border-radius:10px; margin-left:4px; font-weight:bold;">방어 양호 🛡️</span>'
+        return '<span style="background:#15803d; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">지수 방어 양호 🛡️</span>'
     elif stock_daily_chg <= (market_avg_chg - 2.0):
-        return '<span style="background:#b91c1c; color:#ffffff; font-size:11px; padding:2px 6px; border-radius:10px; margin-left:4px; font-weight:bold;">변동성 주의 ⚠️</span>'
+        return '<span style="background:#b91c1c; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">고변동성 하락 ⚠️</span>'
     return ""
 
 # =========================================================
-# PART 1: 🇰🇷 국장(index.html) 분석
+# PART 1: 🇰🇷 국장(index.html) 분석 & 08:30 기준 종목 고정/갱신
 # =========================================================
 print("\n" + "="*60)
-print("🇰🇷 [PART 1] 한국 증시 스캔 & 2단 리포트 생성 중...")
+print("🇰🇷 [PART 1] 한국 증시 연속 추세 & 세력 매집 주도주 스캔 중...")
 print("="*60)
 
 kr_is_open, kr_open_msg = get_market_open_status("KR")
@@ -1278,10 +1269,10 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         cloud_b = int(df_daily['Senkou_B'].iloc[-1])
         cloud_top = max(cloud_a, cloud_b)
 
-        short_trend = "단기 상승 📈" if latest_close >= ma20_d else "단기 하락 📉"
-        mid_trend = "중기 상승 📈" if latest_close >= ma60_d else "중기 하락 📉"
-        bb_status = "상한선 근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
-        cloud_status = "구름대 위 🟢" if latest_close > cloud_top else "구름대 내부/하단 🟡"
+        short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
+        mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
+        bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
+        cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
         df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
         raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:{int(row['Open']):,}원 | High:{int(row['High']):,}원 | Low:{int(row['Low']):,}원 | Close:{int(row['Close']):,}원 | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
@@ -1289,17 +1280,17 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         rsi_status = f"과매수 ({rsi_val}) ⚠️" if rsi_val >= 70 else (f"과매도 ({rsi_val}) 🟢" if rsi_val <= 30 else f"중립 ({rsi_val}) ⚖️")
         macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
-        ma_status = f"정배열 🟢" if (ma20_d > ma60_d and ma60_d > ma120_d) else "혼조세 🔴"
+        ma_status = f"정배열 (20>60>120) 🟢" if (ma20_d > ma60_d and ma60_d > ma120_d) else "역배열/혼조세 🔴"
 
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
-        pick_reason, basic_ai_report, deep_ai_report, ai_prices, stock_ai_time = generate_ai_stock_analysis(
+        pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
             stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "원", force_refresh=kr_emergency
         )
 
-        buy_price_str = f"{int(round(ai_prices['buy'])):,}원" if ai_prices.get('buy') else "⚠️ 산출 오류"
-        stop_loss_str = f"{int(round(ai_prices['stop'])):,}원" if ai_prices.get('stop') else "⚠️ 산출 오류"
-        target_price_str = f"{int(round(ai_prices['target1'])):,}원" if ai_prices.get('target1') else "⚠️ 산출 오류"
+        buy_price_str = f"{int(round(ai_prices['buy'])):,}원" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        stop_loss_str = f"{int(round(ai_prices['stop'])):,}원" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        target_price_str = f"{int(round(ai_prices['target1'])):,}원" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -1312,13 +1303,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA60'], line=dict(color='purple', width=1.2), name='60일선'), row=1, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
-        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"POC: {fmt_price(poc_price, True)}", row=1, col=1)
-        if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"진입: {buy_price_str}", row=1, col=1)
-        if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"1차익절: {target_price_str}", row=1, col=1)
-        if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"손절: {stop_loss_str}", row=1, col=1)
+        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, True)}", row=1, col=1)
+        if ai_prices.get('buy'):
+            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
+        if ai_prices.get('target1'):
+            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
+        if ai_prices.get('stop'):
+            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -1328,8 +1319,8 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
         fig.update_layout(
-            height=480, 
-            margin=dict(l=5, r=5, t=10, b=30), 
+            height=540, 
+            margin=dict(l=10, r=10, t=10, b=40), 
             xaxis_rangeslider_visible=False, 
             template="plotly_dark",
             dragmode=False
@@ -1344,35 +1335,27 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
             }
         )
 
-        deep_section_html = ""
-        if deep_ai_report:
-            deep_section_html = f"""
-            <details class="deep-report-accordion">
-                <summary class="deep-report-btn">🔍 전문가용 캔들/파동/호가창 심도 분석 펼치기 ▼</summary>
-                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_report}</div>
-            </details>
-            """
-
         stock_cards_kr_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="report-header">{stock_name} ({pure_code}) {badge_html} {defense_badge}</div>
-                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView ↗</a>
+                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
+                <div class="stock-reason-box">💡 <b>선정 이유:</b><br>{pick_reason}</div>
                 <div class="report-divider"></div>
                 <div class="report-line">• 종가 기준 현재가 : <span class="highlight-val">{fmt_price(latest_close, True)}</span></div>
-                <div class="report-line">• 추세 / 구조 : {short_trend} | {bb_status} | {cloud_status}</div>
-                <div class="report-line">• 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, True)}</span> &nbsp;|&nbsp; RSI : {rsi_status}</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(눌림목 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(ATR 검증 지지선)</span></div>
-                <div class="report-line text-green">🚀 AI 1차 익절가 : {target_price_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5)</span></div>
+                <div class="report-line">• 추세 진단 : {short_trend} / {mid_trend}</div>
+                <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
+                <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, True)}</span></div>
+                <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:11px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
-                {deep_section_html}
+                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
             </div>
             <div class="chart-container">{chart_html}</div>
         </div>
@@ -1380,10 +1363,10 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 2: 🇺🇸 미장(us_index.html) 분석
+# PART 2: 🇺🇸 미장(us_index.html) 분석 & 22:00 기준 종목 고정/갱신
 # =========================================================
 print("\n" + "="*60)
-print("🇺🇸 [PART 2] 미국 증시 스캔 & 2단 리포트 생성 중...")
+print("🇺🇸 [PART 2] 미국 증시 스캔 & AI 분석 중...")
 print("="*60)
 
 us_is_open, us_open_msg = get_market_open_status("US")
@@ -1539,10 +1522,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         cloud_b = round(float(df_daily['Senkou_B'].iloc[-1]), 2)
         cloud_top = max(cloud_a, cloud_b)
 
-        short_trend = "단기 상승 📈" if latest_close >= ma20_d else "단기 하락 📉"
-        mid_trend = "중기 상승 📈" if latest_close >= ma60_d else "중기 하락 📉"
-        bb_status = "상한선 근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
-        cloud_status = "구름대 위 🟢" if latest_close > cloud_top else "구름대 내부/하단 🟡"
+        short_trend = "단기 상승 추세 📈" if latest_close >= ma20_d else "단기 하락 추세 📉"
+        mid_trend = "중기 상승 추세 📈" if latest_close >= ma60_d else "중기 하락 추세 📉"
+        bb_status = "상한선 돌파/근접 🚀" if latest_close >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if latest_close <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
+        cloud_status = "구름대 위 상승 국면 🟢" if latest_close > cloud_top else "구름대 내부/하단 돌파 시도 🟡"
 
         df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
         raw_lines = [f"{idx.strftime('%Y-%m-%d')} | Open:${row['Open']:.2f} | High:${row['High']:.2f} | Low:${row['Low']:.2f} | Close:${row['Close']:.2f} | Vol:{int(row['Volume']):,}" for idx, row in df_recent15.iterrows()]
@@ -1550,17 +1533,17 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         rsi_status = f"과매수 ({rsi_val}) ⚠️" if rsi_val >= 70 else (f"과매도 ({rsi_val}) 🟢" if rsi_val <= 30 else f"중립 ({rsi_val}) ⚖️")
         macd_status = "골든크로스 📈" if macd_val > signal_val else "데드크로스 📉"
-        ma_status = f"정배열 🟢" if (ma20_d > ma60_d and ma60_d > ma120_d) else "혼조세 🔴"
+        ma_status = f"정배열 (20>60>120) 🟢" if (ma20_d > ma60_d and ma60_d > ma120_d) else "역배열/혼조세 🔴"
 
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
-        pick_reason, basic_ai_report, deep_ai_report, ai_prices, stock_ai_time = generate_ai_stock_analysis(
+        pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
             stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "$", force_refresh=us_emergency
         )
 
-        buy_price_str = f"${ai_prices['buy']:.2f}" if ai_prices.get('buy') else "⚠️ 산출 오류"
-        stop_loss_str = f"${ai_prices['stop']:.2f}" if ai_prices.get('stop') else "⚠️ 산출 오류"
-        target_price_str = f"${ai_prices['target1']:.2f}" if ai_prices.get('target1') else "⚠️ 산출 오류"
+        buy_price_str = f"${ai_prices['buy']:.2f}" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        stop_loss_str = f"${ai_prices['stop']:.2f}" if ai_prices.get('stop') else "⚠️ 산출 실패 (AI 파싱 오류)"
+        target_price_str = f"${ai_prices['target1']:.2f}" if ai_prices.get('target1') else "⚠️ 산출 실패 (AI 파싱 오류)"
 
         df_chart = df_daily.tail(120)
         fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.04, row_heights=[0.55, 0.25, 0.2])
@@ -1573,13 +1556,13 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA60'], line=dict(color='purple', width=1.2), name='60일선'), row=1, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
-        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"POC: {fmt_price(poc_price, False)}", row=1, col=1)
-        if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"진입: {buy_price_str}", row=1, col=1)
-        if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"1차익절: {target_price_str}", row=1, col=1)
-        if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"손절: {stop_loss_str}", row=1, col=1)
+        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, False)}", row=1, col=1)
+        if ai_prices.get('buy'):
+            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
+        if ai_prices.get('target1'):
+            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
+        if ai_prices.get('stop'):
+            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -1589,8 +1572,8 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
         fig.update_layout(
-            height=480, 
-            margin=dict(l=5, r=5, t=10, b=30), 
+            height=540, 
+            margin=dict(l=10, r=10, t=10, b=40), 
             xaxis_rangeslider_visible=False, 
             template="plotly_dark",
             dragmode=False
@@ -1605,35 +1588,27 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
             }
         )
 
-        deep_section_html = ""
-        if deep_ai_report:
-            deep_section_html = f"""
-            <details class="deep-report-accordion">
-                <summary class="deep-report-btn">🔍 전문가용 캔들/파동/호가창 심도 분석 펼치기 ▼</summary>
-                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_report}</div>
-            </details>
-            """
-
         stock_cards_us_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="report-header">{stock_name} ({symbol}) {badge_html} {defense_badge}</div>
-                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView ↗</a>
+                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
+                <div class="stock-reason-box">💡 <b>선정 이유:</b><br>{pick_reason}</div>
                 <div class="report-divider"></div>
                 <div class="report-line">• 종가 기준 현재가 : <span class="highlight-val">{fmt_price(latest_close, False)}</span></div>
-                <div class="report-line">• 추세 / 구조 : {short_trend} | {bb_status} | {cloud_status}</div>
-                <div class="report-line">• 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, False)}</span> &nbsp;|&nbsp; RSI : {rsi_status}</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(눌림목 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(ATR 검증 지지선)</span></div>
-                <div class="report-line text-green">🚀 AI 1차 익절가 : {target_price_str} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5)</span></div>
+                <div class="report-line">• 추세 진단 : {short_trend} / {mid_trend}</div>
+                <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
+                <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, False)}</span></div>
+                <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:11px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
-                {deep_section_html}
+                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
             </div>
             <div class="chart-container">{chart_html}</div>
         </div>
@@ -1641,10 +1616,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html)
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 잔고 직결 및 2단 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고(현재가/평가액) 직결 및 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -1683,9 +1658,12 @@ def get_toss_holdings():
                     qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
                     avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or 0)
                     
+                    # 🎯 토스 원본 실시간 필드 추출
                     last_p = float(item.get("lastPrice") or 0)
+                    
                     mv = item.get("marketValue") or {}
                     eval_amt = float(mv.get("amountAfterCost") or mv.get("amount") or (last_p * qty))
+                    
                     pl = item.get("profitLoss") or {}
                     profit_loss = float(pl.get("amountAfterCost") or pl.get("amount") or 0)
                     ret_rate = float(pl.get("rateAfterCost") or pl.get("rate") or 0.0) * 100.0
@@ -1693,6 +1671,7 @@ def get_toss_holdings():
                     market = str(item.get("marketCountry", "KR")).upper()
                     currency = str(item.get("currency", "KRW")).upper()
 
+                    # 💡 상장폐지/특수 종목 (평단가 0 이하) 보정
                     if avg_p <= 0:
                         profit_loss = 0.0
                         ret_rate = 0.0
@@ -1702,16 +1681,16 @@ def get_toss_holdings():
                             "ticker": raw_sym,
                             "name": name,
                             "avg_price": avg_p,
-                            "current_price": last_p,
-                            "eval_amount": eval_amt,
-                            "profit_loss": profit_loss,
-                            "return_pct": ret_rate,
+                            "current_price": last_p,       # 토스 실시간 현재가
+                            "eval_amount": eval_amt,         # 토스 실제 평가금액
+                            "profit_loss": profit_loss,     # 토스 실제 평가손익
+                            "return_pct": ret_rate,         # 토스 실제 수익률(%)
                             "quantity": qty,
                             "market": market,
                             "currency": currency
                         })
                 if holdings:
-                    print(f"🎉 토스증권 API 연동 성공! 보유 종목 {len(holdings)}개 수신")
+                    print(f"🎉 토스증권 API 연동 성공! 실제 보유 종목 총 {len(holdings)}개 수신 완료")
                     return holdings
     except Exception as e:
         print(f"⚠️ 토스 API 호출 오류: {e}")
@@ -1727,6 +1706,7 @@ def get_mock_holdings():
 
 toss_holdings = get_toss_holdings()
 
+# 💡 [매도 종목 캐시 자동 정리]: 현재 계좌에 없는 종목은 ai_cache에서 제거
 currently_held_symbols = set(h['ticker'] for h in toss_holdings)
 deleted_cache_count = 0
 for key in list(ai_cache_store.keys()):
@@ -1753,6 +1733,7 @@ for h in toss_holdings:
         currency = h['currency']
         quantity = h['quantity']
         
+        # 🎯 토스 실제 계좌 값 직결 (오차 0원화)
         current_price = h['current_price']
         eval_amount_raw = h['eval_amount']
         profit_loss_raw = h['profit_loss']
@@ -1767,6 +1748,7 @@ for h in toss_holdings:
 
         emergency_flag = kr_emergency if is_krw else us_emergency
 
+        # 차트 및 보조지표 계산용 yfinance
         yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
         df_daily = None
         try:
@@ -1779,7 +1761,7 @@ for h in toss_holdings:
             df_daily = None
 
         if df_daily is None or df_daily.empty or len(df_daily) == 0:
-            short_trend, mid_trend = "단기 분석 중 ⚖️", "중기 분석 중 ⚖️"
+            short_trend, mid_trend = "단기 추세 분석 중 ⚖️", "중기 추세 분석 중 ⚖️"
             bb_status, cloud_status = "밴드 안정 ⚖️", "구름대 유효 🟢"
             poc_price, max_120, min_120 = current_price, current_price, current_price
             rsi_status, macd_status = "중립 (50) ⚖️", "중립 ⚖️"
@@ -1845,11 +1827,11 @@ for h in toss_holdings:
             rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
 
             if rsi_val > rsi_signal_val:
-                rsi_cross_status = "RSI 상향 돌파 📈"
+                rsi_cross_status = "RSI 상향 돌파 및 상승 모멘텀 유지 📈"
             elif rsi_val < rsi_signal_val and rsi_val >= 60:
-                rsi_cross_status = "RSI-Signal 데드크로스 🔴"
+                rsi_cross_status = "RSI-Signal 데드크로스 발생 (단기 과열 꺾임 경고) 🔴"
             else:
-                rsi_cross_status = "RSI 모멘텀 조정 📉"
+                rsi_cross_status = "RSI 하향 이탈 및 모멘텀 조정 📉"
 
             exp1 = df_daily['Close'].ewm(span=12, adjust=False).mean()
             exp2 = df_daily['Close'].ewm(span=26, adjust=False).mean()
@@ -1864,10 +1846,10 @@ for h in toss_holdings:
             bb_up = float(df_daily['BB_Upper'].iloc[-1])
             bb_low = float(df_daily['BB_Lower'].iloc[-1])
 
-            short_trend = "단기 상승 📈" if current_price >= ma20_d else "단기 하락 📉"
-            mid_trend = "중기 상승 📈" if current_price >= ma60_d else "중기 하락 📉"
-            bb_status = "상한선 근접 🚀" if current_price >= bb_up * 0.99 else ("하한선 지지 🟢" if current_price <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
-            cloud_status = "구름대 유효 🟢"
+            short_trend = "단기 상승 추세 📈" if current_price >= ma20_d else "단기 하락 추세 📉"
+            mid_trend = "중기 상승 추세 📈" if current_price >= ma60_d else "중기 하락 추세 📉"
+            bb_status = "상한선 돌파/근접 🚀" if current_price >= bb_up * 0.99 else ("하한선 근접/지지 🟢" if current_price <= bb_low * 1.01 else "밴드 내 안정 ⚖️")
+            cloud_status = "구름대 상태 유효 🟢"
 
             df_recent15 = df_daily[['Open', 'High', 'Low', 'Close', 'Volume']].tail(15).copy()
             if is_krw:
@@ -1883,7 +1865,7 @@ for h in toss_holdings:
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
-        basic_ai_guide, deep_ai_guide, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
+        ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
             stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw, force_refresh=emergency_flag
         )
 
@@ -1894,47 +1876,39 @@ for h in toss_holdings:
         current_price_formatted = fmt_price(current_price, is_krw, show_decimal=not is_krw)
         poc_formatted = fmt_price(poc_price, is_krw, show_decimal=not is_krw)
 
-        my_stop_str = fmt_price(my_stop_val, is_krw, show_decimal=not is_krw) if my_stop_val else "⚠️ 산출 오류"
-        my_target_str = fmt_price(my_target_val, is_krw, show_decimal=not is_krw) if my_target_val else "⚠️ 산출 오류"
+        my_stop_str = fmt_price(my_stop_val, is_krw, show_decimal=not is_krw) if my_stop_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
+        my_target_str = fmt_price(my_target_val, is_krw, show_decimal=not is_krw) if my_target_val else "⚠️ 산출 실패 (AI 응답 파싱 에러)"
 
         pyramid_row_html = ""
         if my_pyramid_val and my_pyramid_type:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
-            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:11px; color:#94a3b8; font-weight:normal;">(지지/반등 타점)</span></div>'
+            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
-
-        deep_guide_html = ""
-        if deep_ai_guide:
-            deep_guide_html = f"""
-            <details class="deep-report-accordion">
-                <summary class="deep-report-btn">🔍 전문가용 포지션/수급 심도 분석 펼치기 ▼</summary>
-                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_guide}</div>
-            </details>
-            """
 
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주 {defense_badge}</div>
-                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView ↗</a>
+                    <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:17px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
                     {eval_formatted} <span class="{'text-green' if profit_loss_krw>=0 else 'text-red'}">{profit_formatted}</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">• 평단가 : <span class="highlight-val">{avg_price_formatted}</span> (<span class="{'text-green' if return_pct>=0 else 'text-red'}">{return_pct:+.2f}%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">{current_price_formatted}</span></div>
-                <div class="report-line">• 추세 / 구조 : {short_trend} | {bb_status} | {cloud_status}</div>
-                <div class="report-line">• 매물대 (POC) : <span class="highlight-val">{poc_formatted}</span> &nbsp;|&nbsp; RSI : {rsi_status}</div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">{avg_price_formatted}</span> (<span class="{'text-green' if return_pct>=0 else 'text-red'}">{return_pct:+.2f}%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">{current_price_formatted}</span></div>
+                <div class="report-line">추세 진단 : {short_trend} &nbsp;&nbsp;|&nbsp;&nbsp; {mid_trend}</div>
+                <div class="report-line">차트 구조 : {bb_status} &nbsp;&nbsp;|&nbsp;&nbsp; {cloud_status}</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">{poc_formatted}</span></div>
+                <div class="report-line">RSI / MACD : {rsi_status} / {macd_status}</div>
                 {pyramid_row_html}
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : {my_stop_str}</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:11px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{basic_ai_guide}</div>
-                {deep_guide_html}
+                <div class="ai-title">⚡ AI 포트폴리오 심도 포지션 대응 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{ai_3line_comment}</div>
             </div>
         </div>
         """
@@ -1949,94 +1923,56 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: 모바일 반응형 HTML 템플릿 & 레이아웃
+# PART 4: HTML 템플릿 및 레이아웃
 # =========================================================
 html_style = """
 <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 12px; }
+    body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
-    
-    .nav-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
-    .nav-btn { flex: 1; text-align: center; padding: 10px 4px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13.5px; }
+    .nav-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .nav-btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
     .btn-active { background: #2563eb; color: #ffffff; }
     .btn-inactive { background: #334155; color: #94a3b8; }
+    .header { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
     
-    .header { background: #1e293b; color: #38bdf8; padding: 16px 12px; border-radius: 10px; margin-bottom: 16px; text-align: center; border: 1px solid #334155; }
-    .header h1 { font-size: 1.25rem; margin: 0 0 6px 0; }
+    .event-banner { background: #3b0764; border: 1px solid #a855f7; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13.5px; line-height: 1.7; color: #f3e8ff; }
+    .event-banner-title { font-weight: bold; color: #facc15; font-size: 15px; margin-bottom: 6px; }
     
-    .event-banner { background: #3b0764; border: 1px solid #a855f7; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; color: #f3e8ff; }
-    .event-banner-title { font-weight: bold; color: #facc15; font-size: 14px; margin-bottom: 4px; }
-    
-    .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    @media (max-width: 768px) {
-        body { padding: 8px; }
-        .macro-grid { grid-template-columns: 1fr; gap: 6px; }
-        .nav-btn { font-size: 12px; padding: 8px 2px; }
-        .header h1 { font-size: 1.1rem; }
-    }
-    
+    .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
     .macro-card { 
         background: #182232; 
         border: 1px solid #334155; 
-        border-radius: 8px; 
-        padding: 12px 10px; 
+        border-radius: 10px; 
+        padding: 16px 14px; 
         text-align: center; 
         text-decoration: none; 
         color: inherit; 
         display: block;
-        transition: transform 0.15s ease-in-out;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
     }
-    .macro-card:active { transform: scale(0.98); }
-    .macro-title { font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 4px; }
-    .macro-value { font-size: 17px; font-weight: bold; color: #38bdf8; margin-bottom: 2px; }
-    .macro-sub { font-size: 10.5px; color: #4ade80; }
+    .macro-card:hover { transform: translateY(-3px); border-color: #38bdf8; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); }
+    .macro-title { font-size: 13px; color: #94a3b8; font-weight: bold; margin-bottom: 8px; }
+    .macro-value { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 6px; }
+    .macro-sub { font-size: 11px; color: #4ade80; margin-top: 4px; }
     
-    .news-briefing-card { background: #182232; border: 1px solid #38bdf8; border-radius: 10px; padding: 14px; margin-bottom: 20px; line-height: 1.7; font-size: 13.5px; }
-    .news-title { font-size: 14.5px; font-weight: bold; color: #38bdf8; margin-bottom: 8px; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
+    .news-briefing-card { background: #182232; border: 1px solid #38bdf8; border-radius: 12px; padding: 18px; margin-bottom: 25px; line-height: 1.8; font-size: 14px; }
+    .news-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
     
-    .card { background: #1e293b; padding: 14px; border-radius: 10px; margin-bottom: 24px; border: 1px solid #334155; }
-    .console-report { background: #090d16; padding: 14px; border-radius: 8px; border: 1px solid #334155; font-size: 13.5px; line-height: 1.6; }
-    .stock-reason-box { background: #1e1b4b; border-left: 3px solid #818cf8; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 13px; color: #e0e7ff; line-height: 1.5; }
-    .report-header { font-size: 15.5px; font-weight: bold; color: #38bdf8; }
-    .report-divider { border-top: 1px dashed #475569; margin: 8px 0; }
-    .report-line { margin: 3px 0; }
+    .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #334155; }
+    .console-report { background: #090d16; padding: 18px; border-radius: 8px; border: 1px solid #334155; font-size: 15px; line-height: 1.7; }
+    .stock-reason-box { background: #1e1b4b; border-left: 4px solid #818cf8; padding: 12px; border-radius: 4px; margin: 12px 0; font-size: 14px; color: #e0e7ff; line-height: 1.6; }
+    .report-header { font-size: 17px; font-weight: bold; color: #38bdf8; }
+    .report-divider { border-top: 1px dashed #475569; margin: 10px 0; }
+    .report-line { margin: 4px 0; }
     .highlight-val { color: #facc15; font-weight: bold; }
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
-    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 11px; font-weight: bold; display: inline-block; }
-    
-    .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 14px; margin-top: 12px; }
-    .ai-title { font-size: 13.5px; font-weight: bold; color: #4ade80; margin-bottom: 8px; }
-    .ai-content { font-size: 13px; color: #f1f5f9; line-height: 1.65; }
-    
-    .deep-report-accordion { margin-top: 12px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 10px; }
-    .deep-report-btn { 
-        background: #0d4a32; 
-        color: #86efac; 
-        padding: 8px 12px; 
-        border-radius: 6px; 
-        font-size: 12px; 
-        font-weight: bold; 
-        cursor: pointer; 
-        user-select: none;
-        list-style: none;
-        text-align: center;
-        border: 1px solid #15803d;
-    }
-    .deep-report-btn::-webkit-details-marker { display: none; }
-    .deep-report-content { 
-        background: #041f15; 
-        border-radius: 6px; 
-        padding: 12px; 
-        margin-top: 8px; 
-        font-size: 12.5px; 
-        color: #e2e8f0; 
-        line-height: 1.7; 
-        border: 1px solid #166534; 
-    }
-
-    .chart-container { margin-top: 14px; border-radius: 6px; overflow: hidden; }
+    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; }
+    .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 15px; }
+    .ai-title { font-size: 14px; font-weight: bold; color: #4ade80; margin-bottom: 10px; }
+    .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.75; }
+    .chart-container { margin-top: 20px; border-radius: 8px; overflow: hidden; }
 </style>
 """
 
@@ -2080,11 +2016,11 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:16px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:12px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:16px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:12px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
 
-full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:12px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:10px; margin-bottom:20px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.3rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.3rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.3rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.1rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
+full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: {usd_krw_rate:,.1f} 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
 
 # =========================================================
 # PART 5: GitHub Pages 및 ai_cache.json 통합 배포
@@ -2100,7 +2036,7 @@ def upload_to_github_safely(repo, file_path, commit_message, content):
     except Exception as e:
         print(f"🚨 {file_path} 배포 중 예외 발생: {e}")
 
-print("\n🌐 [PART 5] GitHub Pages 및 AI 캐시 동기화 업로드 중...")
+print("\n🌐 [PART 5] GitHub Pages (index, us_index, index3) 및 AI 캐시 동기화 업로드 중...")
 try:
     if not GITHUB_TOKEN:
         raise ValueError("GH_TOKEN이 설정되지 않았습니다.")
@@ -2118,7 +2054,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 2단 아코디언 및 모바일 반응형 대시보드 배포 완료!")
+    print("🎉 [최종 완료] 3개 대시보드가 정상적으로 업데이트 및 GitHub 배포 완료되었습니다!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
