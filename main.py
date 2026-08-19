@@ -106,6 +106,69 @@ def fmt_num(val):
         return "0"
 
 # =========================================================
+# 🎯 [아이템 1] KRX/US 호가 단위(Tick Size) 자동 보정 함수
+# =========================================================
+def adjust_to_tick_size(price, is_krw=True):
+    if price is None or price <= 0:
+        return price
+    
+    if not is_krw:
+        if price >= 1.0:
+            return round(price, 2)
+        else:
+            return round(price, 4)
+
+    p = float(price)
+    if p < 2000:
+        tick = 1
+    elif p < 5000:
+        tick = 5
+    elif p < 20000:
+        tick = 10
+    elif p < 50000:
+        tick = 50
+    elif p < 200000:
+        tick = 100
+    elif p < 500000:
+        tick = 500
+    else:
+        tick = 1000
+        
+    return int(round(p / tick) * tick)
+
+# =========================================================
+# 🛡️ [아이템 2] ATR(14) 기반 최소 손절 버퍼 검증 함수
+# =========================================================
+def calculate_atr(df, period=14):
+    try:
+        high = df['High']
+        low = df['Low']
+        close_prev = df['Close'].shift(1)
+        
+        tr1 = high - low
+        tr2 = (high - close_prev).abs()
+        tr3 = (low - close_prev).abs()
+        
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = tr.rolling(period, min_periods=1).mean().iloc[-1]
+        return float(atr)
+    except Exception:
+        return 0.0
+
+def validate_stop_loss_with_atr(entry_price, stop_loss_price, atr_val, is_krw=True):
+    if not entry_price or not stop_loss_price or atr_val <= 0:
+        return stop_loss_price
+    
+    min_buffer = atr_val * 1.0
+    max_allowed_stop = entry_price - min_buffer
+    
+    if stop_loss_price > max_allowed_stop:
+        adjusted_stop = max_allowed_stop
+        return adjust_to_tick_size(adjusted_stop, is_krw)
+    
+    return adjust_to_tick_size(stop_loss_price, is_krw)
+
+# =========================================================
 # 🏛️ [LLM 다중화 매니저: GEMINI (1순위) -> GROQ (2순위 우회)]
 # =========================================================
 class MultiLLMManager:
@@ -211,7 +274,7 @@ now_str = now_dt.strftime("%Y-%m-%d %H:%M KST")
 today_date = now_dt.date()
 
 # =========================================================
-# 💾 AI 캐시 매니저 & 시간/기준시점 기반 스마트 갱신 로직
+# 💾 AI 캐시 매니저
 # =========================================================
 def load_ai_cache():
     if os.path.exists(CACHE_FILE_NAME):
@@ -280,7 +343,72 @@ def should_refresh_daily_pivot(market_type):
         return True
 
 # =========================================================
-# 📅 [증시 휴장일 판별 모듈 (신호등 이모지 완전 제거)]
+# 🚨 [핵심 아이템 3] 시장 급락(-2.5%) / 반등(-0.5%) 상태 머신 & 롤러코스터 잠금
+# =========================================================
+def get_index_change_rate(ticker_symbol):
+    try:
+        df = yf.Ticker(ticker_symbol).history(period="2d")
+        if df is not None and len(df) >= 2:
+            prev_close = float(df['Close'].iloc[-2])
+            curr_close = float(df['Close'].iloc[-1])
+            return ((curr_close - prev_close) / prev_close) * 100.0
+        elif df is not None and len(df) == 1:
+            prev_close = float(df['Open'].iloc[-1])
+            curr_close = float(df['Close'].iloc[-1])
+            return ((curr_close - prev_close) / prev_close) * 100.0
+    except Exception:
+        pass
+    return 0.0
+
+def check_market_volatility_trigger(market_type="KR"):
+    if market_type == "KR":
+        chg1 = get_index_change_rate("^KS11")
+        chg2 = get_index_change_rate("^KQ11")
+        avg_chg = (chg1 + chg2) / 2.0
+    else:
+        chg1 = get_index_change_rate("^IXIC")
+        chg2 = get_index_change_rate("^DJI")
+        avg_chg = (chg1 + chg2) / 2.0
+
+    state_key = f"VOLATILITY_STATE_{market_type}"
+    today_str = today_date.strftime("%Y-%m-%d")
+    state = ai_cache_store.get(state_key, {"date": today_str, "status": "NORMAL", "crash_count": 0, "recovery_count": 0})
+
+    if state.get("date") != today_str:
+        state = {"date": today_str, "status": "NORMAL", "crash_count": 0, "recovery_count": 0}
+
+    is_emergency_refresh = False
+    banner_msg = None
+    defense_mode = False
+
+    # 1. 급락 감지 (-2.5% 이하)
+    if avg_chg <= -2.5:
+        defense_mode = True
+        if state["status"] == "NORMAL" and state["crash_count"] == 0:
+            print(f"🚨 [{market_type}] 1차 시장 급락 감지 ({avg_chg:+.2f}%) ➔ 긴급 방어 풀 업데이트 1회 실행!")
+            state["status"] = "CRASH_HANDLED"
+            state["crash_count"] = 1
+            is_emergency_refresh = True
+            banner_msg = f"🚨 <b>[시장 급락 경보 ({avg_chg:+.2f}%)]</b> 긴급 방어 지지선 및 손절선 풀 업데이트 완료"
+        elif state["status"] == "RECOVERY_HANDLED":
+            print(f"⚠️ [{market_type}] 2차 재급락 감지 ({avg_chg:+.2f}%) ➔ 롤러코스터 장세 진입 (단기 긴급호출 잠금, 정규주기 유지)")
+            state["status"] = "HIGH_VOLATILITY_LOCKED"
+            banner_msg = f"🚨 <b>[초고변동성 롤러코스터 경보 ({avg_chg:+.2f}%)]</b> 장중 잦은 급변동 발생. 신규 진입을 멈추고 관망 및 현금 비중 유지를 권장합니다."
+
+    # 2. 반등 감지 (-0.5% 이상)
+    elif avg_chg >= -0.5 and state["status"] == "CRASH_HANDLED" and state["recovery_count"] == 0:
+        print(f"🟢 [{market_type}] 1차 시장 급반등 감지 ({avg_chg:+.2f}%) ➔ 긴급 복구 풀 업데이트 1회 실행!")
+        state["status"] = "RECOVERY_HANDLED"
+        state["recovery_count"] = 1
+        is_emergency_refresh = True
+        banner_msg = f"🟢 <b>[시장 급반등 확인 ({avg_chg:+.2f}%)]</b> 상방 목표가 및 추세 복구 풀 업데이트 완료"
+
+    ai_cache_store[state_key] = state
+    save_ai_cache(state_key, state)
+    return is_emergency_refresh, banner_msg, defense_mode, avg_chg
+
+# =========================================================
+# 📅 [증시 휴장일 판별 모듈]
 # =========================================================
 def get_market_open_status(market="KR"):
     if today_date.weekday() == 5:
@@ -491,7 +619,7 @@ us_macro = get_us_macro_data()
 usd_krw_rate = get_usd_krw_rate()
 
 # =========================================================
-# 📰 뉴스 헤드라인 수집 및 7일 감성 분석
+# 📰 뉴스 수집 및 7일 감성 분석 (신호등 이모지 복원)
 # =========================================================
 def get_naver_7days_news():
     if TEST_MODE:
@@ -536,10 +664,10 @@ def sanitize_text(text):
     if not text: return ""
     return re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', str(text)).strip()
 
-def analyze_7days_news_sentiment(market_type, news_text):
+def analyze_7days_news_sentiment(market_type, news_text, force_refresh=False):
     cache_key = f"MARKET_{market_type}"
 
-    if not should_refresh_daily_pivot(market_type):
+    if not force_refresh and not should_refresh_daily_pivot(market_type):
         print(f"📦 [뉴스 브리핑] {market_type} 당일 기준 시점 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         brief_time = cached.get('updated_at', now_str)
@@ -550,7 +678,7 @@ def analyze_7days_news_sentiment(market_type, news_text):
             cached_data = ai_cache_store[cache_key]
             brief_time = cached_data.get('updated_at', now_str)
             return cached_data['status'], cached_data['briefing_html'], brief_time
-        return "보통", "분석 데이터를 불러올 수 없습니다.", now_str
+        return "보통 🟡", "분석 데이터를 불러올 수 없습니다.", now_str
 
     print(f"⚡ [뉴스 브리핑] {market_type} 신규 AI 종합 분석 요청 생성 중...")
     prompt = f"""
@@ -578,9 +706,14 @@ def analyze_7days_news_sentiment(market_type, news_text):
     """
     try:
         content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=800)
-        status_val = "보통"
+        raw_status = "보통"
         status_match = re.search(r'상태:\s*(.*)', content)
-        if status_match: status_val = status_match.group(1).strip()
+        if status_match: raw_status = status_match.group(1).strip()
+
+        # 🚥 [신호등 이모지 복원]
+        if "긍정" in raw_status: status_val = "긍정 🟢"
+        elif "부정" in raw_status: status_val = "부정 🔴"
+        else: status_val = "보통 🟡"
 
         extracted_pos = [re.search(rf'긍정{i}:\s*(.*)', content).group(1).strip() for i in range(1, 6) if re.search(rf'긍정{i}:\s*(.*)', content)]
         extracted_neg = [re.search(rf'부정{i}:\s*(.*)', content).group(1).strip() for i in range(1, 6) if re.search(rf'부정{i}:\s*(.*)', content)]
@@ -600,11 +733,11 @@ def analyze_7days_news_sentiment(market_type, news_text):
         📊 <b>7일 누적 뉴스 감성 지수:</b> <span class="highlight-val">{sanitize_text(score_val)}</span>
         """
 
-        save_ai_cache(cache_key, {"status": sanitize_text(status_val), "briefing_html": raw_briefing_html})
-        return sanitize_text(status_val), raw_briefing_html, now_str
+        save_ai_cache(cache_key, {"status": status_val, "briefing_html": raw_briefing_html})
+        return status_val, raw_briefing_html, now_str
 
     except Exception as e:
-        return "보통", f"뉴스 분석 생성 안내: {e}", now_str
+        return "보통 🟡", f"뉴스 분석 생성 안내: {e}", now_str
 
 # =========================================================
 # 🛠️ 기술적 지표 & 파동 마디점 추출 유틸리티
@@ -626,7 +759,8 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
     except Exception:
         return "파동 마디점 안정화 진행 중"
 
-def parse_price_from_text(text, key_prefix):
+# 🎯 [소수점 오차 정밀 파서 및 안전 스케일링]
+def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     if not text:
         return None
     try:
@@ -636,19 +770,24 @@ def parse_price_from_text(text, key_prefix):
             digits = re.findall(r'[\d\.]+', raw_str.replace(',', ''))
             if digits:
                 val = float(digits[0])
-                if val > 0: return val
+                if val > 0:
+                    # 미장 종목 소수점 누락(예: 72.91 -> 7291) 자동 보정
+                    if not is_krw and current_price > 0:
+                        if val > (current_price * 10):
+                            val = val / 100.0
+                    return adjust_to_tick_size(val, is_krw)
     except Exception:
         pass
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (4시간 스마트 캐싱)
+# 🤖 일반 종목 AI 정밀 리포트 (4시간 캐싱 / 급락 시 강제갱신)
 # =========================================================
-def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type="", currency_symbol="원"):
+def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val=0.0, supply_type="", currency_symbol="원", force_refresh=False):
     cache_key = f"STOCK_{symbol}"
     is_krw = True if currency_symbol in ["원", "KRW"] else False
 
-    if is_cache_valid(cache_key, max_hours=4):
+    if not force_refresh and is_cache_valid(cache_key, max_hours=4):
         print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         report_time = cached.get('updated_at', now_str)
@@ -661,6 +800,8 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
             return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {}), report_time
         else:
             return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
+
+    example_format = "77200" if is_krw else "72.91 (달러 기준 소수점 2자리)"
 
     prompt = f"""
 너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
@@ -690,10 +831,10 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 
 [출력 양식 - 규격 엄수]
 선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 2~3줄 요약>
-파싱_눌림목가: <숫자만 입력 ex: 77200>
-파싱_손절가: <숫자만 입력 ex: 75500>
-파싱_1차익절가: <숫자만 입력 ex: 80200>
-파싱_2차익절가: <숫자만 입력 ex: 83800>
+파싱_눌림목가: <숫자만 입력 ex: {example_format}>
+파싱_손절가: <숫자만 입력 ex: {example_format}>
+파싱_1차익절가: <숫자만 입력 ex: {example_format}>
+파싱_2차익절가: <숫자만 입력 ex: {example_format}>
 상세리포트:
 📌 [차트 구조 & 패턴/캔들 종합 진단]
 - <이평선/구름대 구조와 함께 현재 포착되는 캔들 형태(거래량 동반 여부) 및 차트 패턴(쌍바닥/역헤드앤숄더/컵앤핸들/엘리엇파동 위치 등)을 2~3줄로 종합 진단>
@@ -721,10 +862,14 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         if reason_match: reason_val = reason_match.group(1).strip()
         if report_match: report_val = report_match.group(1).strip()
 
-        ai_buy = parse_price_from_text(content, "파싱_눌림목가")
-        ai_stop = parse_price_from_text(content, "파싱_손절가")
-        ai_target1 = parse_price_from_text(content, "파싱_1차익절가")
-        ai_target2 = parse_price_from_text(content, "파싱_2차익절가")
+        ai_buy = parse_price_from_text(content, "파싱_눌림목가", is_krw, latest_close)
+        ai_stop = parse_price_from_text(content, "파싱_손절가", is_krw, latest_close)
+        ai_target1 = parse_price_from_text(content, "파싱_1차익절가", is_krw, latest_close)
+        ai_target2 = parse_price_from_text(content, "파싱_2차익절가", is_krw, latest_close)
+
+        # 🛡️ [아이템 2] ATR 손절가 최소 버퍼 검증
+        if ai_stop and atr_val > 0 and ai_buy:
+            ai_stop = validate_stop_loss_with_atr(ai_buy, ai_stop, atr_val, is_krw)
 
         parsed_prices = {"buy": ai_buy, "stop": ai_stop, "target1": ai_target1, "target2": ai_target2}
 
@@ -741,13 +886,13 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 [토스증권 마이 대시보드 전용] AI 심도 3줄 가이드 (4시간 캐싱)
+# 🎯 [토스 마이 대시보드 전용] AI 심도 가이드 (4시간 캐싱 / 급락 시 강제갱신)
 # =========================================================
-def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True):
+def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
     currency_symbol = "원" if is_krw else "$"
 
-    if is_cache_valid(cache_key, max_hours=4):
+    if not force_refresh and is_cache_valid(cache_key, max_hours=4):
         print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         guide_time = cached.get('updated_at', now_str)
@@ -761,6 +906,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
 
     avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
+    example_format = "74200" if is_krw else "72.91 (달러 소수점 2자리)"
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
@@ -785,9 +931,9 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
 [출력 양식 - 규격 엄수]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
-파싱_추매추천가: <숫자만 입력 ex: 74200 (없을 시 0)>
-파싱_Trailing손절가: <숫자만 입력 ex: 73500>
-파싱_동적목표가: <숫자만 입력 ex: 79000>
+파싱_추매추천가: <숫자만 입력 ex: {example_format} (없을 시 0)>
+파싱_Trailing손절가: <숫자만 입력 ex: {example_format}>
+파싱_동적목표가: <숫자만 입력 ex: {example_format}>
 상세가이드:
 결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
 
@@ -800,9 +946,9 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
     try:
         content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=600)
         
-        stop_val = parse_price_from_text(content, "파싱_Trailing손절가")
-        target_val = parse_price_from_text(content, "파싱_동적목표가")
-        pyramid_val = parse_price_from_text(content, "파싱_추매추천가")
+        stop_val = parse_price_from_text(content, "파싱_Trailing손절가", is_krw, current_price)
+        target_val = parse_price_from_text(content, "파싱_동적목표가", is_krw, current_price)
+        pyramid_val = parse_price_from_text(content, "파싱_추매추천가", is_krw, current_price)
         
         type_match = re.search(r'파싱_추매타입:\s*(불타기|물타기)', content)
         pyramid_type = type_match.group(1) if (type_match and pyramid_val and pyramid_val > 0) else None
@@ -861,6 +1007,18 @@ def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
         return '<span style="background:#2563eb; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">1일차 🆕</span>'
 
 # =========================================================
+# 🛡️ [아이템 4] 급락 시 지수 대비 상대 방어력 라벨링 함수
+# =========================================================
+def get_crash_defense_badge(stock_daily_chg, market_avg_chg, defense_mode):
+    if not defense_mode:
+        return ""
+    if stock_daily_chg >= (market_avg_chg + 1.5):
+        return '<span style="background:#15803d; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">지수 방어 양호 🛡️</span>'
+    elif stock_daily_chg <= (market_avg_chg - 2.0):
+        return '<span style="background:#b91c1c; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">고변동성 하락 ⚠️</span>'
+    return ""
+
+# =========================================================
 # PART 1: 🇰🇷 국장(index.html) 분석 & 08:30 기준 종목 고정/갱신
 # =========================================================
 print("\n" + "="*60)
@@ -871,10 +1029,14 @@ kr_is_open, kr_open_msg = get_market_open_status("KR")
 kr_witching_alerts = get_witching_day_alert("KR")
 kr_econ_events = get_economic_calendar_events("KR")
 
+kr_emergency, kr_vol_banner, kr_defense_mode, kr_avg_chg = check_market_volatility_trigger("KR")
+
 kr_7d_news = get_naver_7days_news()
-kr_market_status, kr_sentiment_briefing, kr_briefing_time = analyze_7days_news_sentiment("대한민국 주식시장(국장)", kr_7d_news)
+kr_market_status, kr_sentiment_briefing, kr_briefing_time = analyze_7days_news_sentiment("대한민국 주식시장(국장)", kr_7d_news, force_refresh=kr_emergency)
 
 kr_banner_items = kr_witching_alerts + kr_econ_events
+if kr_vol_banner:
+    kr_banner_items.insert(0, kr_vol_banner)
 if not kr_is_open:
     kr_banner_items.insert(0, f"<b>[오늘 휴장일]</b> {kr_open_msg} (시세는 직전 거래일 종가 기준입니다)")
 
@@ -888,7 +1050,7 @@ if kr_banner_items:
 else:
     kr_banner_html = ""
 
-kr_needs_refresh = should_refresh_daily_pivot("대한민국 주식시장(국장)")
+kr_needs_refresh = should_refresh_daily_pivot("대한민국 주식시장(국장)") or kr_emergency
 kr_selected_cache_key = "SELECTED_KR_TARGETS"
 
 if not kr_needs_refresh and kr_selected_cache_key in ai_cache_store:
@@ -1009,6 +1171,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         badge_html = update_and_get_consecutive_days(symbol, kr_needs_refresh)
 
+        # 당일 등락률 계산 & 방어력 태그 산출
+        if len(df_daily) >= 2:
+            kr_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
+        else:
+            kr_stock_chg = 0.0
+        defense_badge = get_crash_defense_badge(kr_stock_chg, kr_avg_chg, kr_defense_mode)
+
         df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
         df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
         df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
@@ -1044,6 +1213,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         max_120 = int(df_recent120['High'].max())
         min_120 = int(df_recent120['Low'].min())
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=True)
+        atr_val = calculate_atr(df_daily, period=14)
 
         df_daily = df_daily.ffill().bfill()
 
@@ -1096,7 +1266,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
         pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
-            stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "원"
+            stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "원", force_refresh=kr_emergency
         )
 
         buy_price_str = f"{int(round(ai_prices['buy'])):,}원" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
@@ -1150,7 +1320,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{stock_name} ({pure_code}) {badge_html}</div>
+                    <div class="report-header">{stock_name} ({pure_code}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
@@ -1161,7 +1331,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, True)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
                 <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(주요 지지선 이탈 기준)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
@@ -1184,10 +1354,14 @@ us_is_open, us_open_msg = get_market_open_status("US")
 us_witching_alerts = get_witching_day_alert("US")
 us_econ_events = get_economic_calendar_events("US")
 
+us_emergency, us_vol_banner, us_defense_mode, us_avg_chg = check_market_volatility_trigger("US")
+
 us_7d_news = get_yahoo_7days_news()
-us_market_status, us_sentiment_briefing, us_briefing_time = analyze_7days_news_sentiment("미국 주식시장(미장)", us_7d_news)
+us_market_status, us_sentiment_briefing, us_briefing_time = analyze_7days_news_sentiment("미국 주식시장(미장)", us_7d_news, force_refresh=us_emergency)
 
 us_banner_items = us_witching_alerts + us_econ_events
+if us_vol_banner:
+    us_banner_items.insert(0, us_vol_banner)
 if not us_is_open:
     us_banner_items.insert(0, f"<b>[오늘 휴장일]</b> {us_open_msg} (시세는 직전 거래일 종가 기준입니다)")
 
@@ -1201,7 +1375,7 @@ if us_banner_items:
 else:
     us_banner_html = ""
 
-us_needs_refresh = should_refresh_daily_pivot("미국 주식시장(미장)")
+us_needs_refresh = should_refresh_daily_pivot("미국 주식시장(미장)") or us_emergency
 us_selected_cache_key = "SELECTED_US_TARGETS"
 
 if not us_needs_refresh and us_selected_cache_key in ai_cache_store:
@@ -1251,6 +1425,13 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         badge_html = update_and_get_consecutive_days(symbol, us_needs_refresh)
 
+        # 당일 등락률 계산 & 방어력 태그 산출
+        if len(df_daily) >= 2:
+            us_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
+        else:
+            us_stock_chg = 0.0
+        defense_badge = get_crash_defense_badge(us_stock_chg, us_avg_chg, us_defense_mode)
+
         df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
         df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
         df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
@@ -1286,6 +1467,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         max_120 = round(float(df_recent120['High'].max()), 2)
         min_120 = round(float(df_recent120['Low'].min()), 2)
         peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=False)
+        atr_val = calculate_atr(df_daily, period=14)
 
         df_daily = df_daily.ffill().bfill()
 
@@ -1338,7 +1520,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
         pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
-            stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, supply_type, "$"
+            stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "$", force_refresh=us_emergency
         )
 
         buy_price_str = f"${ai_prices['buy']:.2f}" if ai_prices.get('buy') else "⚠️ 산출 실패 (AI 파싱 오류)"
@@ -1392,7 +1574,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{stock_name} ({symbol}) {badge_html}</div>
+                    <div class="report-header">{stock_name} ({symbol}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div class="stock-reason-box">💡 <b>선정 이유:</b> {pick_reason}</div>
@@ -1403,7 +1585,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, False)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
                 <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(주요 지지선 이탈 기준)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
@@ -1546,6 +1728,8 @@ for h in toss_holdings:
         eval_amount_krw = eval_amount_raw * fx
         profit_loss_krw = profit_loss_raw * fx
 
+        emergency_flag = kr_emergency if is_krw else us_emergency
+
         # 차트 및 보조지표 계산용 yfinance
         yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
         df_daily = None
@@ -1566,7 +1750,18 @@ for h in toss_holdings:
             rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 안정"
             peaks_and_troughs_summary = "마디점 안정화 진행 중"
             raw_data_str_15days = f"최신 토스 현재가: {fmt_price(current_price, is_krw)}"
+            defense_badge = ""
         else:
+            # 상대 방어력 계산
+            if len(df_daily) >= 2:
+                my_stock_chg = ((df_daily['Close'].iloc[-1] - df_daily['Close'].iloc[-2]) / df_daily['Close'].iloc[-2]) * 100.0
+            else:
+                my_stock_chg = 0.0
+            
+            m_avg = kr_avg_chg if is_krw else us_avg_chg
+            m_def = kr_defense_mode if is_krw else us_defense_mode
+            defense_badge = get_crash_defense_badge(my_stock_chg, m_avg, m_def)
+
             df_daily['MA20'] = df_daily['Close'].rolling(20, min_periods=1).mean()
             df_daily['MA60'] = df_daily['Close'].rolling(60, min_periods=1).mean()
             df_daily['MA120'] = df_daily['Close'].rolling(120, min_periods=1).mean()
@@ -1654,7 +1849,7 @@ for h in toss_holdings:
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
         ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
-            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw
+            stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw, force_refresh=emergency_flag
         )
 
         eval_formatted = f"{int(round(eval_amount_krw)):,}원"
@@ -1678,7 +1873,7 @@ for h in toss_holdings:
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주</div>
+                    <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주 {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
