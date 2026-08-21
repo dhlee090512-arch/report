@@ -63,7 +63,7 @@ except Exception:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
-DEFAULT_PROXY_URL = "http://rhjkraof:8k6vhgbj4i2h@31.59.20.176:6754"
+DEFAULT_PROXY_URL = "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
 PROXY_URL = FIXIE_URL if FIXIE_URL else DEFAULT_PROXY_URL
 
 os.environ["HTTP_PROXY"] = PROXY_URL
