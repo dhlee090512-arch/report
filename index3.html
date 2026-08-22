@@ -1,5 +1,6 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🎯 마이 포트폴리오 대시보드</title>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>
 <style>
+    * { box-sizing: border-box; }
     body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
     .nav-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
@@ -41,13 +42,14 @@
     .highlight-val { color: #facc15; font-weight: bold; }
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
-    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; }
+    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
+    .sub-desc { font-size: 12px; color: #94a3b8; font-weight: normal; }
+    .badge-item { color: #ffffff; font-size: 12px; padding: 2px 7px; border-radius: 12px; margin-left: 6px; font-weight: bold; display: inline-block; }
     
     .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 15px; }
     .ai-title { font-size: 14px; font-weight: bold; color: #4ade80; margin-bottom: 10px; }
     .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.75; }
     
-    /* 🎯 2단 아코디언 토글 스타일 */
     .deep-report-accordion { margin-top: 14px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 12px; }
     .deep-report-btn { 
         background: #0d4a32; 
@@ -77,15 +79,49 @@
     }
 
     .chart-container { margin-top: 20px; border-radius: 8px; overflow: hidden; }
+
+    /* 📱 [모바일 폰트 20px 이상 스케일업 반응형] */
+    @media (max-width: 768px) {
+        body { padding: 10px; }
+        .container { width: 100%; }
+        .nav-bar { gap: 6px; margin-bottom: 14px; }
+        .nav-btn { flex: 1; text-align: center; font-size: 20px; padding: 12px 4px; }
+        
+        .header h1 { font-size: 26px; }
+        .header p { font-size: 20px !important; }
+        
+        .macro-grid { grid-template-columns: 1fr; gap: 8px; }
+        .macro-title { font-size: 20px; }
+        .macro-value { font-size: 28px; }
+        .macro-sub { font-size: 20px; }
+        
+        .event-banner { font-size: 20px; line-height: 1.7; }
+        .event-banner-title { font-size: 22px; }
+        
+        .news-briefing-card { font-size: 21px; line-height: 1.8; padding: 16px; }
+        .news-title { font-size: 23px; }
+        
+        .report-header { font-size: 25px; }
+        .tv-link-btn { font-size: 20px; padding: 6px 12px; }
+        .stock-reason-box { font-size: 21px; line-height: 1.7; }
+        .console-report { font-size: 21px; line-height: 1.8; padding: 16px; }
+        .sub-desc { font-size: 20px !important; }
+        .badge-item { font-size: 20px !important; padding: 3px 9px; }
+        
+        .ai-title { font-size: 22px; }
+        .ai-content { font-size: 21px; line-height: 1.8; }
+        .deep-report-btn { font-size: 21px; padding: 12px 14px; }
+        .deep-report-content { font-size: 20px; line-height: 1.8; padding: 16px; }
+    }
 </style>
-</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: 2026-08-22 23:30 KST</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">50,346,875원</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: 1,383.9 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#60a5fa;">-5,680,553원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#60a5fa;">-10.14%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>
+</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: 2026-08-23 00:00 KST</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:10px;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">50,346,875원</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: 1,383.9 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#60a5fa;">-5,680,553원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#60a5fa;">-10.14%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 RISE 미국AI밸류체인데일리고정커버드콜 (490590) - 700주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-490590/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     9,983,306원 <span class="text-green">(+320,395원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -99,7 +135,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 15,410원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 및 손절선 상향 🟢
 • [추세/패턴] 최근 15일간 15110원 고점 찍은 후 단기 조정 국면이며, RSI 하향 이탈 및 이평선 혼조세로 모멘텀 숨고르기 진행 중입니다.
 • [목표가 대응] 15406원(매물대 POC 근접) 도달 시 분할 매도를 통해 차익을 실현하며, 저항선 돌파 여부를 모니터링합니다.
@@ -118,11 +154,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 RISE 미국AI밸류체인TOP3Plus (485690) - 270주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-485690/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     5,892,976원 <span class="text-red">(-794,924원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -131,12 +167,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">24,156원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (57.32) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 21,600원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 21,600원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 20,750원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 23,600원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 7만 주가 넘는 대량 거래량과 함께 21585원 단기 바닥을 형성한 후 횡보 안정세를 보이며 POC 매물대 진입을 준비 중입니다.
 • [목표가 대응] 단기 저항대인 22890원을 돌파할 경우 주가는 매물대 POC 24156원 및 상단 동적 목표가 23576원까지 탄력적인 반등이 가능합니다.
@@ -155,11 +191,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 RISE 미국테크100데일리고정커버드콜 (491620) - 230주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-491620/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     2,443,140원 <span class="text-red">(-20,640원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -173,7 +209,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 11,480원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 🟡
 • [추세/패턴] 최근 15일간 단기 고점 형성 이후 거래량이 수반되며 조정을 받고 있으나, 일목 구름대와 볼린저 밴드 내에서 지지력을 테스트하는 혼조세 국면입니다.
 • [목표가 대응] 반등 시 상단 주요 매물대인 11444원과 동적 목표가 11475원을 기준으로 단계적인 분할 매도 전략을 수립해야 합니다.
@@ -192,11 +228,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 KODEX 미국S&P500액티브 (0041E0) - 190주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0041E0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     3,044,771원 <span class="text-red">(-220,574원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -205,12 +241,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">14,220원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (47.2) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 15,710원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 15,710원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 15,230원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 17,310원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 17,090원 고점 형성 후 거래량이 동반된 하락세로 전환되었으나, 일목 구름대 지지와 볼린저 밴드 내 안정을 유지하며 낙폭을 조절 중임.
 • [목표가 대응] 단기 반등 시 17,312원을 1차 목표가로 설정하고, 해당 구간 도달 시 비중을 축소하며 리스크를 관리할 것.
@@ -229,11 +265,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 SOL 미국넥스트테크TOP10액티브 (0118S0) - 300주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0118S0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     3,282,646원 <span class="text-red">(-572,804원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -242,12 +278,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">9,732원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (53.56) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 9,730원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 9,730원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 10,400원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 11,820원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 급등락 이후 10945원 부근에서 거래량이 수반되며 지지 테스트를 거치고 있으며, MACD 골든크로스와 일목구름대 지지가 유효함.
 • [목표가 대응] 단기 저항선이자 직전 고점 구간인 11820원 도달 시 물량의 절반 이상을 분할 매도하여 수익을 실현할 것.
@@ -266,11 +302,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 TIME 글로벌우주테크&방산액티브 (478150) - 115주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-478150/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     2,295,998원 <span class="text-red">(-258,927원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -279,12 +315,12 @@
                 <div class="report-line">차트 구조 : 하한선 근접/지지 🟢 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">22,672원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (41.23) ⚖️ / 데드크로스 📉</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 19,970원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 19,970원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 18,970원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 21,550원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 120일 최저가이자 볼린저 밴드 하한선에 도달한 상태로, 단기 과매도 구간에서 분할 매수를 통한 평단가 인하 전략이 유효함.
 • [목표가 대응] 반등 시 최근 매물대 저항선이자 주요 마디점인 구간을 동적 목표가로 설정하여 단계적 비중 축소 및 탈출을 도모함.
@@ -303,11 +339,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 TIGER 미국우주테크 (0183J0) - 70주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0183J0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     566,541원 <span class="text-red">(-358,151원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -316,12 +352,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">10,880원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (63.53) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 7,690원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 7,690원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 7,690원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 10,880원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 단기 고점(8965원) 형성 후 4거래일 연속 조정을 거쳤으나, 120일 최저점(6380원) 이후의 상승 추세선과 정배열 지지 구조는 여전히 유효함.
 • [목표가 대응] 단기 반등 시 매물대 POC(10880원) 부근을 동적 목표가로 설정하여, 해당 구간 도달 시 단계적 비중 축소 및 수익 극대화를 도모해야 함.
@@ -340,11 +376,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 두산에너빌리티 (034020) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-034020/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     2,197,116원 <span class="text-red">(-306,730원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -358,7 +394,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 79,300원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 🟡
 • [추세/패턴] 최근 15일간 82600원 단기 고점을 기록한 뒤, 최근 8월 21일 73300원까지 거래량이 동반된 하락세가 발생하며 단기 추세가 약화되었습니다.
 • [목표가 대응] 반등 시 1차 저항선인 79272원 도달 여부를 확인하며, 해당 구간에서의 저항 강도에 따라 비중 조절 및 분할 매도를 고려해야 합니다.
@@ -377,11 +413,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 한화오션 (042660) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-042660/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     2,523,356원 <span class="text-red">(-392,256원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -390,12 +426,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">134,540원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (48.84) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 82,000원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 82,000원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 80,000원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 91,000원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 95800원 고점 형성 후 거래량이 감소하며 84300원까지 조정을 받았으나, 일목구름대 유효 및 120일 최저점(71300원) 상단에서 지지를 모색 중입니다.
 • [목표가 대응] 단기 기술적 반등 시 최근 매물대 저항선인 91000원을 동적 목표가로 설정하여 도달 시 분할 익절 및 비중 조절을 권장합니다.
@@ -414,11 +450,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 SKC (011790) - 60주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-011790/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     5,028,689원 <span class="text-red">(-1,019,146원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -427,12 +463,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">155,783원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (66.47) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 81,100원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 81,100원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 79,800원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 90,700원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 89800원 고점 형성 후 조정 국면이나, 81100원 부근 저점 다지기와 MACD 골든크로스 및 정배열 지지가 유효합니다.
 • [목표가 대응] 단기 저항선인 90720원(전고점 인근) 도달 시 분할 매도를 통해 차익 실현 및 비중 조절을 권장합니다.
@@ -451,11 +487,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇰🇷 SK하이닉스 (000660) - 5주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-000660/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     8,784,794원 <span class="text-red">(-1,888,421원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -464,12 +500,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">876,213원</span></div>
                 <div class="report-line">RSI / MACD : 중립 (50.53) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 1,576,000원 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : 1,576,000원 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : 1,673,000원</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : 1,902,000원</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 저점을 높이며 상승 반전 중이며, 8월 21일 1730000원 안착과 함께 MACD 골든크로스 및 RSI 상향 모멘텀이 유효함.
 • [목표가 대응] 단기 반등 흐름을 활용하여 파싱_동적목표가인 1901880원 도달 시 분할 매도를 통해 수익 실현 및 비중 조절을 수행할 것.
@@ -488,11 +524,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 NASA (NASA) - 1주 </div>
                     <a href="https://www.tradingview.com/symbols/NASA/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     34,016원 <span class="text-red">(-15,400원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -501,12 +537,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$32.64</span></div>
                 <div class="report-line">RSI / MACD : 중립 (59.37) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $23.83 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $23.83 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : $23.41</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $26.78</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 27.24 고점 달성 후 3일 연속 음봉 조정을 거쳤으나, 24.10 부근에서 하방 경직성을 확보하며 단기 지지 테스트를 완료했습니다.
 • [목표가 대응] 직전 고점인 26.78 부근을 1차 동적 목표가로 설정하며, 해당 구간 도달 시 비중 축소 및 차익 실현을 권장합니다.
@@ -525,11 +561,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 누 홀딩스 (NU) - 25주 </div>
                     <a href="https://www.tradingview.com/symbols/NU/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     503,449원 <span class="text-green">(+9,743원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -543,7 +579,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $15.75</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 및 손절선 상향 🟢
 • [추세/패턴] 최근 13.56 반등 저점 이후 15.23 고점을 형성하며 단기 파동 마디점이 안정적으로 구축되었으며, MACD 골든크로스와 정배열 지지를 바탕으로 상승 모멘텀이 유지되고 있음.
 • [목표가 대응] 상단 저항선인 15.75 도달 시 1차 물량 분할 매도를 통해 차익을 실현하고, 잔여 물량은 추세 연동 대응을 권장함.
@@ -562,11 +598,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 방코 산탄데르(ADR) (SAN) - 10주 </div>
                     <a href="https://www.tradingview.com/symbols/SAN/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     201,524원 <span class="text-red">(-1,218원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -580,7 +616,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $15.76</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 🟡
 • [추세/패턴] 최근 500만 주 이상의 대량 거래량 동반 하락 후 14.59 부근으로 회복 중이나 MACD 데드크로스와 RSI 모멘텀 조정으로 추가 관찰 필요.
 • [목표가 대응] 상단 매물대 POC 및 120일 최고가 저항을 고려하여 동적목표가 15.76 도달 시 분할 익절 대응.
@@ -599,11 +635,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 비아샛 (VSAT) - 5주 </div>
                     <a href="https://www.tradingview.com/symbols/VSAT/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     516,001원 <span class="text-red">(-28,364원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -612,12 +648,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$72.91</span></div>
                 <div class="report-line">RSI / MACD : 중립 (40.65) ⚖️ / 데드크로스 📉</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $72.91 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $72.91 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : $72.65</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $80.70</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 8월 18일 이후 급락세가 진정되며 72.65 부근 저점을 다지고 74.72에서 반등 시도를 보이는 구간입니다.
 • [목표가 대응] 반등 시 1차 주요 저항선이자 매물대인 80.70 도달 시 분할 익절을 통해 리스크를 관리해야 합니다.
@@ -636,11 +672,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 오로라 이노베이션 (AUR) - 40주 </div>
                     <a href="https://www.tradingview.com/symbols/AUR/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     344,757원 <span class="text-green">(+9,853원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -654,7 +690,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $6.74</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 및 손절선 상향 🟢
 • [추세/패턴] 지난 8월 18일 대규모 거래량과 함께 급락한 이후 6.00 부근에서 저점을 다지며 횡보세를 보이는 국면입니다.
 • [목표가 대응] 단기 반등 시 주요 매물대와 전고점 라인인 상단 가격대를 목표로 삼고 분할 익절 대응을 준비합니다.
@@ -673,11 +709,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 인텔 (INTC) - 3주 </div>
                     <a href="https://www.tradingview.com/symbols/INTC/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     373,196원 <span class="text-red">(-7,390원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -691,7 +727,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $97.52</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 🟡
 • [추세/패턴] 최근 15일간 단기 고점 형성 후 거래량이 동반된 하락 압력(MACD 데드크로스, RSI 하향 이탈)이 나타나며 역배열 혼조세를 보이고 있습니다.
 • [목표가 대응] 반등 시 직전 저항 마디점인 97.52를 단기 동적 목표가로 설정하여 분할 매도 및 비중 조절을 고려합니다.
@@ -710,11 +746,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 코닝 (GLW) - 2주 </div>
                     <a href="https://www.tradingview.com/symbols/GLW/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     413,911원 <span class="text-red">(-9,563원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -728,7 +764,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $161.83</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 🟡
 • [추세/패턴] 최근 15일간 단기 고점(173.21) 기록 후 연속 음봉과 함께 조정 흐름을 보이고 있으나 볼린저 밴드 내에서 안정적인 조정을 거치는 중입니다.
 • [목표가 대응] 반등 시 직전 주요 저항 구간이자 단기 매물벽인 161.83을 1차 동적 목표가로 설정하여 분할 익절 대응을 준비합니다.
@@ -747,11 +783,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 테슬라 (TSLA) - 2주 </div>
                     <a href="https://www.tradingview.com/symbols/TSLA/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     1,002,414원 <span class="text-green">(+80,668원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -765,7 +801,7 @@
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $391.89</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 관망 및 손절선 상향 🟢
 • [추세/패턴] 최근 58,979,800주의 대량 거래량을 동반한 장대양봉으로 362.86 돌파 및 볼린저 밴드 상한선 확장세 전개.
 • [목표가 대응] RSI가 72.71로 단기 과열권에 진입하여 무리한 불타기보다는 391.89 주요 매물대 POC 도달 시 분할 익절 준비.
@@ -784,11 +820,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 ASTX (ASTX) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/ASTX/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     581,196원 <span class="text-red">(-139,411원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -797,12 +833,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$24.69</span></div>
                 <div class="report-line">RSI / MACD : 중립 (55.32) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $13.50 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $13.50 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : $13.05</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $16.62</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 17.00 달러 고점 형성 후 급락했으나 12.59 달러 부근에서 반등에 성공하며 MACD 골든크로스와 정배열 지지를 유지 중입니다.
 • [목표가 대응] 단기 반등 시 직전 고점 라인인 16.62 달러를 1차 동적목표가로 설정하고, 해당 구간 접근 시 분할 익절을 통해 평단가를 낮추는 전략을 취합니다.
@@ -821,11 +857,11 @@
         
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">🇺🇸 SOXL (SOXL) - 2주 </div>
                     <a href="https://www.tradingview.com/symbols/SOXL/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     333,077원 <span class="text-red">(-67,292원)</span>
                 </div>
                 <div class="report-divider"></div>
@@ -834,12 +870,12 @@
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$49.16</span></div>
                 <div class="report-line">RSI / MACD : 중립 (51.84) ⚖️ / 골든크로스 📈</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $116.71 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가(물타기) : $116.71 <span class="sub-desc">(눌림목/반등 타점)</span></div>
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : $114.57</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : $130.25</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(2026-08-22 22:30 KST)</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">(2026-08-22 22:30 KST)</span></div>
                 <div class="ai-content" style="white-space: pre-line;">결론: 물타기 고려 🟢
 • [추세/패턴] 최근 15일간 급격한 하락 변동성이 나타났으나, 116대 부근에서 대량 거래량이 수반되며 하방 경직성을 확보하는 모습입니다.
 • [목표가 대응] 단기 반등 시 직전 저항선이자 매물대인 130.25 부근을 1차 목표가로 설정하여 분할 익절 및 리스크 관리를 수행합니다.
