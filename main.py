@@ -63,6 +63,7 @@ except Exception:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
+# 🎯 Webshare 신규 프록시 기본값
 DEFAULT_PROXY_URL = "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
 PROXY_URL = FIXIE_URL if FIXIE_URL else DEFAULT_PROXY_URL
 
@@ -169,7 +170,7 @@ def validate_stop_loss_with_atr(entry_price, stop_loss_price, atr_val, is_krw=Tr
     return adjust_to_tick_size(stop_loss_price, is_krw)
 
 # =========================================================
-# 🏛️ [LLM 다중화 매니저: GEMINI (1순위) -> GROQ (2순위 우회)]
+# 🏛️ [LLM 다중화 매니저]
 # =========================================================
 class MultiLLMManager:
     def __init__(self, gemini_key, groq_keys):
@@ -216,11 +217,10 @@ class MultiLLMManager:
     def is_available(self):
         return (self.gemini_client is not None or self.groq_client is not None) and not TEST_MODE
 
-    def generate_completion(self, prompt, temperature=0.3, max_tokens=1500):
+    def generate_completion(self, prompt, temperature=0.3, max_tokens=1800):
         if TEST_MODE:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
-        # 1. Gemini 우선 호출 (4.1초 RPM 방어)
         if self.gemini_client:
             try:
                 elapsed = time.time() - self.last_gemini_call_time
@@ -238,7 +238,6 @@ class MultiLLMManager:
             except Exception as e:
                 print(f"⚠️ Gemini 일시 오류/429 ({e}) ➔ Groq으로 임시 우회합니다.")
 
-        # 2. Groq 우회 호출
         while self.groq_client:
             try:
                 print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} 요청 전송 중...")
@@ -343,7 +342,7 @@ def should_refresh_daily_pivot(market_type):
         return True
 
 # =========================================================
-# 🚨 [핵심 아이템 3] 시장 급락(-2.5%) / 반등(-0.5%) 상태 머신 & 롤러코스터 잠금
+# 🚨 시장 급락(-2.5%) / 반등(-0.5%) 상태 머신 & 롤러코스터 잠금
 # =========================================================
 def get_index_change_rate(ticker_symbol):
     try:
@@ -381,7 +380,6 @@ def check_market_volatility_trigger(market_type="KR"):
     banner_msg = None
     defense_mode = False
 
-    # 1. 급락 감지 (-2.5% 이하)
     if avg_chg <= -2.5:
         defense_mode = True
         if state["status"] == "NORMAL" and state["crash_count"] == 0:
@@ -395,7 +393,6 @@ def check_market_volatility_trigger(market_type="KR"):
             state["status"] = "HIGH_VOLATILITY_LOCKED"
             banner_msg = f"🚨 <b>[초고변동성 롤러코스터 경보 ({avg_chg:+.2f}%)]</b> 장중 잦은 급변동 발생. 신규 진입을 멈추고 관망 및 현금 비중 유지를 권장합니다."
 
-    # 2. 반등 감지 (-0.5% 이상)
     elif avg_chg >= -0.5 and state["status"] == "CRASH_HANDLED" and state["recovery_count"] == 0:
         print(f"🟢 [{market_type}] 1차 시장 급반등 감지 ({avg_chg:+.2f}%) ➔ 긴급 복구 풀 업데이트 1회 실행!")
         state["status"] = "RECOVERY_HANDLED"
@@ -710,7 +707,6 @@ def analyze_7days_news_sentiment(market_type, news_text, force_refresh=False):
         status_match = re.search(r'상태:\s*(.*)', content)
         if status_match: raw_status = status_match.group(1).strip()
 
-        # 🚥 [신호등 이모지 복원]
         if "긍정" in raw_status: status_val = "긍정 🟢"
         elif "부정" in raw_status: status_val = "부정 🔴"
         else: status_val = "보통 🟡"
@@ -759,7 +755,6 @@ def extract_peaks_and_troughs(df_60, is_krw=True):
     except Exception:
         return "파동 마디점 안정화 진행 중"
 
-# 🎯 [소수점 오차 정밀 파서]
 def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     if not text:
         return None
@@ -777,7 +772,7 @@ def parse_price_from_text(text, key_prefix, is_krw=True, current_price=0.0):
     return None
 
 # =========================================================
-# 🤖 일반 종목 AI 정밀 리포트 (심도 있는 상세 서술 & 동적 예시)
+# 🤖 일반 종목 AI 2단 리포트 (기본 핵심 요약 + 상세 아코디언 원문)
 # =========================================================
 def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val=0.0, supply_type="", currency_symbol="원", force_refresh=False):
     cache_key = f"STOCK_{symbol}"
@@ -787,15 +782,20 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         report_time = cached.get('updated_at', now_str)
-        return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {}), report_time
+        # 💡 기존 캐시와 새 캐시 구조 완벽 호환
+        b_rep = cached.get('basic_report') or cached.get('report', '')
+        d_rep = cached.get('deep_report', '')
+        return cached.get('reason', ''), b_rep, d_rep, cached.get('parsed_prices', {}), report_time
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             report_time = cached.get('updated_at', now_str)
-            return cached.get('reason', ''), cached.get('report', ''), cached.get('parsed_prices', {}), report_time
+            b_rep = cached.get('basic_report') or cached.get('report', '')
+            d_rep = cached.get('deep_report', '')
+            return cached.get('reason', ''), b_rep, d_rep, cached.get('parsed_prices', {}), report_time
         else:
-            return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
+            return "수급/모멘텀 모니터링 종목", "AI 분석 준비 중", "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
     if is_krw:
         ex_buy = f"{int(latest_close * 0.98)}"
@@ -812,7 +812,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 
     prompt = f"""
 너는 20년 경력의 수석 기술적 분석 및 차트 패턴 트레이딩 전문가이다. 
-단순 요약이나 짧은 결론에 그치지 말고, 120일 파동 마디점, POC 매물대, 15일 캔들 형태, 보조지표를 종합적으로 심도 있게 판단하여 전문적이고 상세한 매매 전략 리포트를 작성하라.
+120일 파동 마디점, POC 매물대, 15일 캔들 형태를 종합적으로 판단하여 심도 있는 [상세리포트]를 작성하고, 이를 바탕으로 한눈에 보기 편한 [핵심요약리포트]를 도출하라.
 
 [종목 기본 & 수급/뉴스 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -833,12 +833,26 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [가격 출력 규칙 - 엄수]
 {price_rule}
 
-[출력 양식 - 규격 엄수 (상세리포트는 각 항목별로 구체적인 기술적 근거를 들어 풍부하게 서술할 것)]
-선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세, 캔들/패턴 모멘텀을 종합하여 3~4줄로 심도 있게 서술>
+[출력 양식 - 규격 엄수]
+선정이유: <외인/기관 수급, 뉴스 호재, 주도 테마/섹터 강세를 종합하여 2~3줄 요약>
 파싱_눌림목가: <{ex_buy}>
 파싱_손절가: <{ex_stop}>
 파싱_1차익절가: <{ex_t1}>
 파싱_2차익절가: <{ex_t2}>
+
+핵심요약리포트:
+📌 [차트 구조 & 패턴/캔들 종합 진단]
+- <아래 상세리포트의 진단 내용을 2~3줄로 깔끔하게 압축>
+
+🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
+- 눌림목 매수 추천가 : {ex_buy}{currency_symbol} / 타이트 손절가 : {ex_stop}{currency_symbol}
+- <아래 상세리포트의 매수/손절 지지 근거를 2~3줄로 압축>
+
+🚀 [현실적 분할 익절 전략]
+- 1차 안전 익절가 : {ex_t1}{currency_symbol} (손익비 1:1.5 이상 달성 지점 / 물량 50% 익절)
+- 2차 추세 익절가 : {ex_t2}{currency_symbol} (패턴 상단 목표 및 전고점 저항 지점 / 잔량 50% 추세 대응)
+- <아래 상세리포트의 목표가/익절 근거를 2~3줄로 압축>
+
 상세리포트:
 📌 [차트 구조 & 패턴/캔들 종합 진단]
 • 이평선 배열 상태({ma_status})와 일목균형표 구름대 지지 여부를 바탕으로 현재 추세의 강도를 구체적으로 진단.
@@ -858,23 +872,27 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1500)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1800)
         
         reason_val = f"{supply_type} 모멘텀과 기술적 지지선 반등 종목입니다."
-        report_val = content
+        basic_report_val = ""
+        deep_report_val = ""
 
         reason_match = re.search(r'선정이유:\s*(.*)', content)
-        report_match = re.search(r'상세리포트:\s*([\s\S]*)', content)
-
         if reason_match: reason_val = reason_match.group(1).strip()
-        if report_match: report_val = report_match.group(1).strip()
+
+        basic_match = re.search(r'핵심요약리포트:\s*([\s\S]*?)(?=상세리포트:|$)', content)
+        if basic_match: basic_report_val = basic_match.group(1).strip()
+        else: basic_report_val = content
+
+        deep_match = re.search(r'상세리포트:\s*([\s\S]*)', content)
+        if deep_match: deep_report_val = deep_match.group(1).strip()
 
         ai_buy = parse_price_from_text(content, "파싱_눌림목가", is_krw, latest_close)
         ai_stop = parse_price_from_text(content, "파싱_손절가", is_krw, latest_close)
         ai_target1 = parse_price_from_text(content, "파싱_1차익절가", is_krw, latest_close)
         ai_target2 = parse_price_from_text(content, "파싱_2차익절가", is_krw, latest_close)
 
-        # 🛡️ [아이템 2] ATR 손절가 최소 버퍼 검증
         if ai_stop and atr_val > 0 and ai_buy:
             ai_stop = validate_stop_loss_with_atr(ai_buy, ai_stop, atr_val, is_krw)
 
@@ -882,18 +900,19 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 
         save_ai_cache(cache_key, {
             "reason": sanitize_text(reason_val),
-            "report": sanitize_text(report_val),
+            "basic_report": sanitize_text(basic_report_val),
+            "deep_report": sanitize_text(deep_report_val),
             "parsed_prices": parsed_prices
         })
-        return sanitize_text(reason_val), sanitize_text(report_val), parsed_prices, now_str
+        return sanitize_text(reason_val), sanitize_text(basic_report_val), sanitize_text(deep_report_val), parsed_prices, now_str
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 통신 오류 발생: {e}"
         print(f"⚠️ {stock_name} AI 리포트 생성 오류: {e}")
-        return "AI 분석 호출 실패", err_msg, {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
+        return "AI 분석 호출 실패", err_msg, "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 [토스 마이 대시보드 전용] AI 심도 가이드 (상세 서술 & 동적 예시)
+# 🎯 토스 마이 대시보드 전용 AI 2단 가이드
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -903,14 +922,18 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         guide_time = cached.get('updated_at', now_str)
-        return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        b_rep = cached.get('basic_report') or cached.get('report', '')
+        d_rep = cached.get('deep_report', '')
+        return b_rep, d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             guide_time = cached.get('updated_at', now_str)
-            return cached.get('report', ''), cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
-        return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
+            b_rep = cached.get('basic_report') or cached.get('report', '')
+            d_rep = cached.get('deep_report', '')
+            return b_rep, d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        return "[테스트 모드] AI 연동 미사용 상태입니다.", "", None, None, None, None, now_str
 
     avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
     
@@ -927,7 +950,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-단순 요약이 아닌, 사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로 수익 극대화(Trailing Stop)와 리스크 관리에 최적화된 심도 있는 포지션 대응 전략을 작성하라.
+사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 심도 있는 [상세가이드]를 작성하고 이를 바탕으로 한눈에 보기 편한 [핵심요약가이드]를 도출하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -949,14 +972,20 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열, 상장폐지/정리매매 종목) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
 4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
 
-[출력 양식 - 규격 엄수 (상세가이드는 각 항목별로 구체적인 기술적/수급적 근거를 들어 풍부하게 서술할 것)]
+[출력 양식 - 규격 엄수]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
 파싱_추매추천가: <{ex_pyramid} (없을 시 0)>
 파싱_Trailing손절가: <{ex_stop}>
 파싱_동적목표가: <{ex_target}>
-상세가이드:
-결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
 
+핵심요약가이드:
+결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
+• [추세/패턴] <아래 상세가이드의 캔들/거래량 진단을 1~2줄로 요약>
+• [목표가 대응] <아래 상세가이드의 목표가 및 익절 요령을 1~2줄로 요약>
+• [이익 보존] <아래 상세가이드의 Trailing Stop 손절가 근거를 1~2줄로 요약>
+
+상세가이드:
+결론: [위와 동일]
 • [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 상세히 분석.
 • [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 파싱_동적목표가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
 • [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 파싱_Trailing손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
@@ -964,7 +993,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
     try:
-        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1000)
+        content = llm_mgr.generate_completion(prompt, temperature=0.3, max_tokens=1400)
         
         stop_val = parse_price_from_text(content, "파싱_Trailing손절가", is_krw, current_price)
         target_val = parse_price_from_text(content, "파싱_동적목표가", is_krw, current_price)
@@ -973,22 +1002,26 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         type_match = re.search(r'파싱_추매타입:\s*(불타기|물타기)', content)
         pyramid_type = type_match.group(1) if (type_match and pyramid_val and pyramid_val > 0) else None
 
-        guide_match = re.search(r'상세가이드:\s*([\s\S]*)', content)
-        guide_text = guide_match.group(1).strip() if guide_match else content
+        basic_match = re.search(r'핵심요약가이드:\s*([\s\S]*?)(?=상세가이드:|$)', content)
+        basic_text = basic_match.group(1).strip() if basic_match else content
+
+        deep_match = re.search(r'상세가이드:\s*([\s\S]*)', content)
+        deep_text = deep_match.group(1).strip() if deep_match else ""
 
         save_ai_cache(cache_key, {
-            "report": sanitize_text(guide_text),
+            "basic_report": sanitize_text(basic_text),
+            "deep_report": sanitize_text(deep_text),
             "stop_price": stop_val,
             "target_price": target_val,
             "pyramid_price": pyramid_val if pyramid_type else None,
             "pyramid_type": pyramid_type
         })
-        return sanitize_text(guide_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
+        return sanitize_text(basic_text), sanitize_text(deep_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 오류 발생: {e}"
         print(f"⚠️ {stock_name} 마이 대시보드 AI 가이드 실패: {e}")
-        return err_msg, None, None, None, None, now_str
+        return err_msg, "", None, None, None, None, now_str
 
 # =========================================================
 # 🏷️ [N일 연속 추천 뱃지 계산 모듈]
@@ -1042,7 +1075,7 @@ def get_crash_defense_badge(stock_daily_chg, market_avg_chg, defense_mode):
 # PART 1: 🇰🇷 국장(index.html) 분석 & 08:30 기준 종목 고정/갱신
 # =========================================================
 print("\n" + "="*60)
-print("🇰🇷 [PART 1] 한국 증시 연속 추세 & 세력 매집 주도주 스캔 중...")
+print("🇰🇷 [PART 1] 한국 증시 스캔 & 2단 리포트 생성 중...")
 print("="*60)
 
 kr_is_open, kr_open_msg = get_market_open_status("KR")
@@ -1284,7 +1317,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         tradingview_url = f"https://www.tradingview.com/symbols/KRX-{pure_code}/"
 
-        pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
+        pick_reason, basic_ai_report, deep_ai_report, ai_prices, stock_ai_time = generate_ai_stock_analysis(
             stock_name, symbol, kr_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "원", force_refresh=kr_emergency
         )
 
@@ -1304,11 +1337,11 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
         fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, True)}", row=1, col=1)
-        if ai_prices.get('buy'):
+        if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
-        if ai_prices.get('target1'):
+        if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
-        if ai_prices.get('stop'):
+        if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
@@ -1335,6 +1368,15 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
             }
         )
 
+        deep_section_html = ""
+        if deep_ai_report:
+            deep_section_html = f"""
+            <details class="deep-report-accordion">
+                <summary class="deep-report-btn">🔍 AI 심도 분석 & 세부 근거 더보기 ▼</summary>
+                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_report}</div>
+            </details>
+            """
+
         stock_cards_kr_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1354,8 +1396,9 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
+                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
+                {deep_section_html}
             </div>
             <div class="chart-container">{chart_html}</div>
         </div>
@@ -1366,7 +1409,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 # PART 2: 🇺🇸 미장(us_index.html) 분석 & 22:00 기준 종목 고정/갱신
 # =========================================================
 print("\n" + "="*60)
-print("🇺🇸 [PART 2] 미국 증시 스캔 & AI 분석 중...")
+print("🇺🇸 [PART 2] 미국 증시 스캔 & 2단 리포트 생성 중...")
 print("="*60)
 
 us_is_open, us_open_msg = get_market_open_status("US")
@@ -1537,7 +1580,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         tradingview_url = f"https://www.tradingview.com/symbols/{symbol}/"
 
-        pick_reason, ai_comment, ai_prices, stock_ai_time = generate_ai_stock_analysis(
+        pick_reason, basic_ai_report, deep_ai_report, ai_prices, stock_ai_time = generate_ai_stock_analysis(
             stock_name, symbol, us_7d_news, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, latest_close, ma20_d, ma60_d, ma120_d, atr_val, supply_type, "$", force_refresh=us_emergency
         )
 
@@ -1557,11 +1600,11 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
         fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, False)}", row=1, col=1)
-        if ai_prices.get('buy'):
+        if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
-        if ai_prices.get('target1'):
+        if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
-        if ai_prices.get('stop'):
+        if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
             fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
@@ -1588,6 +1631,15 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
             }
         )
 
+        deep_section_html = ""
+        if deep_ai_report:
+            deep_section_html = f"""
+            <details class="deep-report-accordion">
+                <summary class="deep-report-btn">🔍 AI 심도 분석 & 세부 근거 더보기 ▼</summary>
+                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_report}</div>
+            </details>
+            """
+
         stock_cards_us_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1607,8 +1659,9 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                 <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 상세 리포트 & 입체 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{ai_comment}</div>
+                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
+                {deep_section_html}
             </div>
             <div class="chart-container">{chart_html}</div>
         </div>
@@ -1619,7 +1672,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 # PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 실시간 잔고(현재가/평가액) 직결 및 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 2단 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -1658,7 +1711,6 @@ def get_toss_holdings():
                     qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
                     avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or 0)
                     
-                    # 🎯 토스 원본 실시간 필드 추출
                     last_p = float(item.get("lastPrice") or 0)
                     
                     mv = item.get("marketValue") or {}
@@ -1671,7 +1723,6 @@ def get_toss_holdings():
                     market = str(item.get("marketCountry", "KR")).upper()
                     currency = str(item.get("currency", "KRW")).upper()
 
-                    # 💡 상장폐지/특수 종목 (평단가 0 이하) 보정
                     if avg_p <= 0:
                         profit_loss = 0.0
                         ret_rate = 0.0
@@ -1706,7 +1757,6 @@ def get_mock_holdings():
 
 toss_holdings = get_toss_holdings()
 
-# 💡 [매도 종목 캐시 자동 정리]: 현재 계좌에 없는 종목은 ai_cache에서 제거
 currently_held_symbols = set(h['ticker'] for h in toss_holdings)
 deleted_cache_count = 0
 for key in list(ai_cache_store.keys()):
@@ -1733,7 +1783,6 @@ for h in toss_holdings:
         currency = h['currency']
         quantity = h['quantity']
         
-        # 🎯 토스 실제 계좌 값 직결 (오차 0원화)
         current_price = h['current_price']
         eval_amount_raw = h['eval_amount']
         profit_loss_raw = h['profit_loss']
@@ -1748,7 +1797,6 @@ for h in toss_holdings:
 
         emergency_flag = kr_emergency if is_krw else us_emergency
 
-        # 차트 및 보조지표 계산용 yfinance
         yf_ticker = f"{pure_code}.KS" if (is_krw and not ticker.endswith((".KS", ".KQ"))) else pure_code
         df_daily = None
         try:
@@ -1865,7 +1913,7 @@ for h in toss_holdings:
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
-        ai_3line_comment, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
+        basic_ai_guide, deep_ai_guide, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
             stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw, force_refresh=emergency_flag
         )
 
@@ -1885,6 +1933,15 @@ for h in toss_holdings:
             pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
+
+        deep_guide_html = ""
+        if deep_ai_guide:
+            deep_guide_html = f"""
+            <details class="deep-report-accordion">
+                <summary class="deep-report-btn">🔍 AI 심도 분석 & 세부 근거 더보기 ▼</summary>
+                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_guide}</div>
+            </details>
+            """
 
         my_stock_cards_html += f"""
         <div class="card">
@@ -1907,8 +1964,9 @@ for h in toss_holdings:
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 심도 포지션 대응 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{ai_3line_comment}</div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{basic_ai_guide}</div>
+                {deep_guide_html}
             </div>
         </div>
         """
@@ -1969,9 +2027,40 @@ html_style = """
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
     .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; }
+    
     .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 15px; }
     .ai-title { font-size: 14px; font-weight: bold; color: #4ade80; margin-bottom: 10px; }
     .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.75; }
+    
+    /* 🎯 2단 아코디언 토글 스타일 */
+    .deep-report-accordion { margin-top: 14px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 12px; }
+    .deep-report-btn { 
+        background: #0d4a32; 
+        color: #86efac; 
+        padding: 9px 14px; 
+        border-radius: 6px; 
+        font-size: 13px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        user-select: none;
+        list-style: none;
+        text-align: center;
+        border: 1px solid #15803d;
+        transition: background 0.2s;
+    }
+    .deep-report-btn:hover { background: #15803d; }
+    .deep-report-btn::-webkit-details-marker { display: none; }
+    .deep-report-content { 
+        background: #041f15; 
+        border-radius: 6px; 
+        padding: 14px; 
+        margin-top: 10px; 
+        font-size: 13.5px; 
+        color: #e2e8f0; 
+        line-height: 1.8; 
+        border: 1px solid #166534; 
+    }
+
     .chart-container { margin-top: 20px; border-radius: 8px; overflow: hidden; }
 </style>
 """
@@ -2054,7 +2143,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 3개 대시보드가 정상적으로 업데이트 및 GitHub 배포 완료되었습니다!")
+    print("🎉 [최종 완료] 2단 아코디언 상세 대시보드가 정상적으로 배포 완료되었습니다!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
