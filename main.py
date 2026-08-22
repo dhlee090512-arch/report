@@ -782,7 +782,6 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         print(f"  📦 [종목 AI 분석] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         report_time = cached.get('updated_at', now_str)
-        # 💡 기존 캐시와 새 캐시 구조 완벽 호환
         b_rep = cached.get('basic_report') or cached.get('report', '')
         d_rep = cached.get('deep_report', '')
         return cached.get('reason', ''), b_rep, d_rep, cached.get('parsed_prices', {}), report_time
@@ -1055,9 +1054,9 @@ def update_and_get_consecutive_days(symbol, is_new_pivot_cycle):
 
     cnt = item_info.get("days", 1)
     if cnt > 1:
-        return f'<span style="background:#dc2626; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">{cnt}일 연속 추천 🔥</span>'
+        return f'<span class="badge-item" style="background:#dc2626;">{cnt}일 연속 추천 🔥</span>'
     else:
-        return '<span style="background:#2563eb; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">1일차 🆕</span>'
+        return '<span class="badge-item" style="background:#2563eb;">1일차 🆕</span>'
 
 # =========================================================
 # 🛡️ [아이템 4] 급락 시 지수 대비 상대 방어력 라벨링 함수
@@ -1066,9 +1065,9 @@ def get_crash_defense_badge(stock_daily_chg, market_avg_chg, defense_mode):
     if not defense_mode:
         return ""
     if stock_daily_chg >= (market_avg_chg + 1.5):
-        return '<span style="background:#15803d; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">지수 방어 양호 🛡️</span>'
+        return '<span class="badge-item" style="background:#15803d;">지수 방어 양호 🛡️</span>'
     elif stock_daily_chg <= (market_avg_chg - 2.0):
-        return '<span style="background:#b91c1c; color:#ffffff; font-size:12px; padding:2px 7px; border-radius:12px; margin-left:6px; font-weight:bold;">고변동성 하락 ⚠️</span>'
+        return '<span class="badge-item" style="background:#b91c1c;">고변동성 하락 ⚠️</span>'
     return ""
 
 # =========================================================
@@ -1380,7 +1379,7 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         stock_cards_kr_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">{stock_name} ({pure_code}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
@@ -1391,12 +1390,12 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
                 <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, True)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
-                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span class="sub-desc">(눌림목 지지 타점)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span class="sub-desc">(ATR 버퍼 검증 지지선)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span class="sub-desc">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-title">⚡ AI 핵심 매매 전략 <span class="sub-desc">({stock_ai_time})</span></div>
                 <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
                 {deep_section_html}
             </div>
@@ -1643,7 +1642,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         stock_cards_us_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">{stock_name} ({symbol}) {badge_html} {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
@@ -1654,12 +1653,12 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
                 <div class="report-line">• 차트 구조 : {bb_status} / {cloud_status}</div>
                 <div class="report-line">• 집중 매물대 (POC) : <span class="highlight-val">{fmt_price(poc_price, False)}</span></div>
                 <div class="report-line">• RSI / MACD : {rsi_status} / {macd_status}</div>
-                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목 지지 타점)</span></div>
-                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(ATR 버퍼 검증 지지선)</span></div>
-                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(손익비 1:1.5 저항선)</span></div>
+                <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 진입가 : {buy_price_str} <span class="sub-desc">(눌림목 지지 타점)</span></div>
+                <div class="report-line text-red">🛑 AI 산출 손절가 : {stop_loss_str} <span class="sub-desc">(ATR 버퍼 검증 지지선)</span></div>
+                <div class="report-line text-green">🚀 AI 산출 1차 익절가 : {target_price_str} <span class="sub-desc">(손익비 1:1.5 저항선)</span></div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 핵심 매매 전략 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({stock_ai_time})</span></div>
+                <div class="ai-title">⚡ AI 핵심 매매 전략 <span class="sub-desc">({stock_ai_time})</span></div>
                 <div class="ai-content" style="white-space: pre-line;">{basic_ai_report}</div>
                 {deep_section_html}
             </div>
@@ -1930,7 +1929,7 @@ for h in toss_holdings:
         pyramid_row_html = ""
         if my_pyramid_val and my_pyramid_type:
             pyramid_label = "불타기" if my_pyramid_type == "불타기" else "물타기"
-            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span style="font-size:12px; color:#94a3b8; font-weight:normal;">(눌림목/반등 타점)</span></div>'
+            pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span class="sub-desc">(눌림목/반등 타점)</span></div>'
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
 
@@ -1946,11 +1945,11 @@ for h in toss_holdings:
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주 {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:18px; font-weight:bold; margin-top:4px; color:#f8fafc;">
+                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     {eval_formatted} <span class="{'text-green' if profit_loss_krw>=0 else 'text-red'}">{profit_formatted}</span>
                 </div>
                 <div class="report-divider"></div>
@@ -1964,7 +1963,7 @@ for h in toss_holdings:
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({my_guide_time})</span></div>
+                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">({my_guide_time})</span></div>
                 <div class="ai-content" style="white-space: pre-line;">{basic_ai_guide}</div>
                 {deep_guide_html}
             </div>
@@ -1981,10 +1980,11 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃
+# PART 4: HTML 템플릿 및 레이아웃 (모바일 20px 이상 스케일업 CSS)
 # =========================================================
 html_style = """
 <style>
+    * { box-sizing: border-box; }
     body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
     .nav-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
@@ -2026,13 +2026,14 @@ html_style = """
     .highlight-val { color: #facc15; font-weight: bold; }
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
-    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; }
+    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
+    .sub-desc { font-size: 12px; color: #94a3b8; font-weight: normal; }
+    .badge-item { color: #ffffff; font-size: 12px; padding: 2px 7px; border-radius: 12px; margin-left: 6px; font-weight: bold; display: inline-block; }
     
     .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 15px; }
     .ai-title { font-size: 14px; font-weight: bold; color: #4ade80; margin-bottom: 10px; }
     .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.75; }
     
-    /* 🎯 2단 아코디언 토글 스타일 */
     .deep-report-accordion { margin-top: 14px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 12px; }
     .deep-report-btn { 
         background: #0d4a32; 
@@ -2062,6 +2063,40 @@ html_style = """
     }
 
     .chart-container { margin-top: 20px; border-radius: 8px; overflow: hidden; }
+
+    /* 📱 [모바일 폰트 20px 이상 스케일업 반응형] */
+    @media (max-width: 768px) {
+        body { padding: 10px; }
+        .container { width: 100%; }
+        .nav-bar { gap: 6px; margin-bottom: 14px; }
+        .nav-btn { flex: 1; text-align: center; font-size: 20px; padding: 12px 4px; }
+        
+        .header h1 { font-size: 26px; }
+        .header p { font-size: 20px !important; }
+        
+        .macro-grid { grid-template-columns: 1fr; gap: 8px; }
+        .macro-title { font-size: 20px; }
+        .macro-value { font-size: 28px; }
+        .macro-sub { font-size: 20px; }
+        
+        .event-banner { font-size: 20px; line-height: 1.7; }
+        .event-banner-title { font-size: 22px; }
+        
+        .news-briefing-card { font-size: 21px; line-height: 1.8; padding: 16px; }
+        .news-title { font-size: 23px; }
+        
+        .report-header { font-size: 25px; }
+        .tv-link-btn { font-size: 20px; padding: 6px 12px; }
+        .stock-reason-box { font-size: 21px; line-height: 1.7; }
+        .console-report { font-size: 21px; line-height: 1.8; padding: 16px; }
+        .sub-desc { font-size: 20px !important; }
+        .badge-item { font-size: 20px !important; padding: 3px 9px; }
+        
+        .ai-title { font-size: 22px; }
+        .ai-content { font-size: 21px; line-height: 1.8; }
+        .deep-report-btn { font-size: 21px; padding: 12px 14px; }
+        .deep-report-content { font-size: 20px; line-height: 1.8; padding: 16px; }
+    }
 </style>
 """
 
@@ -2105,11 +2140,11 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
 
-full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: {usd_krw_rate:,.1f} 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
+full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:10px;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: {usd_krw_rate:,.1f} 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
 
 # =========================================================
 # PART 5: GitHub Pages 및 ai_cache.json 통합 배포
@@ -2143,7 +2178,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 2단 아코디언 상세 대시보드가 정상적으로 배포 완료되었습니다!")
+    print("🎉 [최종 완료] 모바일 가독성 최적화 대시보드가 정상적으로 배포 완료되었습니다!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
