@@ -62,8 +62,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "부정 🔴",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 미 재무부의 적극적인 채권시장 개입 및 국채 매입 계획을 통한 시장 안정화 노력<br>&nbsp;&nbsp;• 일부 기술주 중심의 저가 매수세 유입 및 주간 마감 시 반발 매수세로 인한 하락 폭 축소<br>&nbsp;&nbsp;• 비트코인 등 대체 자산의 강세 및 일부 대형 기술주의 일시적 반등으로 인한 투자 심리 방어<br>&nbsp;&nbsp;• S&P 500 등 대형주 중심의 장기 투자 수익률이 역사적 평균을 상회할 것이라는 긍정적 전망 존재<br>&nbsp;&nbsp;• 변동성이 큰 장세 속에서도 저평가된 우량주와 대안적 투자처 및 ETF를 발굴하려는 투자 전략 활발<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 국채 금리 급등 및 채권시장 변동성 확대가 주식시장을 직접적으로 압박하는 주요 리스크로 작용<br>&nbsp;&nbsp;• 인플레이션 압력 지속 및 고금리 장기화 우려로 인한 연방준비제도 금리 인하 기대감 후퇴<br>&nbsp;&nbsp;• 중동 지역 지정학적 갈등 고조 및 이란발 리스크로 인한 국제유가 상승 및 투자 심리 위축<br>&nbsp;&nbsp;• 월마트 등 주요 기업의 실적 부진 및 소비재 실적 둔화 시그널 감지<br>&nbsp;&nbsp;• AI 및 기술주 섹터의 고점 부담, 거품 붕괴 우려, 그리고 향후 경기 침체 가능성에 대한 경고 대두<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">비트코인 및 암호화폐 관련 자산, 저평가 가치주 및 방어적 ETF</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-35점 (국채 금리 상승, 인플레이션 우려, 지정학적 리스크가 시장을 지배하며 하방 압력이 우세함)</span>\n        ",
-    "updated_at": "2026-08-23 22:00 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 미국 재무부의 채무 발행 및 국채 시장 안정화 개입으로 인한 급락세 진정 효과<br>&nbsp;&nbsp;• 엔비디아 실적 기대감 및 AI 관련 실적 모멘텀 지속<br>&nbsp;&nbsp;• 서비스업 지표의 견조함과 일부 물가 지표의 완화 조짐<br>&nbsp;&nbsp;• 대형주 중심의 쏠림 현상에서 벗어나 동일 가중(Equal-weight) S&P 500 및 소외주로의 자금 순환매 유입<br>&nbsp;&nbsp;• 주간 변동성 장세 속에서도 저가 매수세 유입 및 주말 반등 성공<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 국채 금리 상승(High yield)과 채권 시장 변동성 확대가 증시를 압박하는 주요 요인으로 작용<br>&nbsp;&nbsp;• 중동 지역 지정학적 갈등(이란 및 Mideast) 고조와 이에 따른 유가 상승 및 공급 불안<br>&nbsp;&nbsp;• 미국, 캐나다 간 무역 갈등 및 관세 우려로 인한 매크로 불확실성 증대<br>&nbsp;&nbsp;• 월마트, 타겟 등 주요 유통 기업의 실적 부진 및 소비 위축 시그널<br>&nbsp;&nbsp;• AI 거품론, 테크 섹터 조정 가능성, 연준의 혼조된 금리 신호 및 장기 인플레이션 우려<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">동일 가중 S&P 500 및 저평가 가치주, AI 실적 기대주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-15점 (금리 및 지정학적 리스크로 인한 변동성과 하방 압력이 우세함)</span>\n        ",
+    "updated_at": "2026-08-24 22:00 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 및 빅테크/AI 핵심주로 강한 수급 유입이 지속되고 있으며, 120일 파동의 변동성 속에서도 단기 저점을 다지며 반등 시도를 모색하는 우수한 섹터 모멘텀을 보유하고 있습니다.",
@@ -460,20 +460,20 @@
   },
   "SELECTED_US_TARGETS": {
     "targets": {
-      "Webster Financial Corporation": [
-        "WBS",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
-      "Moderna, Inc.": [
-        "MRNA",
+      "NVIDIA Corporation": [
+        "NVDA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Intel Corporation": [
         "INTC",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "NVIDIA Corporation": [
-        "NVDA",
+      "Webster Financial Corporation": [
+        "WBS",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Moderna, Inc.": [
+        "MRNA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Space Exploration Technologies ": [
@@ -488,12 +488,12 @@
         "SOFI",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Tesla, Inc.": [
-        "TSLA",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "BitMine Immersion Technologies,": [
         "BMNR",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Tesla, Inc.": [
+        "TSLA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Robinhood Markets, Inc.": [
@@ -501,25 +501,25 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-08-23 22:00 KST"
+    "updated_at": "2026-08-24 22:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 6,
-      "last_pivot_date": "2026-08-23"
+      "days": 7,
+      "last_pivot_date": "2026-08-24"
     },
-    "updated_at": "2026-08-24 08:30 KST",
+    "updated_at": "2026-08-24 22:00 KST",
     "SPCX": {
-      "days": 6,
-      "last_pivot_date": "2026-08-23"
+      "days": 7,
+      "last_pivot_date": "2026-08-24"
     },
     "INTC": {
-      "days": 6,
-      "last_pivot_date": "2026-08-23"
+      "days": 7,
+      "last_pivot_date": "2026-08-24"
     },
     "NVDA": {
-      "days": 6,
-      "last_pivot_date": "2026-08-23"
+      "days": 7,
+      "last_pivot_date": "2026-08-24"
     },
     "NOK": {
       "days": 4,
@@ -534,8 +534,8 @@
       "last_pivot_date": "2026-08-17"
     },
     "TSLA": {
-      "days": 2,
-      "last_pivot_date": "2026-08-23"
+      "days": 3,
+      "last_pivot_date": "2026-08-24"
     },
     "IREN": {
       "days": 1,
@@ -566,8 +566,8 @@
       "last_pivot_date": "2026-08-20"
     },
     "SOFI": {
-      "days": 2,
-      "last_pivot_date": "2026-08-23"
+      "days": 3,
+      "last_pivot_date": "2026-08-24"
     },
     "NKE": {
       "days": 1,
@@ -606,16 +606,16 @@
       "last_pivot_date": "2026-08-19"
     },
     "MRNA": {
-      "days": 3,
-      "last_pivot_date": "2026-08-23"
+      "days": 4,
+      "last_pivot_date": "2026-08-24"
     },
     "WBS": {
-      "days": 3,
-      "last_pivot_date": "2026-08-23"
+      "days": 4,
+      "last_pivot_date": "2026-08-24"
     },
     "BMNR": {
-      "days": 3,
-      "last_pivot_date": "2026-08-23"
+      "days": 4,
+      "last_pivot_date": "2026-08-24"
     },
     "005935.KS": {
       "days": 3,
@@ -638,8 +638,8 @@
       "last_pivot_date": "2026-08-22"
     },
     "HOOD": {
-      "days": 2,
-      "last_pivot_date": "2026-08-23"
+      "days": 3,
+      "last_pivot_date": "2026-08-24"
     },
     "FUTU": {
       "days": 1,
@@ -740,7 +740,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-08-24 21:30 KST"
+    "updated_at": "2026-08-24 22:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 반도체 섹터 전반의 온기와 외국인 및 기관의 강한 순매수세 유입 속에서 평소 대비 2.4배에 달하는 거래량이 폭발하며 장대양봉 종가 고가 마감 패턴을 연출했습니다.  장기금리 변동성에 따른 증시 혼조세 속에서도 120일 최대 매물대 POC인 45035원을 강하게 상향 돌파하며 강력한 매수 에너지와 주도 테마 내의 수급 집중 현상을 명확히 보여주고 있습니다. 특히 보조지표 상 RSI의 강력한 상향 모멘텀과 MACD 골든크로스가 동반되어 단기 폭등 이후의 추가 상승 탄력이 매우 높게 기대되는 최우선 공략 대상입니다.",
@@ -758,7 +758,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-08-24 21:30 KST"
+    "updated_at": "2026-08-24 22:00 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 월스트리트 거래대금 상위권과 빅테크/AI 핵심 자율주행 테마의 중심에 위치하며 강력한 수급 에너지를 발산하고 있습니다. 최근 광범위한 시장의 변동성과 기술주 조정 압력 속에서도 핵심 지지선을 방어하며 견조한 매수세를 유입시키고 있으며, 최근 15일간 대량 거래량이 동반된 변동성 구간을 거쳐 주요 매물대 안착을 시도하는 역동적인 캔들 패턴을 형성하고 있어 트레이딩 관점에서 매우 매력적인 모멘텀을 보유하고 있습니다.",
