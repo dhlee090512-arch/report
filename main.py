@@ -1335,13 +1335,13 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA60'], line=dict(color='purple', width=1.2), name='60일선'), row=1, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
-        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, True)}", row=1, col=1)
+        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"POC: {fmt_price(poc_price, True)}", row=1, col=1)
         if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"진입: {buy_price_str}", row=1, col=1)
         if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"1차익절: {target_price_str}", row=1, col=1)
         if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"손절: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -1350,12 +1350,21 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
+        # 🎯 [범례 상단 가로 배치 & 좌우 여백 극대화]
         fig.update_layout(
-            height=540, 
-            margin=dict(l=10, r=10, t=10, b=40), 
+            height=500, 
+            margin=dict(l=5, r=5, t=35, b=30), 
             xaxis_rangeslider_visible=False, 
             template="plotly_dark",
-            dragmode=False
+            dragmode=False,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="left",
+                x=0,
+                font=dict(size=10.5)
+            )
         )
         chart_html = fig.to_html(
             full_html=False, 
@@ -1598,13 +1607,13 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA60'], line=dict(color='purple', width=1.2), name='60일선'), row=1, col=1)
         fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA120'], line=dict(color='#a855f7', width=1.5, dash='dash'), name='120일선'), row=1, col=1)
         
-        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"최대매물대: {fmt_price(poc_price, False)}", row=1, col=1)
+        fig.add_hline(y=poc_price, line_dash="dot", line_color="#facc15", annotation_text=f"POC: {fmt_price(poc_price, False)}", row=1, col=1)
         if ai_prices.get('buy') and (0.3 * latest_close <= ai_prices['buy'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"AI 진입가: {buy_price_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['buy'], line_dash="dash", line_color="#38bdf8", annotation_text=f"진입: {buy_price_str}", row=1, col=1)
         if ai_prices.get('target1') and (0.3 * latest_close <= ai_prices['target1'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"AI 목표가: {target_price_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['target1'], line_dash="dash", line_color="green", annotation_text=f"1차익절: {target_price_str}", row=1, col=1)
         if ai_prices.get('stop') and (0.3 * latest_close <= ai_prices['stop'] <= 3.0 * latest_close):
-            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"AI 손절가: {stop_loss_str}", row=1, col=1)
+            fig.add_hline(y=ai_prices['stop'], line_dash="dash", line_color="red", annotation_text=f"손절: {stop_loss_str}", row=1, col=1)
         
         colors = ['#f87171' if c < o else '#4ade80' for c, o in zip(df_chart['Close'], df_chart['Open'])]
         fig.add_trace(go.Bar(x=df_chart.index, y=df_chart['Volume'], marker_color=colors, name='거래량'), row=2, col=1)
@@ -1613,12 +1622,21 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
+        # 🎯 [범례 상단 가로 배치 & 좌우 여백 극대화]
         fig.update_layout(
-            height=540, 
-            margin=dict(l=10, r=10, t=10, b=40), 
+            height=500, 
+            margin=dict(l=5, r=5, t=35, b=30), 
             xaxis_rangeslider_visible=False, 
             template="plotly_dark",
-            dragmode=False
+            dragmode=False,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="left",
+                x=0,
+                font=dict(size=10.5)
+            )
         )
         chart_html = fig.to_html(
             full_html=False, 
@@ -1949,7 +1967,7 @@ for h in toss_holdings:
                     <div class="report-header">{country_badge} {stock_name} ({pure_code}) - {fmt_num(quantity)}주 {defense_badge}</div>
                     <a href="{tradingview_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
-                <div style="font-size:24px; font-weight:bold; margin-top:6px; color:#f8fafc;">
+                <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     {eval_formatted} <span class="{'text-green' if profit_loss_krw>=0 else 'text-red'}">{profit_formatted}</span>
                 </div>
                 <div class="report-divider"></div>
@@ -1980,28 +1998,28 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃 (모바일 20px 이상 스케일업 CSS)
+# PART 4: HTML 템플릿 및 레이아웃 (최적 밸런스 반응형 CSS)
 # =========================================================
 html_style = """
 <style>
     * { box-sizing: border-box; }
     body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
-    .nav-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .nav-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
     .nav-btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
     .btn-active { background: #2563eb; color: #ffffff; }
     .btn-inactive { background: #334155; color: #94a3b8; }
-    .header { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
+    .header { background: #1e293b; color: #38bdf8; padding: 18px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
     
     .event-banner { background: #3b0764; border: 1px solid #a855f7; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13.5px; line-height: 1.7; color: #f3e8ff; }
     .event-banner-title { font-weight: bold; color: #facc15; font-size: 15px; margin-bottom: 6px; }
     
-    .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .macro-card { 
         background: #182232; 
         border: 1px solid #334155; 
         border-radius: 10px; 
-        padding: 16px 14px; 
+        padding: 14px 12px; 
         text-align: center; 
         text-decoration: none; 
         color: inherit; 
@@ -2010,35 +2028,35 @@ html_style = """
         cursor: pointer;
     }
     .macro-card:hover { transform: translateY(-3px); border-color: #38bdf8; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); }
-    .macro-title { font-size: 13px; color: #94a3b8; font-weight: bold; margin-bottom: 8px; }
-    .macro-value { font-size: 20px; font-weight: bold; color: #38bdf8; margin-bottom: 6px; }
-    .macro-sub { font-size: 11px; color: #4ade80; margin-top: 4px; }
+    .macro-title { font-size: 13px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
+    .macro-value { font-size: 19px; font-weight: bold; color: #38bdf8; margin-bottom: 4px; }
+    .macro-sub { font-size: 11.5px; color: #4ade80; margin-top: 2px; }
     
-    .news-briefing-card { background: #182232; border: 1px solid #38bdf8; border-radius: 12px; padding: 18px; margin-bottom: 25px; line-height: 1.8; font-size: 14px; }
-    .news-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
+    .news-briefing-card { background: #182232; border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; margin-bottom: 24px; line-height: 1.75; font-size: 14px; }
+    .news-title { font-size: 15.5px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
     
-    .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #334155; }
-    .console-report { background: #090d16; padding: 18px; border-radius: 8px; border: 1px solid #334155; font-size: 15px; line-height: 1.7; }
-    .stock-reason-box { background: #1e1b4b; border-left: 4px solid #818cf8; padding: 12px; border-radius: 4px; margin: 12px 0; font-size: 14px; color: #e0e7ff; line-height: 1.6; }
+    .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 26px; border: 1px solid #334155; }
+    .console-report { background: #090d16; padding: 16px; border-radius: 8px; border: 1px solid #334155; font-size: 14.5px; line-height: 1.7; }
+    .stock-reason-box { background: #1e1b4b; border-left: 4px solid #818cf8; padding: 11px; border-radius: 4px; margin: 10px 0; font-size: 13.5px; color: #e0e7ff; line-height: 1.6; }
     .report-header { font-size: 17px; font-weight: bold; color: #38bdf8; }
     .report-divider { border-top: 1px dashed #475569; margin: 10px 0; }
     .report-line { margin: 4px 0; }
     .highlight-val { color: #facc15; font-weight: bold; }
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
-    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 10px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
+    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 9px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
     .sub-desc { font-size: 12px; color: #94a3b8; font-weight: normal; }
-    .badge-item { color: #ffffff; font-size: 12px; padding: 2px 7px; border-radius: 12px; margin-left: 6px; font-weight: bold; display: inline-block; }
+    .badge-item { color: #ffffff; font-size: 11.5px; padding: 2px 7px; border-radius: 12px; margin-left: 6px; font-weight: bold; display: inline-block; }
     
-    .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 15px; }
-    .ai-title { font-size: 14px; font-weight: bold; color: #4ade80; margin-bottom: 10px; }
-    .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.75; }
+    .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 14px; }
+    .ai-title { font-size: 14.5px; font-weight: bold; color: #4ade80; margin-bottom: 8px; }
+    .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.7; }
     
-    .deep-report-accordion { margin-top: 14px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 12px; }
+    .deep-report-accordion { margin-top: 12px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 10px; }
     .deep-report-btn { 
         background: #0d4a32; 
         color: #86efac; 
-        padding: 9px 14px; 
+        padding: 9px 12px; 
         border-radius: 6px; 
         font-size: 13px; 
         font-weight: bold; 
@@ -2054,48 +2072,49 @@ html_style = """
     .deep-report-content { 
         background: #041f15; 
         border-radius: 6px; 
-        padding: 14px; 
-        margin-top: 10px; 
+        padding: 13px; 
+        margin-top: 8px; 
         font-size: 13.5px; 
         color: #e2e8f0; 
-        line-height: 1.8; 
+        line-height: 1.75; 
         border: 1px solid #166534; 
     }
 
-    .chart-container { margin-top: 20px; border-radius: 8px; overflow: hidden; }
+    .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
 
-    /* 📱 [모바일 폰트 20px 이상 스케일업 반응형] */
+    /* 📱 [모바일 최적화 폰트 규격] */
     @media (max-width: 768px) {
-        body { padding: 10px; }
+        body { padding: 10px 8px; }
         .container { width: 100%; }
-        .nav-bar { gap: 6px; margin-bottom: 14px; }
-        .nav-btn { flex: 1; text-align: center; font-size: 20px; padding: 12px 4px; }
+        .nav-bar { gap: 6px; margin-bottom: 12px; }
+        .nav-btn { flex: 1; text-align: center; font-size: 14.5px; padding: 10px 2px; }
         
-        .header h1 { font-size: 26px; }
-        .header p { font-size: 20px !important; }
+        .header h1 { font-size: 19px; }
+        .header p { font-size: 13.5px !important; }
         
-        .macro-grid { grid-template-columns: 1fr; gap: 8px; }
-        .macro-title { font-size: 20px; }
-        .macro-value { font-size: 28px; }
-        .macro-sub { font-size: 20px; }
+        .macro-grid { grid-template-columns: 1fr; gap: 6px; }
+        .macro-title { font-size: 13.5px; }
+        .macro-value { font-size: 20px; }
+        .macro-sub { font-size: 12.5px; }
         
-        .event-banner { font-size: 20px; line-height: 1.7; }
-        .event-banner-title { font-size: 22px; }
+        .event-banner { font-size: 13.5px; line-height: 1.65; padding: 12px; }
+        .event-banner-title { font-size: 14.5px; }
         
-        .news-briefing-card { font-size: 21px; line-height: 1.8; padding: 16px; }
-        .news-title { font-size: 23px; }
+        .news-briefing-card { font-size: 15px; line-height: 1.75; padding: 14px; }
+        .news-title { font-size: 16.5px; }
         
-        .report-header { font-size: 25px; }
-        .tv-link-btn { font-size: 20px; padding: 6px 12px; }
-        .stock-reason-box { font-size: 21px; line-height: 1.7; }
-        .console-report { font-size: 21px; line-height: 1.8; padding: 16px; }
-        .sub-desc { font-size: 20px !important; }
-        .badge-item { font-size: 20px !important; padding: 3px 9px; }
+        .card { padding: 14px 10px; margin-bottom: 20px; }
+        .report-header { font-size: 18.5px; }
+        .tv-link-btn { font-size: 13px; padding: 4px 8px; }
+        .stock-reason-box { font-size: 14.5px; line-height: 1.6; padding: 10px; }
+        .console-report { font-size: 15.5px; line-height: 1.75; padding: 14px 12px; }
+        .sub-desc { font-size: 13px !important; }
+        .badge-item { font-size: 12px !important; padding: 2px 6px; }
         
-        .ai-title { font-size: 22px; }
-        .ai-content { font-size: 21px; line-height: 1.8; }
-        .deep-report-btn { font-size: 21px; padding: 12px 14px; }
-        .deep-report-content { font-size: 20px; line-height: 1.8; padding: 16px; }
+        .ai-title { font-size: 16px; }
+        .ai-content { font-size: 15px; line-height: 1.7; }
+        .deep-report-btn { font-size: 14px; padding: 10px; }
+        .deep-report-content { font-size: 14px; line-height: 1.7; padding: 12px; }
     }
 </style>
 """
@@ -2140,11 +2159,11 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:18px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:17px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:18px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:14px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:12px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:17px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
 
-full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:14px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:20px; border-radius:12px; margin-bottom:25px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:10px;"><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 금액 (원화 환산)</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.8rem; color:#60a5fa; margin-top:4px;">적용 환율: {usd_krw_rate:,.1f} 원/USD</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.8rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.5rem; font-weight:bold; margin-top:5px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.2rem; color:#38bdf8; margin-bottom:15px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
+full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
 
 # =========================================================
 # PART 5: GitHub Pages 및 ai_cache.json 통합 배포
@@ -2178,7 +2197,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 모바일 가독성 최적화 대시보드가 정상적으로 배포 완료되었습니다!")
+    print("🎉 [최종 완료] 차트 범례 최적화 및 밸런스 폰트 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
