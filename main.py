@@ -659,7 +659,10 @@ def get_yahoo_7days_news():
 
 def sanitize_text(text):
     if not text: return ""
-    return re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', str(text)).strip()
+    # 한자/일본어 제거 및 본문 노출 방지를 위한 "파싱_" 단어 자동 정제
+    cleaned = re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', str(text))
+    cleaned = cleaned.replace("파싱_", "")
+    return cleaned.strip()
 
 def analyze_7days_news_sentiment(market_type, news_text, force_refresh=False):
     cache_key = f"MARKET_{market_type}"
@@ -859,13 +862,13 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 • 포착되는 차트 패턴(쌍바닥, 역헤드앤숄더, 컵앤핸들, 깃발형 등) 및 엘리엇 파동 상의 현재 위치를 심도 있게 설명.
 
 🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-• 추천 진입 타점: 파싱_눌림목가({ex_buy}{currency_symbol}) 부근 눌림목 분할 매수 전략 제시.
-• 손절선 및 지지선: 파싱_손절가({ex_stop}{currency_symbol}) 설정 근거(주요 이평선, 매물대 POC, 파동 저점 이탈 기준)를 명확히 제시하고, 장중 노이즈에 털리지 않으면서도 리스크 폭을 최소화한 이유를 서술.
+• 추천 진입 타점: 추천 매수가({ex_buy}{currency_symbol}) 부근 눌림목 분할 매수 전략 제시.
+• 손절선 및 지지선: 목표 손절가({ex_stop}{currency_symbol}) 설정 근거(주요 이평선, 매물대 POC, 파동 저점 이탈 기준)를 명확히 제시하고, 장중 노이즈에 털리지 않으면서도 리스크 폭을 최소화한 이유를 서술.
 • 진입 시 비중 관리 및 매수 체결 후 캔들 확인 요령을 상세히 설명.
 
 🚀 [현실적 분할 익절 전략]
-• 1차 안전 익절가: 파싱_1차익절가({ex_t1}{currency_symbol}) (손익비 1:1.5 이상 달성 지점 / 물량 50% 분할 익절 전략 및 단기 저항 매물대 근거 제시).
-• 2차 추세 익절가: 파싱_2차익절가({ex_t2}{currency_symbol}) (패턴 상단 목표치 및 전고점 저항 지점 / 잔량 50% 추세 홀딩 및 Trailing Stop 전략 서술).
+• 1차 안전 익절가: 1차 목표 익절가({ex_t1}{currency_symbol}) (손익비 1:1.5 이상 달성 지점 / 물량 50% 분할 익절 전략 및 단기 저항 매물대 근거 제시).
+• 2차 추세 익절가: 2차 추세 익절가({ex_t2}{currency_symbol}) (패턴 상단 목표치 및 전고점 저항 지점 / 잔량 50% 추세 홀딩 및 Trailing Stop 전략 서술).
 • 목표가 도달 시 예상되는 호가창/거래량 반응과 대응 가이드를 상세히 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
@@ -911,7 +914,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 토스 마이 대시보드 전용 AI 2단 가이드
+# 🎯 토스 마이 대시보드 전용 AI 단일 상세 가이드 (파싱_ 접두사 완전 제거)
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -921,18 +924,16 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         print(f"  📦 [마이 대시보드] {stock_name} 4시간 이내 캐시 재사용 (AI 호출 스킵)")
         cached = ai_cache_store[cache_key]
         guide_time = cached.get('updated_at', now_str)
-        b_rep = cached.get('basic_report') or cached.get('report', '')
-        d_rep = cached.get('deep_report', '')
-        return b_rep, d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        d_rep = cached.get('deep_report') or cached.get('basic_report') or cached.get('report', '')
+        return d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
 
     if not llm_mgr.is_available():
         if cache_key in ai_cache_store:
             cached = ai_cache_store[cache_key]
             guide_time = cached.get('updated_at', now_str)
-            b_rep = cached.get('basic_report') or cached.get('report', '')
-            d_rep = cached.get('deep_report', '')
-            return b_rep, d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
-        return "[테스트 모드] AI 연동 미사용 상태입니다.", "", None, None, None, None, now_str
+            d_rep = cached.get('deep_report') or cached.get('basic_report') or cached.get('report', '')
+            return d_rep, cached.get('stop_price'), cached.get('target_price'), cached.get('pyramid_price'), cached.get('pyramid_type'), guide_time
+        return "[테스트 모드] AI 연동 미사용 상태입니다.", None, None, None, None, now_str
 
     avg_p_text = fmt_price(avg_price, is_krw, show_decimal=is_krw) if avg_price > 0 else "0원 (상장폐지/청산대기)"
     
@@ -949,7 +950,7 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 
     prompt = f"""
 너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 심도 있는 [상세가이드]를 작성하고 이를 바탕으로 한눈에 보기 편한 [핵심요약가이드]를 도출하라.
+사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 실전 대응에 바로 활용할 수 있는 심도 있는 [상세가이드]를 작성하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -977,17 +978,12 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 파싱_Trailing손절가: <{ex_stop}>
 파싱_동적목표가: <{ex_target}>
 
-핵심요약가이드:
-결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
-• [추세/패턴] <아래 상세가이드의 캔들/거래량 진단을 1~2줄로 요약>
-• [목표가 대응] <아래 상세가이드의 목표가 및 익절 요령을 1~2줄로 요약>
-• [이익 보존] <아래 상세가이드의 Trailing Stop 손절가 근거를 1~2줄로 요약>
-
 상세가이드:
-결론: [위와 동일]
+결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
+
 • [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 상세히 분석.
-• [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 파싱_동적목표가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
-• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 파싱_Trailing손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
+• [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 목표 익절가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
+• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 트레일링 손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
@@ -1001,26 +997,22 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         type_match = re.search(r'파싱_추매타입:\s*(불타기|물타기)', content)
         pyramid_type = type_match.group(1) if (type_match and pyramid_val and pyramid_val > 0) else None
 
-        basic_match = re.search(r'핵심요약가이드:\s*([\s\S]*?)(?=상세가이드:|$)', content)
-        basic_text = basic_match.group(1).strip() if basic_match else content
-
         deep_match = re.search(r'상세가이드:\s*([\s\S]*)', content)
-        deep_text = deep_match.group(1).strip() if deep_match else ""
+        deep_text = deep_match.group(1).strip() if deep_match else content
 
         save_ai_cache(cache_key, {
-            "basic_report": sanitize_text(basic_text),
             "deep_report": sanitize_text(deep_text),
             "stop_price": stop_val,
             "target_price": target_val,
             "pyramid_price": pyramid_val if pyramid_type else None,
             "pyramid_type": pyramid_type
         })
-        return sanitize_text(basic_text), sanitize_text(deep_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
+        return sanitize_text(deep_text), stop_val, target_val, (pyramid_val if pyramid_type else None), pyramid_type, now_str
 
     except Exception as e:
         err_msg = f"🚨 AI 분석 오류 발생: {e}"
         print(f"⚠️ {stock_name} 마이 대시보드 AI 가이드 실패: {e}")
-        return err_msg, "", None, None, None, None, now_str
+        return err_msg, None, None, None, None, now_str
 
 # =========================================================
 # 🏷️ [N일 연속 추천 뱃지 계산 모듈]
@@ -1686,10 +1678,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑 (단일 가이드)
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 2단 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 단일 상세 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -1930,7 +1922,7 @@ for h in toss_holdings:
         tv_prefix = f"KRX-{pure_code}" if is_krw else ticker
         tradingview_url = f"https://www.tradingview.com/symbols/{tv_prefix}/"
 
-        basic_ai_guide, deep_ai_guide, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
+        deep_ai_guide, my_stop_val, my_target_val, my_pyramid_val, my_pyramid_type, my_guide_time = generate_ai_toss_3line_analysis(
             stock_name, ticker, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw, force_refresh=emergency_flag
         )
 
@@ -1950,15 +1942,6 @@ for h in toss_holdings:
             pyramid_row_html = f'<div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 AI 추천 추매가({pyramid_label}) : {fmt_price(my_pyramid_val, is_krw, show_decimal=not is_krw)} <span class="sub-desc">(눌림목/반등 타점)</span></div>'
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
-
-        deep_guide_html = ""
-        if deep_ai_guide:
-            deep_guide_html = f"""
-            <details class="deep-report-accordion">
-                <summary class="deep-report-btn">🔍 AI 심도 분석 & 세부 근거 더보기 ▼</summary>
-                <div class="deep-report-content" style="white-space: pre-line;">{deep_ai_guide}</div>
-            </details>
-            """
 
         my_stock_cards_html += f"""
         <div class="card">
@@ -1981,9 +1964,8 @@ for h in toss_holdings:
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
             <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 핵심 대응 가이드 <span class="sub-desc">({my_guide_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{basic_ai_guide}</div>
-                {deep_guide_html}
+                <div class="ai-title">⚡ AI 포트폴리오 심도 포지션 대응 전략 <span class="sub-desc">({my_guide_time})</span></div>
+                <div class="ai-content" style="white-space: pre-line;">{deep_ai_guide}</div>
             </div>
         </div>
         """
@@ -2197,7 +2179,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 차트 범례 최적화 및 밸런스 폰트 대시보드 배포 완료!")
+    print("🎉 [최종 완료] 차트 범례 최적화 및 자연스러운 리포트 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
