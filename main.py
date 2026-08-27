@@ -63,13 +63,49 @@ except Exception:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
-# 🎯 Webshare 신규 프록시 기본값
-DEFAULT_PROXY_URL = "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
-PROXY_URL = FIXIE_URL if FIXIE_URL else DEFAULT_PROXY_URL
+# =========================================================
+# 🌐 [프록시 다중화 & 트래픽 절약 설정]
+# =========================================================
+# 1순위 신규 Webshare 프록시
+PROXY_POOL = [
+    "http://ljdunsqh:ln7u5fsekv2t@142.111.67.146:5611",
+    "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
+]
+if FIXIE_URL and FIXIE_URL not in PROXY_POOL:
+    PROXY_POOL.append(FIXIE_URL)
 
-os.environ["HTTP_PROXY"] = PROXY_URL
-os.environ["HTTPS_PROXY"] = PROXY_URL
-proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else {}
+# 💡 yfinance / 크롤링 / GitHub 업로드는 글로벌 프록시 없이 다이렉트 통신 (트래픽 절약)
+os.environ.pop("HTTP_PROXY", None)
+os.environ.pop("HTTPS_PROXY", None)
+os.environ.pop("http_proxy", None)
+os.environ.pop("https_proxy", None)
+
+def toss_request_with_proxy_failover(method, url, **kwargs):
+    headers_req = kwargs.pop('headers', {})
+    data_req = kwargs.pop('data', None)
+    timeout_req = kwargs.pop('timeout', 12)
+
+    for i, p_url in enumerate(PROXY_POOL):
+        proxies = {"http": p_url, "https": p_url}
+        try:
+            if method.upper() == "POST":
+                res = requests.post(url, headers=headers_req, data=data_req, proxies=proxies, timeout=timeout_req)
+            else:
+                res = requests.get(url, headers=headers_req, proxies=proxies, timeout=timeout_req)
+
+            if res.status_code == 402:
+                print(f"⚠️ 프록시 #{i+1} ({p_url.split('@')[-1]}) 대역폭 소진 (402) -> 다음 프록시로 페일오버")
+                continue
+            return res
+        except Exception as e:
+            print(f"⚠️ 프록시 #{i+1} ({p_url.split('@')[-1]}) 통신 실패: {e}")
+            continue
+
+    print("⚠️ 모든 프록시 실패 -> 로컬/클라우드 직접 연결 시도")
+    if method.upper() == "POST":
+        return requests.post(url, headers=headers_req, data=data_req, timeout=timeout_req)
+    else:
+        return requests.get(url, headers=headers_req, timeout=timeout_req)
 
 # =========================================================
 # [숫자 포맷 유틸리티]
@@ -659,7 +695,6 @@ def get_yahoo_7days_news():
 
 def sanitize_text(text):
     if not text: return ""
-    # 한자/일본어 제거 및 본문 노출 방지를 위한 "파싱_" 단어 자동 정제
     cleaned = re.sub(r'[\u4e00-\u9fff\u3040-\u30ff\u31f0-\u31ff]', '', str(text))
     cleaned = cleaned.replace("파싱_", "")
     return cleaned.strip()
@@ -1342,7 +1377,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
-        # 🎯 [범례 상단 가로 배치 & 좌우 여백 극대화]
         fig.update_layout(
             height=500, 
             margin=dict(l=5, r=5, t=35, b=30), 
@@ -1614,7 +1648,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         fig.add_hline(y=70, line_dash="dot", line_color="red", row=3, col=1)
         fig.add_hline(y=30, line_dash="dot", line_color="green", row=3, col=1)
         
-        # 🎯 [범례 상단 가로 배치 & 좌우 여백 극대화]
         fig.update_layout(
             height=500, 
             margin=dict(l=5, r=5, t=35, b=30), 
@@ -1678,7 +1711,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 필드 완전 매핑 (단일 가이드)
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (단일 가이드)
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 단일 상세 리포트 생성 중...")
@@ -1687,18 +1720,18 @@ print("="*60)
 def get_toss_holdings():
     if not TOSS_CLIENT_ID or not TOSS_CLIENT_SECRET:
         print("⚠️ Toss API Key 미설정 ➔ 샘플 데이터 사용")
-        return get_mock_holdings()
+        return get_mock_holdings(), False
 
     try:
         token_url = "https://openapi.tossinvest.com/oauth2/token"
         token_data = {"grant_type": "client_credentials", "client_id": TOSS_CLIENT_ID, "client_secret": TOSS_CLIENT_SECRET}
-        token_res = requests.post(token_url, data=token_data, headers={"Content-Type": "application/x-www-form-urlencoded"}, proxies=proxies, timeout=15)
+        token_res = toss_request_with_proxy_failover("POST", token_url, data=token_data, headers={"Content-Type": "application/x-www-form-urlencoded"}, timeout=12)
         
         if token_res.status_code == 200:
             access_token = token_res.json().get("access_token")
             base_headers = {"Authorization": f"Bearer {access_token}", "x-api-key": TOSS_CLIENT_ID, "Content-Type": "application/json"}
             
-            acc_res = requests.get("https://openapi.tossinvest.com/api/v1/accounts", headers=base_headers, proxies=proxies, timeout=15)
+            acc_res = toss_request_with_proxy_failover("GET", "https://openapi.tossinvest.com/api/v1/accounts", headers=base_headers, timeout=12)
             account_seq = 1
             if acc_res.status_code == 200:
                 acc_list = acc_res.json().get("result", [])
@@ -1708,7 +1741,7 @@ def get_toss_holdings():
             holdings_headers = base_headers.copy()
             holdings_headers["X-Tossinvest-Account"] = str(account_seq)
             
-            res = requests.get("https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, proxies=proxies, timeout=15)
+            res = toss_request_with_proxy_failover("GET", "https://openapi.tossinvest.com/api/v1/holdings", headers=holdings_headers, timeout=12)
             if res.status_code == 200:
                 result_obj = res.json().get("result", {})
                 items = result_obj.get("items", []) if isinstance(result_obj, dict) else []
@@ -1719,7 +1752,6 @@ def get_toss_holdings():
                     name = str(item.get("name") or item.get("stockName") or raw_sym).strip()
                     qty = float(item.get("quantity") or item.get("holdingQuantity") or 0)
                     avg_p = float(item.get("averagePurchasePrice") or item.get("avgPrice") or 0)
-                    
                     last_p = float(item.get("lastPrice") or 0)
                     
                     mv = item.get("marketValue") or {}
@@ -1741,20 +1773,20 @@ def get_toss_holdings():
                             "ticker": raw_sym,
                             "name": name,
                             "avg_price": avg_p,
-                            "current_price": last_p,       # 토스 실시간 현재가
-                            "eval_amount": eval_amt,         # 토스 실제 평가금액
-                            "profit_loss": profit_loss,     # 토스 실제 평가손익
-                            "return_pct": ret_rate,         # 토스 실제 수익률(%)
+                            "current_price": last_p,
+                            "eval_amount": eval_amt,
+                            "profit_loss": profit_loss,
+                            "return_pct": ret_rate,
                             "quantity": qty,
                             "market": market,
                             "currency": currency
                         })
                 if holdings:
                     print(f"🎉 토스증권 API 연동 성공! 실제 보유 종목 총 {len(holdings)}개 수신 완료")
-                    return holdings
+                    return holdings, True
     except Exception as e:
         print(f"⚠️ 토스 API 호출 오류: {e}")
-    return get_mock_holdings()
+    return get_mock_holdings(), False
 
 def get_mock_holdings():
     return [
@@ -1764,20 +1796,22 @@ def get_mock_holdings():
         {"ticker": "PLTR", "name": "Palantir", "avg_price": 24.5, "current_price": 27.2, "eval_amount": 2720.0, "profit_loss": 270.0, "return_pct": 11.02, "quantity": 100, "market": "US", "currency": "USD"}
     ]
 
-toss_holdings = get_toss_holdings()
+toss_holdings, is_real_toss = get_toss_holdings()
 
-currently_held_symbols = set(h['ticker'] for h in toss_holdings)
-deleted_cache_count = 0
-for key in list(ai_cache_store.keys()):
-    if key.startswith("TOSS_MY_"):
-        cached_sym = key.replace("TOSS_MY_", "")
-        if cached_sym not in currently_held_symbols:
-            print(f"🗑️ [매도 감지] 계좌에 없는 종목 캐시 삭제: {cached_sym}")
-            del ai_cache_store[key]
-            deleted_cache_count += 1
+# 🛡️ 실제 토스 API 연동이 성공했을 때만 매도 캐시 삭제 수행 (통신 실패로 인한 캐시 날림 방지)
+if is_real_toss:
+    currently_held_symbols = set(h['ticker'] for h in toss_holdings)
+    deleted_cache_count = 0
+    for key in list(ai_cache_store.keys()):
+        if key.startswith("TOSS_MY_"):
+            cached_sym = key.replace("TOSS_MY_", "")
+            if cached_sym not in currently_held_symbols:
+                print(f"🗑️ [매도 감지] 계좌에 없는 종목 캐시 삭제: {cached_sym}")
+                del ai_cache_store[key]
+                deleted_cache_count += 1
 
-if deleted_cache_count > 0:
-    save_entire_cache(ai_cache_store)
+    if deleted_cache_count > 0:
+        save_entire_cache(ai_cache_store)
 
 my_stock_cards_html = ""
 total_eval_my = 0.0
@@ -1822,6 +1856,7 @@ for h in toss_holdings:
             bb_status, cloud_status = "밴드 안정 ⚖️", "구름대 유효 🟢"
             poc_price, max_120, min_120 = current_price, current_price, current_price
             rsi_status, macd_status = "중립 (50) ⚖️", "중립 ⚖️"
+            ma_status = "이평선 안정화 진행 중 ⚖️"
             rsi_val, rsi_signal_val, rsi_cross_status = 50.0, 50.0, "모멘텀 안정"
             peaks_and_troughs_summary = "마디점 안정화 진행 중"
             raw_data_str_15days = f"최신 토스 현재가: {fmt_price(current_price, is_krw)}"
@@ -2179,7 +2214,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 차트 범례 최적화 및 자연스러운 리포트 대시보드 배포 완료!")
+    print("🎉 [최종 완료] 프록시 최적화 및 자연스러운 리포트 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
