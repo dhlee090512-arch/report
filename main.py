@@ -66,7 +66,6 @@ CACHE_FILE_NAME = "ai_cache.json"
 # =========================================================
 # 🌐 [프록시 다중화 & 트래픽 절약 설정]
 # =========================================================
-# 1순위 신규 Webshare 프록시
 PROXY_POOL = [
     "http://ljdunsqh:ln7u5fsekv2t@142.111.67.146:5611",
     "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
@@ -652,7 +651,7 @@ us_macro = get_us_macro_data()
 usd_krw_rate = get_usd_krw_rate()
 
 # =========================================================
-# 📰 뉴스 수집 및 7일 감성 분석 (신호등 이모지 복원)
+# 📰 뉴스 수집 및 7일 감성 분석
 # =========================================================
 def get_naver_7days_news():
     if TEST_MODE:
@@ -882,7 +881,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
 - <아래 상세리포트의 진단 내용을 2~3줄로 깔끔하게 압축>
 
 🟢 [안전 매수 & 리스크 관리 전략 (손익비 타겟 1:1.5 이상)]
-- 눌림목 매수 추천가 : {ex_buy}{currency_symbol} / 타이트 손절가 : {ex_stop}{currency_symbol}
+- 추천 진입 타점 : {ex_buy}{currency_symbol} / 손절선 : {ex_stop}{currency_symbol}
 - <아래 상세리포트의 매수/손절 지지 근거를 2~3줄로 압축>
 
 🚀 [현실적 분할 익절 전략]
@@ -949,7 +948,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 토스 마이 대시보드 전용 AI 단일 상세 가이드 (파싱_ 접두사 완전 제거)
+# 🎯 토스 마이 대시보드 전용 AI 7단계 냉철한 포지션 진단
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -984,8 +983,9 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         price_rule = f"- 현재 주가가 ${current_price:.2f} 이므로, 반드시 달러($) 기호 없이 소수점 2자리 마침표(.)를 포함한 형태로만 출력하라. (예: {ex_stop}, {ex_target})\n- 절대 소수점을 생략하거나 100을 곱한 정수 형태로 출력하지 말 것."
 
     prompt = f"""
-너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다. 
-사용자의 [내 보유 평단가: {avg_p_text}, 현재 수익률({return_pct:+.2f}%)]과 [차트 캔들/거래량/패턴 및 보조지표]를 바탕으로, 실전 대응에 바로 활용할 수 있는 심도 있는 [상세가이드]를 작성하라.
+너는 20년 경력의 월가 수석 포트폴리오 트레이딩 전문가이다.
+낙관적인 온정주의(희망 회로)를 완전히 배제하고, [추세 및 주요 지지/저항선 붕괴 여부]를 절대적 1순위로 엄격하게 평가하여 [상세가이드]를 작성하라.
+단순히 수익률 수치(%)로만 기계적으로 자르지 말고, 차트 구조가 살아있는지 꺾였는지를 철저히 분석하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -1001,11 +1001,21 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [가격 출력 규칙 - 엄수]
 {price_rule}
 
-[판단 원칙 - 엄격한 추매/손절/목표가 규격]
-1. [불타기 고려 🟢]: 수익률 +5% 이상 안전마진 확보 & RSI 70 미만 & 20일선/구름대 눌림목 지지 반등 시 ➔ 파싱_추매타입: 불타기 / 파싱_추매추천가 산정.
-2. [물타기 고려 🟢]: 손실권(-5% 이하) & RSI 30 이하 과매도 다이버전스/쌍바닥 & POC 매물대 지지 확인 시 ➔ 파싱_추매타입: 물타기 / 파싱_추매추천가 산정.
-3. 추매 조건 미충족 시 (단순 관망, 애매한 하락, 고점 과열, 상장폐지/정리매매 종목) ➔ 파싱_추매타입: 없음 / 파싱_추매추천가: 0.
-4. 스탑로스: 수익권 시 평단가 상회 지지선(Trailing Stop) 설정, 손실권 시 직전 최저점 이탈선 설정.
+[엄격한 7단계 결론 라벨 판정 규칙 - 아래 7개 중 가장 부합하는 단 1개만 정확히 선택]
+1. [익절 🟢 - 상승 추세 종료 시그널 확인 및 전량 차익 실현]
+   - 수익률과 무관하게, 최종 상단 저항선 도달 후 거래량 실린 장대음봉/위꼬리 등 '상승 추세 종료(고점 이탈)' 시그널 포착 시.
+2. [일부 익절 🟢 - 주요 저항선 도달 / 과열 꺾임 시 분할 차익 실현 고려]
+   - 강력한 상단 저항 매물대(POC/전고점) 직면 또는 RSI 70 이상 과열권에서 RSI-Signal 데드크로스 발생 시.
+3. [불타기 고려 🔵 - 정배열 상승 추세 유지 및 눌림목 지지 반등 확인]
+   - 평단가 대비 수익권이면서, 정배열 유지 및 20일선/일목 구름대 상단 지지 반등 확인 시 (파싱_추매타입: 불타기 / 파싱_추매추천가 산정).
+4. [물타기 고려 🟠 - 중장기 지지선 유효 및 단기 반등 캔들 확인]
+   - 평단가 대비 손실권이더라도 120일선/핵심 POC 지지가 살아있고, 일봉상 쌍바닥 또는 밑꼬리 양봉 지지 확인 시에만 제한적 허용 (음봉 지속 시 절대 물타기 금지).
+5. [관망 🟡 - 추세 훼손 없는 건전한 숨고르기 / 박스권 횡보 지속]
+   - 추세가 훼손되지 않고 지지선 위에서 정상적인 숨고르기/박스권 횡보 중일 때.
+6. [일부 손절 🔴 - 단기 지지선 이탈 및 하락 N파 진행에 따른 비중 축소 권고]
+   - 20일선/60일선 지지 실패 및 MACD 데드크로스 지속 등 단기 추세 꺾임 발생 시.
+7. [손절 🔴 - 중장기 추세선·핵심 매물대 완전 붕괴에 따른 리스크 차단]
+   - 120일선 및 주요 매물대(POC)를 거래량 실린 음봉으로 완전히 하향 이탈하고 신저가 갱신 지속 시.
 
 [출력 양식 - 규격 엄수]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
@@ -1014,11 +1024,11 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 파싱_동적목표가: <{ex_target}>
 
 상세가이드:
-결론: [불타기 고려 🟢 / 물타기 고려 🟢 / 관망 및 손절선 상향 🟢 / 일부 매도 🔴 / 관망 🟡 / 손절 및 비중축소 🔴] 중 하나 명시
+결론: [위 7개 표준 문구 중 단 1개만 정확히 출력]
 
-• [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 상세히 분석.
+• [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 객관적이고 냉철하게 분석.
 • [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 목표 익절가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
-• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 제한을 위한 트레일링 손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
+• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 차단을 위한 트레일링 손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
@@ -1711,10 +1721,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (단일 가이드)
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (아코디언 토글 적용)
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 단일 상세 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 아코디언 토글 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -1798,7 +1808,7 @@ def get_mock_holdings():
 
 toss_holdings, is_real_toss = get_toss_holdings()
 
-# 🛡️ 실제 토스 API 연동이 성공했을 때만 매도 캐시 삭제 수행 (통신 실패로 인한 캐시 날림 방지)
+# 🛡️ 실제 토스 API 연동이 성공했을 때만 매도 캐시 삭제 수행
 if is_real_toss:
     currently_held_symbols = set(h['ticker'] for h in toss_holdings)
     deleted_cache_count = 0
@@ -1978,6 +1988,7 @@ for h in toss_holdings:
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
 
+        # 🎯 마이대시보드 전용 아코디언 토글 블록 구성
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
@@ -1998,10 +2009,13 @@ for h in toss_holdings:
                 <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : {my_stop_str}</div>
                 <div class="report-line text-green">🚀 AI 동적 목표가 : {my_target_str}</div>
             </div>
-            <div class="ai-opinion-box">
-                <div class="ai-title">⚡ AI 포트폴리오 심도 포지션 대응 전략 <span class="sub-desc">({my_guide_time})</span></div>
-                <div class="ai-content" style="white-space: pre-line;">{deep_ai_guide}</div>
-            </div>
+            <details class="deep-report-accordion">
+                <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
+                <div class="deep-report-content" style="white-space: pre-line;">
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">({my_guide_time})</span></div>
+                    {deep_ai_guide}
+                </div>
+            </details>
         </div>
         """
 
@@ -2214,7 +2228,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 프록시 최적화 및 자연스러운 리포트 대시보드 배포 완료!")
+    print("🎉 [최종 완료] 7단계 냉철한 포지션 진단 및 아코디언 토글 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
