@@ -64,8 +64,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "보통 🟡",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 엔비디아 실적 발표와 인공지능(AI) 관련 랠리가 기술주 중심의 반등과 시장 기대감을 지속적으로 지지함<br>&nbsp;&nbsp;• 경제 성장세가 완화되는 조짐을 보이면서 연방준비제도(Fed)의 금리 인하 기대감이 시장 하단을 방어함<br>&nbsp;&nbsp;• 서비스업의 견조한 흐름과 주요 기업들의 양호한 실적 발표가 투자 심리의 급격한 붕괴를 막음<br>&nbsp;&nbsp;• 일부 지수가 사상 최고치를 경신하며 다주간 랠리를 이어가는 저력을 보여줌<br>&nbsp;&nbsp;• 약달러 흐름 속에서 미국 외 글로벌 증시 및 국제 주식으로의 분산 투자 기회가 부각됨<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 뜨거운 인플레이션 데이터와 PCE 지표 발표로 인해 연방준비제도의 통화정책 경로가 불확실해짐<br>&nbsp;&nbsp;• 국채 금리 상승과 채권시장의 금리 인상 대비 움직임이 주식 시장에 부담으로 작용함<br>&nbsp;&nbsp;• 인공지능(AI) 거품론 및 밸류에이션에 대한 불안감(AI Jitters)이 상존함<br>&nbsp;&nbsp;• 이란 제재, 미국과 캐나다 간 관세 마찰, 지정학적 리스크가 시장을 압박함<br>&nbsp;&nbsp;• 천문학적인 국가 부채와 거시경제적 경고음으로 인해 장기적인 증시 침체 우려가 제기됨<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 및 반도체(Chip) 기술주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (인공지능 및 실적 기대감이라는 강력한 상방 요인과 인플레이션 및 금리 상승이라는 하방 압력이 팽팽하게 맞서는 혼조 국면)</span>\n        ",
-    "updated_at": "2026-08-30 22:00 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 예외적인 수준을 기록하며 성장을 지속하고 있는 미국 기업들의 뛰어난 실적<br>&nbsp;&nbsp;• 엔비디아 실적 발표를 전후로 한 기술주 중심의 시장 반등 및 신고가 경신 사례 존재<br>&nbsp;&nbsp;• 인공지능(AI) 주식 시장의 랠리가 여전히 초기 단계일 수 있다는 기대감과 펀드 매니저들의 적극적인 매수세<br>&nbsp;&nbsp;• 경제 성장 둔화 신호가 연방준비제도의 통화정책 완화 기대를 일부 지지하는 요인으로 작용<br>&nbsp;&nbsp;• 약달러 추세가 국제 주식 및 글로벌 시장의 추가 상승 여력을 제공할 것이라는 전망<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 워시의 잭슨홀 발언 등으로 인한 금리 인상 우려 및 매파적 기조 확산<br>&nbsp;&nbsp;• 고물가 및 뜨거운 인플레이션 데이터로 인한 연준의 경로 복잡화 및 시장 압박<br>&nbsp;&nbsp;• 미국-이란 긴장 고조 등 지정학적 리스크와 유가 상승, 채권 금리 연고점 경신<br>&nbsp;&nbsp;• 미국 40조 달러 국가 채무 등으로 인한 장기 증시 침체 우려 및 AI 관련 널뛰기 장세<br>&nbsp;&nbsp;• 여름 휴가 시즌 거래량 감소 속에서 쏟아지는 패닉성 장세와 인공지능 거품 논란<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 및 빅테크 실적 관련주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-05점 (인플레이션과 금리 인상 우려, 지정학적 리스크가 상존하나 기업 실적과 기술주 반등이 하단을 지지하는 혼조세)</span>\n        ",
+    "updated_at": "2026-08-31 22:00 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 종목이자 빅테크 및 AI 핵심 테마를 선도하는 20년 경력의 수석 기술적 분석 관점 주도주입니다. 최근 금리 인상 우려 및 지정학적 노이즈 속에서도 핵심 매물대를 사수하며 견조한 거래대금을 동반한 반등 파동을 준비하고 있습니다.",
@@ -465,12 +465,16 @@
         "NU",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
+      "Nokia Corporation Sponsored": [
+        "NOK",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
       "Space Exploration Technologies ": [
         "SPCX",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Nokia Corporation Sponsored": [
-        "NOK",
+      "BitMine Immersion Technologies,": [
+        "BMNR",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Amazon.com, Inc.": [
@@ -480,35 +484,31 @@
       "Marvell Technology, Inc.": [
         "MRVL",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
-      "BitMine Immersion Technologies,": [
-        "BMNR",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-08-30 22:00 KST"
+    "updated_at": "2026-08-31 22:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 3,
-      "last_pivot_date": "2026-08-30"
+      "days": 4,
+      "last_pivot_date": "2026-08-31"
     },
-    "updated_at": "2026-08-31 16:00 KST",
+    "updated_at": "2026-08-31 22:00 KST",
     "SPCX": {
-      "days": 11,
-      "last_pivot_date": "2026-08-30"
+      "days": 12,
+      "last_pivot_date": "2026-08-31"
     },
     "INTC": {
-      "days": 11,
-      "last_pivot_date": "2026-08-30"
+      "days": 12,
+      "last_pivot_date": "2026-08-31"
     },
     "NVDA": {
-      "days": 11,
-      "last_pivot_date": "2026-08-30"
+      "days": 12,
+      "last_pivot_date": "2026-08-31"
     },
     "NOK": {
-      "days": 3,
-      "last_pivot_date": "2026-08-30"
+      "days": 4,
+      "last_pivot_date": "2026-08-31"
     },
     "SMCI": {
       "days": 2,
@@ -523,8 +523,8 @@
       "last_pivot_date": "2026-08-24"
     },
     "IREN": {
-      "days": 2,
-      "last_pivot_date": "2026-08-30"
+      "days": 3,
+      "last_pivot_date": "2026-08-31"
     },
     "HL": {
       "days": 4,
@@ -599,8 +599,8 @@
       "last_pivot_date": "2026-08-28"
     },
     "BMNR": {
-      "days": 8,
-      "last_pivot_date": "2026-08-30"
+      "days": 9,
+      "last_pivot_date": "2026-08-31"
     },
     "005935.KS": {
       "days": 5,
@@ -695,16 +695,16 @@
       "last_pivot_date": "2026-08-28"
     },
     "PCG": {
-      "days": 2,
-      "last_pivot_date": "2026-08-30"
+      "days": 3,
+      "last_pivot_date": "2026-08-31"
     },
     "AMZN": {
-      "days": 2,
-      "last_pivot_date": "2026-08-30"
+      "days": 3,
+      "last_pivot_date": "2026-08-31"
     },
     "MRVL": {
-      "days": 2,
-      "last_pivot_date": "2026-08-30"
+      "days": 3,
+      "last_pivot_date": "2026-08-31"
     },
     "105560.KS": {
       "days": 1,
@@ -786,7 +786,7 @@
     "status": "RECOVERY_HANDLED",
     "crash_count": 1,
     "recovery_count": 1,
-    "updated_at": "2026-08-31 21:30 KST"
+    "updated_at": "2026-08-31 22:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 반도체 섹터 전반의 온기와 외국인 및 기관의 강한 순매수세 유입 속에서 평소 대비 2.4배에 달하는 거래량이 폭발하며 장대양봉 종가 고가 마감 패턴을 연출했습니다.  장기금리 변동성에 따른 증시 혼조세 속에서도 120일 최대 매물대 POC인 45035원을 강하게 상향 돌파하며 강력한 매수 에너지와 주도 테마 내의 수급 집중 현상을 명확히 보여주고 있습니다. 특히 보조지표 상 RSI의 강력한 상향 모멘텀과 MACD 골든크로스가 동반되어 단기 폭등 이후의 추가 상승 탄력이 매우 높게 기대되는 최우선 공략 대상입니다.",
@@ -804,7 +804,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-08-31 21:30 KST"
+    "updated_at": "2026-08-31 22:00 KST"
   },
   "STOCK_AUR": {
     "reason": "Aurora Innovation은 AI 및 빅테크 자율주행 섹터의 핵심 주로 주목받으며 Wall Street 거래대금 상위 종목으로 강한 유동성을 유지하고 있습니다. 최근 매크로 악재 및 본드마켓 변동성으로 인한 기술주 전반의 조정 국면 속에서, 단기 과매도 구간(RSI 31) 진입 후 핵심 지지선 반등을 시도하는 매력적인 눌림목 기회를 제공하고 있습니다.",
