@@ -948,7 +948,7 @@ def generate_ai_stock_analysis(stock_name, symbol, news_keywords, raw_data_str_1
         return "AI 분석 호출 실패", err_msg, "", {"buy": None, "stop": None, "target1": None, "target2": None}, now_str
 
 # =========================================================
-# 🎯 토스 마이 대시보드 전용 AI 7단계 냉철한 포지션 진단
+# 🎯 토스 마이 대시보드 전용 AI 8단계 객관적 포지션 진단
 # =========================================================
 def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price, return_pct, raw_data_str_15days, rsi_val, rsi_signal_val, rsi_cross_status, macd_status, ma_status, bb_status, cloud_status, poc_price, max_120, min_120, peaks_and_troughs_summary, is_krw=True, force_refresh=False):
     cache_key = f"TOSS_MY_{symbol}"
@@ -983,9 +983,8 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
         price_rule = f"- 현재 주가가 ${current_price:.2f} 이므로, 반드시 달러($) 기호 없이 소수점 2자리 마침표(.)를 포함한 형태로만 출력하라. (예: {ex_stop}, {ex_target})\n- 절대 소수점을 생략하거나 100을 곱한 정수 형태로 출력하지 말 것."
 
     prompt = f"""
-너는 20년 경력의 월가 수석 포트폴리오 트레이딩 전문가이다.
-낙관적인 온정주의(희망 회로)를 완전히 배제하고, [추세 및 주요 지지/저항선 붕괴 여부]를 절대적 1순위로 엄격하게 평가하여 [상세가이드]를 작성하라.
-단순히 수익률 수치(%)로만 기계적으로 자르지 말고, 차트 구조가 살아있는지 꺾였는지를 철저히 분석하라.
+너는 20년 경력의 수석 포트폴리오 트레이딩 전문가이다.
+낙관적인 편향(희망 회로)을 배제하고, [사용자의 실제 계좌 손익 상태 (수익권 {return_pct:+.2f}% vs 손실권)]과 [추세 및 차트 지지/저항 구조]를 결합하여 엄격하고 정확한 [상세가이드]를 작성하라.
 
 [보유 종목 & 차트 데이터]
 - 종목명: {stock_name} ({symbol})
@@ -1001,21 +1000,23 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 [가격 출력 규칙 - 엄수]
 {price_rule}
 
-[엄격한 7단계 결론 라벨 판정 규칙 - 아래 7개 중 가장 부합하는 단 1개만 정확히 선택]
-1. [익절 🟢 - 상승 추세 종료 시그널 확인 및 전량 차익 실현]
-   - 수익률과 무관하게, 최종 상단 저항선 도달 후 거래량 실린 장대음봉/위꼬리 등 '상승 추세 종료(고점 이탈)' 시그널 포착 시.
-2. [일부 익절 🟢 - 주요 저항선 도달 / 과열 꺾임 시 분할 차익 실현 고려]
-   - 강력한 상단 저항 매물대(POC/전고점) 직면 또는 RSI 70 이상 과열권에서 RSI-Signal 데드크로스 발생 시.
-3. [불타기 고려 🔵 - 정배열 상승 추세 유지 및 눌림목 지지 반등 확인]
-   - 평단가 대비 수익권이면서, 정배열 유지 및 20일선/일목 구름대 상단 지지 반등 확인 시 (파싱_추매타입: 불타기 / 파싱_추매추천가 산정).
-4. [물타기 고려 🟠 - 중장기 지지선 유효 및 단기 반등 캔들 확인]
-   - 평단가 대비 손실권이더라도 120일선/핵심 POC 지지가 살아있고, 일봉상 쌍바닥 또는 밑꼬리 양봉 지지 확인 시에만 제한적 허용 (음봉 지속 시 절대 물타기 금지).
-5. [관망 🟡 - 추세 훼손 없는 건전한 숨고르기 / 박스권 횡보 지속]
-   - 추세가 훼손되지 않고 지지선 위에서 정상적인 숨고르기/박스권 횡보 중일 때.
-6. [일부 손절 🔴 - 단기 지지선 이탈 및 하락 N파 진행에 따른 비중 축소 권고]
-   - 20일선/60일선 지지 실패 및 MACD 데드크로스 지속 등 단기 추세 꺾임 발생 시.
-7. [손절 🔴 - 중장기 추세선·핵심 매물대 완전 붕괴에 따른 리스크 차단]
-   - 120일선 및 주요 매물대(POC)를 거래량 실린 음봉으로 완전히 하향 이탈하고 신저가 갱신 지속 시.
+[엄격한 8단계 결론 라벨 판정 규칙 - 아래 8개 중 계좌 상태와 차트에 정확히 부합하는 단 1개만 선택]
+1. [일부 익절 🟢 - 수익권 중 상단 저항 직면 / 분할 차익 실현]
+   - 현재 수익권({return_pct:+.2f}% > 0)이면서 상단 주요 저항 매물대(POC/전고점)에 도달했거나 RSI 과열권 데드크로스 발생 시.
+2. [비중 축소 🟠 - 손실권 중 상단 저항 직면 / 손실 축소 필요]
+   - 현재 손실권({return_pct:+.2f}% < 0)이면서 바닥 반등 파동이 상단 저항선/매물대(POC)에 부딪혀 상승 탄력이 둔화될 때 (절대 '익절' 용어 사용 금지).
+3. [익절 🟢 - 수익권 중 지지선 이탈 / 이익 실현 필요]
+   - 현재 수익권({return_pct:+.2f}% > 0)이면서 주요 단기 지지선(20일선 등)을 이탈하여 남은 수익을 확정(Trailing Stop)지어야 할 때 (절대 '손절' 용어 사용 금지).
+4. [일부 손절 🔴 - 손실권 중 단기 지지 이탈 / 비중 축소 권장]
+   - 현재 손실권({return_pct:+.2f}% < 0)이면서 20일선/60일선 지지 실패 및 MACD 데드크로스로 단기 하락세가 지속될 때.
+5. [손절 🔴 - 손실권 중 주요 추세선 붕괴 확인 / 전량 청산 권장]
+   - 현재 손실권({return_pct:+.2f}% < 0)이면서 120일선 및 주요 매물대(POC)를 완전히 하향 이탈하고 신저가 갱신이 지속될 때.
+6. [불타기 고려 🔵 - 상승 추세 및 눌림목 지지 확인]
+   - 현재 수익권({return_pct:+.2f}% > 0)으로 안전마진 확보 상태에서 정배열 유지 및 20일선/구름대 상단 지지 반등 시 (파싱_추매타입: 불타기 / 파싱_추매추천가 산정).
+7. [물타기 고려 🟠 - 장기 지지 및 바닥 반등 확인]
+   - 현재 손실권({return_pct:+.2f}% < 0)이더라도 120일선/핵심 지지 매물대가 살아있고 일봉상 쌍바닥 또는 밑꼬리 양봉 지지 확인 시에만 제한적 허용 (하락 음봉 지속 시 절대 물타기 금지).
+8. [관망 🟡 - 추세 유지 및 박스권 횡보 중 / 포지션 유지]
+   - 추세가 훼손되지 않고 지지선 위에서 정상적인 박스권 횡보/방향 탐색 중일 때.
 
 [출력 양식 - 규격 엄수]
 파싱_추매타입: <불타기 OR 물타기 OR 없음>
@@ -1024,11 +1025,11 @@ def generate_ai_toss_3line_analysis(stock_name, symbol, avg_price, current_price
 파싱_동적목표가: <{ex_target}>
 
 상세가이드:
-결론: [위 7개 표준 문구 중 단 1개만 정확히 출력]
+결론: [위 8개 표준 문구 중 단 1개만 정확히 출력]
 
 • [포지션 및 수급/패턴 정밀 진단] 내 보유 평단가 대비 현재 수익률 위치와 최근 15일간의 캔들 형태, 거래량 수급 변화, 차트 패턴 위치를 객관적이고 냉철하게 분석.
-• [동적 목표가 및 익절 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 목표 익절가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
-• [이익 보존 및 Trailing Stop 전략] 수익 보존 및 리스크 차단을 위한 트레일링 손절가({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
+• [동적 목표가 및 익절/손실축소 시나리오] 상단 매물대 저항선(POC) 및 전고점 돌파 가능성을 근거로 목표가({ex_target}{currency_symbol}) 도달 시 분할 매도 요령을 상세 서술.
+• [이익 보존 및 Trailing Stop 전략] 수익 보존 또는 리스크 제한을 위한 손절선({ex_stop}{currency_symbol}) 설정의 기술적 지지선 근거를 구체적으로 서술.
 
 [언어 제한] 한자(漢字) 및 일본어 절대 금지. 오직 순수 한글, 영문, 숫자만 사용할 것.
 """
@@ -1721,10 +1722,10 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (아코디언 토글 적용)
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (8단계 라벨 & 아코디언 토글)
 # =========================================================
 print("\n" + "="*60)
-print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 아코디언 토글 리포트 생성 중...")
+print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 8단계 라벨 아코디언 리포트 생성 중...")
 print("="*60)
 
 def get_toss_holdings():
@@ -2157,7 +2158,7 @@ macro_html_kr = f"""
         <div class="macro-value">{kr_macro['m2']}</div>
         <div class="macro-sub">{kr_macro['m2_date']}</div>
     </a>
-    <a href="{kr_macro['cli_url']}" target="_blank" class="macro-card">
+    <a href="{kr_cli_url:=kr_macro['cli_url']}" target="_blank" class="macro-card">
         <div class="macro-title">🌐 한국 경기선행지수 (CLI) ↗</div>
         <div class="macro-value">{kr_macro['cli']}</div>
         <div class="macro-sub">{kr_macro['cli_date']}</div>
@@ -2228,7 +2229,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 7단계 냉철한 포지션 진단 및 아코디언 토글 배포 완료!")
+    print("🎉 [최종 완료] 8단계 정밀 결론 라벨 및 아코디언 토글 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
