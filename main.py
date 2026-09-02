@@ -73,7 +73,6 @@ PROXY_POOL = [
 if FIXIE_URL and FIXIE_URL not in PROXY_POOL:
     PROXY_POOL.append(FIXIE_URL)
 
-# 💡 yfinance / 크롤링 / GitHub 업로드는 글로벌 프록시 없이 다이렉트 통신 (트래픽 절약)
 os.environ.pop("HTTP_PROXY", None)
 os.environ.pop("HTTPS_PROXY", None)
 os.environ.pop("http_proxy", None)
@@ -205,7 +204,7 @@ def validate_stop_loss_with_atr(entry_price, stop_loss_price, atr_val, is_krw=Tr
     return adjust_to_tick_size(stop_loss_price, is_krw)
 
 # =========================================================
-# 🏛️ [LLM 다중화 매니저]
+# 🏛️ [LLM 다중화 매니저 - gemini-3.5-flash-lite 엄수 & 503 재시도 & Groq 호환성 확보]
 # =========================================================
 class MultiLLMManager:
     def __init__(self, gemini_key, groq_keys):
@@ -256,42 +255,57 @@ class MultiLLMManager:
         if TEST_MODE:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
+        # 1순위: Gemini (gemini-3.5-flash-lite)
+        # 구글 서버 503 혼잡(High Demand) 발생 시 즉시 탈락시키지 않고 3초 휴식 후 1회 재시도
         if self.gemini_client:
-            try:
-                elapsed = time.time() - self.last_gemini_call_time
-                if elapsed < 4.1:
-                    time.sleep(4.1 - elapsed)
+            for attempt in range(2):
+                try:
+                    elapsed = time.time() - self.last_gemini_call_time
+                    if elapsed < 4.2:
+                        time.sleep(4.2 - elapsed)
 
-                print("⚡ [1순위 Gemini] gemini-3.5-flash-lite 요청 전송 중...")
-                self.last_gemini_call_time = time.time()
-                res = self.gemini_client.models.generate_content(
-                    model="gemini-3.5-flash-lite",
-                    contents=prompt
-                )
-                if res and res.text:
-                    return res.text.strip()
-            except Exception as e:
-                print(f"⚠️ Gemini 일시 오류/429 ({e}) ➔ Groq으로 임시 우회합니다.")
+                    print(f"⚡ [1순위 Gemini] gemini-3.5-flash-lite 요청 전송 중... (시도 {attempt+1}/2)")
+                    self.last_gemini_call_time = time.time()
+                    res = self.gemini_client.models.generate_content(
+                        model="gemini-3.5-flash-lite",
+                        contents=prompt
+                    )
+                    if res and res.text:
+                        return res.text.strip()
+                except Exception as e:
+                    err_str = str(e)
+                    if ("503" in err_str or "UNAVAILABLE" in err_str) and attempt == 0:
+                        print("⏳ Gemini 503 일시 서버 혼잡 감지 -> 3초 대기 후 1회 재시도합니다.")
+                        time.sleep(3)
+                        continue
+                    print(f"⚠️ Gemini 일시 오류/429/503 ({e}) ➔ Groq으로 우회합니다.")
+                    break
 
+        # 2순위: Groq 백업 풀 (Groq 지원 모델 목록 자동 폴백)
+        groq_model_candidates = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192", "llama-3.1-8b-instant"]
         while self.groq_client:
-            try:
-                print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} 요청 전송 중...")
-                res = self.groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
-                return res.choices[0].message.content.strip()
+            for g_model in groq_model_candidates:
+                try:
+                    print(f"⚡ [2순위 Groq] Key #{self.current_groq_index + 1} ({g_model}) 요청 전송 중...")
+                    res = self.groq_client.chat.completions.create(
+                        model=g_model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=temperature,
+                        max_tokens=max_tokens
+                    )
+                    return res.choices[0].message.content.strip()
+                except RateLimitError:
+                    print(f"🔄 Groq Key #{self.current_groq_index + 1} 쿼터 초과!")
+                    break
+                except Exception as e:
+                    err_text = str(e)
+                    if "404" in err_text or "model_not_found" in err_text:
+                        continue
+                    print(f"⚠️ Groq 호출 예외 ({g_model}): {e}")
+                    break
 
-            except RateLimitError:
-                print(f"🔄 Groq Key #{self.current_groq_index + 1} 쿼터 초과!")
-                if not self.switch_to_next_groq():
-                    break
-            except Exception as e:
-                print(f"⚠️ Groq 호출 예외: {e}")
-                if not self.switch_to_next_groq():
-                    break
+            if not self.switch_to_next_groq():
+                break
 
         raise RuntimeError("모든 AI API(Gemini 및 Groq 1/2번) 호출에 실패했습니다.")
 
@@ -1809,7 +1823,6 @@ def get_mock_holdings():
 
 toss_holdings, is_real_toss = get_toss_holdings()
 
-# 🛡️ 실제 토스 API 연동이 성공했을 때만 매도 캐시 삭제 수행
 if is_real_toss:
     currently_held_symbols = set(h['ticker'] for h in toss_holdings)
     deleted_cache_count = 0
@@ -1989,7 +2002,6 @@ for h in toss_holdings:
 
         country_badge = "🇰🇷" if is_krw else "🇺🇸"
 
-        # 🎯 마이대시보드 전용 아코디언 토글 블록 구성
         my_stock_cards_html += f"""
         <div class="card">
             <div class="console-report">
@@ -2030,7 +2042,7 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃 (최적 밸런스 반응형 CSS)
+# PART 4: HTML 템플릿 및 레이아웃 (오타 완벽 수정)
 # =========================================================
 html_style = """
 <style>
@@ -2114,7 +2126,6 @@ html_style = """
 
     .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
 
-    /* 📱 [모바일 최적화 폰트 규격] */
     @media (max-width: 768px) {
         body { padding: 10px 8px; }
         .container { width: 100%; }
@@ -2151,6 +2162,7 @@ html_style = """
 </style>
 """
 
+# 💡 NameError 오타 완전 수정 ({kr_macro['cli_url']})
 macro_html_kr = f"""
 <div class="macro-grid">
     <a href="{kr_macro['m2_url']}" target="_blank" class="macro-card">
@@ -2158,7 +2170,7 @@ macro_html_kr = f"""
         <div class="macro-value">{kr_macro['m2']}</div>
         <div class="macro-sub">{kr_macro['m2_date']}</div>
     </a>
-    <a href="{kr_cli_url:=kr_macro['cli_url']}" target="_blank" class="macro-card">
+    <a href="{kr_macro['cli_url']}" target="_blank" class="macro-card">
         <div class="macro-title">🌐 한국 경기선행지수 (CLI) ↗</div>
         <div class="macro-value">{kr_macro['cli']}</div>
         <div class="macro-sub">{kr_macro['cli_date']}</div>
@@ -2229,7 +2241,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] 8단계 정밀 결론 라벨 및 아코디언 토글 대시보드 배포 완료!")
+    print("🎉 [최종 완료] gemini-3.5-flash-lite 및 8단계 라벨 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
