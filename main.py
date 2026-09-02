@@ -2042,7 +2042,7 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃 (오타 완벽 수정)
+# PART 4: HTML 템플릿 및 레이아웃 (오타 수정 & 플로팅 Top 버튼 탑재)
 # =========================================================
 html_style = """
 <style>
@@ -2126,6 +2126,33 @@ html_style = """
 
     .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
 
+    /* 🚀 플로팅 Top 버튼 스타일 */
+    #btn-back-to-top {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        display: none;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        transition: opacity 0.3s, transform 0.2s, background 0.2s;
+        align-items: center;
+        justify-content: center;
+    }
+    #btn-back-to-top:hover {
+        background: #1d4ed8;
+        transform: translateY(-3px);
+    }
+
     @media (max-width: 768px) {
         body { padding: 10px 8px; }
         .container { width: 100%; }
@@ -2158,11 +2185,35 @@ html_style = """
         .ai-content { font-size: 15px; line-height: 1.7; }
         .deep-report-btn { font-size: 14px; padding: 10px; }
         .deep-report-content { font-size: 14px; line-height: 1.7; padding: 12px; }
+
+        #btn-back-to-top {
+            bottom: 20px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+        }
     }
 </style>
 """
 
-# 💡 NameError 오타 완전 수정 ({kr_macro['cli_url']})
+top_button_component = """
+<button id="btn-back-to-top" title="최상단으로 이동">▲</button>
+<script>
+    const topBtn = document.getElementById("btn-back-to-top");
+    window.addEventListener("scroll", () => {
+        if (window.scrollY > 300) {
+            topBtn.style.display = "flex";
+        } else {
+            topBtn.style.display = "none";
+        }
+    });
+    topBtn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+</script>
+"""
+
 macro_html_kr = f"""
 <div class="macro-grid">
     <a href="{kr_macro['m2_url']}" target="_blank" class="macro-card">
@@ -2203,11 +2254,11 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:17px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div></body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:17px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div>{top_button_component}</body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:17px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div></body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:17px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div>{top_button_component}</body></html>"""
 
-full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div></body></html>"""
+full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div>{top_button_component}</body></html>"""
 
 # =========================================================
 # PART 5: GitHub Pages 및 ai_cache.json 통합 배포
@@ -2241,7 +2292,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] gemini-3.5-flash-lite 및 8단계 라벨 대시보드 배포 완료!")
+    print("🎉 [최종 완료] gemini-3.5-flash-lite, 8단계 라벨 및 Top 플로팅 버튼 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
