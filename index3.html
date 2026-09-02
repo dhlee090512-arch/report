@@ -80,6 +80,33 @@
 
     .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
 
+    /* 🚀 플로팅 Top 버튼 스타일 */
+    #btn-back-to-top {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        display: none;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        transition: opacity 0.3s, transform 0.2s, background 0.2s;
+        align-items: center;
+        justify-content: center;
+    }
+    #btn-back-to-top:hover {
+        background: #1d4ed8;
+        transform: translateY(-3px);
+    }
+
     @media (max-width: 768px) {
         body { padding: 10px 8px; }
         .container { width: 100%; }
@@ -112,9 +139,17 @@
         .ai-content { font-size: 15px; line-height: 1.7; }
         .deep-report-btn { font-size: 14px; padding: 10px; }
         .deep-report-content { font-size: 14px; line-height: 1.7; padding: 12px; }
+
+        #btn-back-to-top {
+            bottom: 20px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+        }
     }
 </style>
-</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: 2026-09-02 21:00 KST</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">48,125,460원</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: 1,362.2원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-8,544,446원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-15.08%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>
+</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: 2026-09-02 21:30 KST</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">48,133,200원</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: 1,360.0원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-8,529,839원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-15.05%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -496,10 +531,10 @@
                     <a href="https://www.tradingview.com/symbols/NASA/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    30,608원 <span class="text-red">(-18,032원)</span>
+                    30,722원 <span class="text-red">(-17,840원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$35.71</span> (<span class="text-red">-37.07%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$22.53</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$35.71</span> (<span class="text-red">-36.73%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$22.65</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$32.64</span></div>
@@ -530,10 +565,10 @@
                     <a href="https://www.tradingview.com/symbols/SAN/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    199,450원 <span class="text-red">(-109원)</span>
+                    199,264원 <span class="text-green">(+27원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$14.65</span> (<span class="text-red">-0.05%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$14.67</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$14.65</span> (<span class="text-green">+0.01%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$14.68</span></div>
                 <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$14.67</span></div>
@@ -564,10 +599,10 @@
                     <a href="https://www.tradingview.com/symbols/AVGO/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    502,195원 <span class="text-green">(+7,792원)</span>
+                    503,437원 <span class="text-green">(+9,833원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$362.95</span> (<span class="text-green">+1.57%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$369.39</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$362.95</span> (<span class="text-green">+1.99%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$370.91</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$374.35</span></div>
@@ -598,10 +633,10 @@
                     <a href="https://www.tradingview.com/symbols/BE/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    285,758원 <span class="text-red">(-5,966원)</span>
+                    287,065원 <span class="text-red">(-4,189원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$214.16</span> (<span class="text-red">-2.04%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$210.20</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$214.16</span> (<span class="text-red">-1.43%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$211.50</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$217.59</span></div>
@@ -632,7 +667,7 @@
                     <a href="https://www.tradingview.com/symbols/VSAT/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    178,473원 <span class="text-red">(-31,496원)</span>
+                    178,185원 <span class="text-red">(-31,445원)</span>
                 </div>
                 <div class="report-divider"></div>
                 <div class="report-line">주당 평단가 : <span class="highlight-val">$77.07</span> (<span class="text-red">-15.00%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$65.65</span></div>
@@ -666,10 +701,10 @@
                     <a href="https://www.tradingview.com/symbols/IONQ/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    254,551원 <span class="text-red">(-22,449원)</span>
+                    255,431원 <span class="text-red">(-21,120원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$40.67</span> (<span class="text-red">-8.10%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$37.45</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$40.67</span> (<span class="text-red">-7.63%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$37.64</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 하한선 근접/지지 🟢 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$43.27</span></div>
@@ -700,7 +735,7 @@
                     <a href="https://www.tradingview.com/symbols/ABEV/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    469,843원 <span class="text-red">(-926원)</span>
+                    469,084원 <span class="text-red">(-925원)</span>
                 </div>
                 <div class="report-divider"></div>
                 <div class="report-line">주당 평단가 : <span class="highlight-val">$2.88</span> (<span class="text-red">-0.19%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$2.88</span></div>
@@ -734,10 +769,10 @@
                     <a href="https://www.tradingview.com/symbols/INTC/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    720,008원 <span class="text-red">(-19,111원)</span>
+                    722,177원 <span class="text-red">(-15,749원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$90.43</span> (<span class="text-red">-2.58%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$88.27</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$90.43</span> (<span class="text-red">-2.13%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$88.68</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$111.02</span></div>
@@ -768,10 +803,10 @@
                     <a href="https://www.tradingview.com/symbols/GLW/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    389,148원 <span class="text-red">(-27,679원)</span>
+                    392,245원 <span class="text-red">(-23,908원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$153</span> (<span class="text-red">-6.64%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$143.13</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$153</span> (<span class="text-red">-5.74%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$144.50</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$180.75</span></div>
@@ -802,10 +837,10 @@
                     <a href="https://www.tradingview.com/symbols/ASTX/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    392,458원 <span class="text-red">(-316,840원)</span>
+                    390,600원 <span class="text-red">(-317,553원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$17.36</span> (<span class="text-red">-44.66%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$9.63</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$17.36</span> (<span class="text-red">-44.84%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$9.60</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$24.69</span></div>
@@ -836,10 +871,10 @@
                     <a href="https://www.tradingview.com/symbols/SOXL/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    281,018원 <span class="text-red">(-113,068원)</span>
+                    283,039원 <span class="text-red">(-110,410원)</span>
                 </div>
                 <div class="report-divider"></div>
-                <div class="report-line">주당 평단가 : <span class="highlight-val">$144.65</span> (<span class="text-red">-28.69%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$103.39</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$144.65</span> (<span class="text-red">-28.06%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$104.30</span></div>
                 <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
                 <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
                 <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$49.16</span></div>
@@ -862,4 +897,19 @@
                 </div>
             </details>
         </div>
-        </div></body></html>
+        </div>
+<button id="btn-back-to-top" title="최상단으로 이동">▲</button>
+<script>
+    const topBtn = document.getElementById("btn-back-to-top");
+    window.addEventListener("scroll", () => {
+        if (window.scrollY > 300) {
+            topBtn.style.display = "flex";
+        } else {
+            topBtn.style.display = "none";
+        }
+    });
+    topBtn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+</script>
+</body></html>
