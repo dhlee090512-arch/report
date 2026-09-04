@@ -204,6 +204,23 @@ def validate_stop_loss_with_atr(entry_price, stop_loss_price, atr_val, is_krw=Tr
     return adjust_to_tick_size(stop_loss_price, is_krw)
 
 # =========================================================
+# 📈 트레이딩뷰/HTS 표준 Wilder's RSI(14) 및 Signal(9) 계산 모듈
+# =========================================================
+def calculate_wilder_rsi(series, period=14, signal_period=9):
+    delta = series.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    
+    # 웰레스 와일더 지수평활 (RMA / EMA, alpha=1/period)
+    avg_gain = gain.ewm(alpha=1.0/period, min_periods=period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1.0/period, min_periods=period, adjust=False).mean()
+    
+    rs = avg_gain / (avg_loss + 1e-9)
+    rsi = 100.0 - (100.0 / (1.0 + rs))
+    rsi_signal = rsi.rolling(signal_period, min_periods=1).mean()
+    return rsi, rsi_signal
+
+# =========================================================
 # 🏛️ [LLM 다중화 매니저 - gemini-3.5-flash-lite 엄수 & 503 재시도 & Groq 호환성 확보]
 # =========================================================
 class MultiLLMManager:
@@ -1320,11 +1337,8 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
 
         df_daily = df_daily.ffill().bfill()
 
-        delta = df_daily['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
-        df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
-        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
+        # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
+        df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
         
         rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
         rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
@@ -1591,11 +1605,8 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
 
         df_daily = df_daily.ffill().bfill()
 
-        delta = df_daily['Close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
-        df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
-        df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
+        # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
+        df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
         
         rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
         rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
@@ -1933,11 +1944,8 @@ for h in toss_holdings:
 
             df_daily = df_daily.ffill().bfill()
 
-            delta = df_daily['Close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(14, min_periods=1).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(14, min_periods=1).mean()
-            df_daily['RSI'] = 100 - (100 / (1 + (gain / (loss + 1e-9))))
-            df_daily['RSI_Signal'] = df_daily['RSI'].rolling(9, min_periods=1).mean()
+            # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
+            df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
 
             rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
             rsi_signal_val = round(float(df_daily['RSI_Signal'].iloc[-1]), 2)
@@ -2042,7 +2050,7 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃 (오타 수정 & 플로팅 Top 버튼 탑재)
+# PART 4: HTML 템플릿 및 레이아웃 (플로팅 Top 버튼 탑재)
 # =========================================================
 html_style = """
 <style>
@@ -2292,7 +2300,7 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] gemini-3.5-flash-lite, 8단계 라벨 및 Top 플로팅 버튼 배포 완료!")
+    print("🎉 [최종 완료] Wilder RSI 지표 보정, Top 버튼 및 8단계 라벨 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
