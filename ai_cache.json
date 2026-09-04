@@ -474,12 +474,12 @@
         "BMNR",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Sunbelt Rentals Holdings, Inc.": [
-        "SUNB",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "Micron Technology, Inc.": [
         "MU",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Sunbelt Rentals Holdings, Inc.": [
+        "SUNB",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Super Micro Computer, Inc.": [
@@ -487,41 +487,41 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-04 23:30 KST"
+    "updated_at": "2026-09-05 00:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
       "days": 8,
       "last_pivot_date": "2026-09-04"
     },
-    "updated_at": "2026-09-04 23:30 KST",
+    "updated_at": "2026-09-05 00:00 KST",
     "SPCX": {
-      "days": 16,
-      "last_pivot_date": "2026-09-04"
+      "days": 17,
+      "last_pivot_date": "2026-09-05"
     },
     "INTC": {
-      "days": 16,
-      "last_pivot_date": "2026-09-04"
+      "days": 17,
+      "last_pivot_date": "2026-09-05"
     },
     "NVDA": {
-      "days": 16,
-      "last_pivot_date": "2026-09-04"
+      "days": 17,
+      "last_pivot_date": "2026-09-05"
     },
     "NOK": {
-      "days": 7,
-      "last_pivot_date": "2026-09-04"
+      "days": 8,
+      "last_pivot_date": "2026-09-05"
     },
     "SMCI": {
-      "days": 1,
-      "last_pivot_date": "2026-09-04"
+      "days": 2,
+      "last_pivot_date": "2026-09-05"
     },
     "F": {
       "days": 2,
       "last_pivot_date": "2026-09-03"
     },
     "TSLA": {
-      "days": 2,
-      "last_pivot_date": "2026-09-04"
+      "days": 3,
+      "last_pivot_date": "2026-09-05"
     },
     "IREN": {
       "days": 3,
@@ -600,8 +600,8 @@
       "last_pivot_date": "2026-08-28"
     },
     "BMNR": {
-      "days": 1,
-      "last_pivot_date": "2026-09-04"
+      "days": 2,
+      "last_pivot_date": "2026-09-05"
     },
     "005935.KS": {
       "days": 5,
@@ -740,16 +740,16 @@
       "last_pivot_date": "2026-09-04"
     },
     "SUNB": {
-      "days": 1,
-      "last_pivot_date": "2026-09-04"
+      "days": 2,
+      "last_pivot_date": "2026-09-05"
     },
     "LULU": {
-      "days": 1,
-      "last_pivot_date": "2026-09-04"
+      "days": 2,
+      "last_pivot_date": "2026-09-05"
     },
     "MU": {
-      "days": 1,
-      "last_pivot_date": "2026-09-04"
+      "days": 2,
+      "last_pivot_date": "2026-09-05"
     }
   },
   "STOCK_SOFI": {
@@ -823,11 +823,11 @@
     "updated_at": "2026-09-01 20:30 KST"
   },
   "VOLATILITY_STATE_KR": {
-    "date": "2026-09-04",
+    "date": "2026-09-05",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-04 23:30 KST"
+    "updated_at": "2026-09-05 00:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "반도체 장비 섹터 내 독보적 기술력을 보유한 HPSP는 최근 단기 과열 국면을 거치며 거래량이 수렴하는 안정적인 눌림목 조정을 보이고 있습니다. 대형주 변동성 속에서도 견조한 매수세가 유입되며 장대양봉 종가 고가 마감 패턴을 연출, 추가 상승 랠리를 위한 탄탄한 수급적 기반을 다지고 있습니다.",
@@ -842,11 +842,11 @@
     "updated_at": "2026-09-04 07:30 KST"
   },
   "VOLATILITY_STATE_US": {
-    "date": "2026-09-04",
+    "date": "2026-09-05",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-04 23:30 KST"
+    "updated_at": "2026-09-05 00:00 KST"
   },
   "STOCK_AUR": {
     "reason": "Aurora Innovation은 AI 및 빅테크 자율주행 섹터의 핵심 주로 주목받으며 Wall Street 거래대금 상위 종목으로 강한 유동성을 유지하고 있습니다. 최근 매크로 악재 및 본드마켓 변동성으로 인한 기술주 전반의 조정 국면 속에서, 단기 과매도 구간(RSI 31) 진입 후 핵심 지지선 반등을 시도하는 매력적인 눌림목 기회를 제공하고 있습니다.",
