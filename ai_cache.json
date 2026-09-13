@@ -856,7 +856,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-13 20:30 KST"
+    "updated_at": "2026-09-13 20:59 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "코스닥 ETF 시장을 이끄는 반도체 소부장 테마의 강세 속에서 이평선 정배열 안착과 장대양봉 고가 마감의 강력한 수급 유입이 포착되어 단기 상승 랠리 지속이 기대됨.",
@@ -875,7 +875,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-13 20:30 KST"
+    "updated_at": "2026-09-13 20:59 KST"
   },
   "STOCK_AUR": {
     "reason": "Aurora Innovation은 AI 및 빅테크 자율주행 섹터의 핵심 주로 주목받으며 Wall Street 거래대금 상위 종목으로 강한 유동성을 유지하고 있습니다. 최근 매크로 악재 및 본드마켓 변동성으로 인한 기술주 전반의 조정 국면 속에서, 단기 과매도 구간(RSI 31) 진입 후 핵심 지지선 반등을 시도하는 매력적인 눌림목 기회를 제공하고 있습니다.",
@@ -1475,5 +1475,52 @@
       "target2": 165.31
     },
     "updated_at": "2026-09-13 19:01 KST"
+  },
+  "SAVETICKER_INTEL_REPORT": {
+    "verdict": "하락 조정 🔴",
+    "score": -45,
+    "core_drivers": [
+      "인플레이션 지표 발표에 따른 연준(Fed)의 추가 금리 인상 우려 및 국채 금리 상승 압박",
+      "지정학적 리스크 심화와 맞물린 유가 급등세가 월스트리트의 비용 부담 및 증시 하방 압력으로 작용",
+      "AI 섹터의 시장 지배력 약화 및 다가오는 중간선거(Midterm) 앞둔 투자 심리 취약성 노출"
+    ],
+    "asset_hedges": [
+      {
+        "name": "ProShares Short QQQ",
+        "ticker": "SQQQ",
+        "type": "나스닥 3X 인버스",
+        "reason": "금리 상승과 인플레이션 우려로 기술주 중심의 나스닥 지수가 조정을 받고 있으며, 하방 압력이 지속될 가능성 높음.",
+        "strategy": "변동성 장세 속 단기 하방 헤지 목적으로 분할 접근"
+      },
+      {
+        "name": "iShares 20+ Year Treasury Bond ETF",
+        "ticker": "TLT",
+        "type": "미국 장기국채",
+        "reason": "국채 금리 상승(채권 가격 하락) 흐름이 나타나고 있으나, 연준의 금리 인상 우려 정점 통과 시 안전자산 선호 및 금리 하락 반전 대비.",
+        "strategy": "금리 고점 인근에서 분할 매집을 통한 듀레이션 전략"
+      },
+      {
+        "name": "United States Oil Fund",
+        "ticker": "USO",
+        "type": "WTI 원유",
+        "reason": "지정학적 갈등 고조 및 원유 가격 상승세가 지속되며 증시에 인플레이션 압력을 가하는 핵심 요인으로 작용 중.",
+        "strategy": "지정학적 리스크 프리미엄을 활용한 단기 트레이딩"
+      }
+    ],
+    "continuation_stocks": [
+      {
+        "name": "NVIDIA Corporation",
+        "ticker": "NVDA",
+        "reason": "AI 테마의 전반적인 시장 지배력은 주춤하나, 반도체 섹터 내에서 여전히 기관의 매수 신호(Buy Signals)와 견조한 펀더멘털 유지 중.",
+        "strategy": "추격 매수를 자제하고, 매크로 조정에 따른 지지선 부근에서의 눌림목 분할 매수"
+      },
+      {
+        "name": "Apple Inc.",
+        "ticker": "AAPL",
+        "reason": "유가 상승 및 매크로 불확실성 속에서도 대형 기술주 중 상대적인 방어력과 함께 기관 리밸런싱 수급 유입 기대.",
+        "strategy": "변동성 확대 시 분할 관점 접근 및 박스권 하단 매집"
+      }
+    ],
+    "updated_at": "2026-09-13 20:59 KST"
   }
 }
