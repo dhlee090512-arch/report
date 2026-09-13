@@ -64,8 +64,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "부정 🔴",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 연쇄적인 주가 하락 속에서도 일부 예상에 부합하는 인플레이션 지표 발표 직후 증시가 반등세를 보임<br>&nbsp;&nbsp;• 유가가 일시적으로 하락세로 돌아설 때마다 월스트리트가 빠르게 안정을 찾고 상승 탄력을 회복함<br>&nbsp;&nbsp;• AI 주도권 집중 현상이 완화되면서 오히려 일부 예상 외의 종목들이 시장을 아웃퍼폼하는 등 순환매 장세 기대감 형성<br>&nbsp;&nbsp;• 연초 이후 주식 펀드 수익률이 12..6퍼센트를 기록하는 등 전반적인 연간 자산 성과가 양호함<br>&nbsp;&nbsp;• 엔비디아와 마이크론 등 주요 기술 및 반도체 관련 종목에서 여전히 매수 신호가 감지됨<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 중동 지역 전쟁 격화로 인해 원유 가격이 배럴당 100달러를 돌파하며 증시에 지속적인 하방 압력을 가함<br>&nbsp;&nbsp;• 인플레이션 가속화와 국채 금리 상승세가 맞물려 연방준비제도의 추가 금리 인상 우려가 고조됨<br>&nbsp;&nbsp;• AI 관련 주식의 급락이 자칫 미국 경기 침체 및 글로벌 경제 정체로 이어질 수 있다는 경고가 제기됨<br>&nbsp;&nbsp;• 중간선거를 앞두고 정치적 불확실성이 커지면서 시장이 각종 충격에 취약한 상태를 보임<br>&nbsp;&nbsp;• 국채 금리 급등과 긴축 우려로 인해 다수의 주요 지수가 조정 영역 진입 압박을 받으며 변동성이 확대됨<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">AI 및 반도체 종목 순환매 테마 (엔비디아, 마이크론, 샌디스크 등 매수 시그널 포착)</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-15점 (인플레이션 압박, 유가 급등, 금리 인상 우려가 복합적으로 작용하여 투자 심리가 다소 위축된 상태)</span>\n        ",
-    "updated_at": "2026-09-12 22:00 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 인플레이션 지표가 예상치에 부합하면서 시장의 불확실성이 일부 해소됨<br>&nbsp;&nbsp;• 유가 하락 시 다우지수와 나스닥 등 주요 지수가 빠르게 반등하는 저가 매수세 유입<br>&nbsp;&nbsp;• 연방준비제도(Fed)의 금리 인상 우려가 일부 지표에 선반영되며 변동성 장세 속에서도 반등 기회 모색<br>&nbsp;&nbsp;• AI 외에 다양한 업종과 종목들로 시장 주도권이 확산되며 일부 종목들은 시장 수익률을 상회함<br>&nbsp;&nbsp;• 연초 이후 주식형 펀드 수익률이 12.6%를 기록하는 등 전반적인 연간 투자 성과는 양호한 상태 유지<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 이란 전쟁 격화 등 지정학적 리스크로 인해 국제유가가 배럴당 100달러를 돌파하며 월스트리트에 부담 가중<br>&nbsp;&nbsp;• 인플레이션 가속화 우려와 국채 금리(수익률)가 다년 최고치를 기록하며 증시를 조정 국면으로 압박<br>&nbsp;&nbsp;• 인플레이션 압력에 따른 연방준비제도의 추가 금리 인상 가능성과 불확실성 지속<br>&nbsp;&nbsp;• AI 관련 거품 붕괴 가능성과 경기 침체(레세션) 우려가 장기적 리스크로 대두됨<br>&nbsp;&nbsp;• 중간선거를 앞둔 정치적 불확실성과 맞물려 시장이 외부 충격에 매우 취약한 상태를 보임<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">기술주 및 반도체(엔비디아, 마이크론 등) 매수세 중심 테마</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-65점 (지정학적 갈등에 따른 유가 급등과 금리 인상 압박으로 투자 심리가 크게 위축된 상태)</span>\n        ",
+    "updated_at": "2026-09-13 22:00 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 및 빅테크 AI 핵심주인 SPCX는 최근 인플레이션 지표 발표와 연방준비제도 금리 인상 우려 속에서도 강한 거래량을 동반한 반등세를 보이고 있습니다. 대형 기관 수급 유입과 더불어 단기 변동성 장세 속에서 주도 테마로서의 강세를 이어가고 있어 기술적 반등 구간 공략이 유효합니다.",
@@ -472,29 +472,29 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-12 22:00 KST"
+    "updated_at": "2026-09-13 22:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 16,
-      "last_pivot_date": "2026-09-12"
+      "days": 17,
+      "last_pivot_date": "2026-09-13"
     },
-    "updated_at": "2026-09-13 08:30 KST",
+    "updated_at": "2026-09-13 22:00 KST",
     "SPCX": {
-      "days": 24,
-      "last_pivot_date": "2026-09-12"
+      "days": 25,
+      "last_pivot_date": "2026-09-13"
     },
     "INTC": {
-      "days": 24,
-      "last_pivot_date": "2026-09-12"
+      "days": 25,
+      "last_pivot_date": "2026-09-13"
     },
     "NVDA": {
-      "days": 24,
-      "last_pivot_date": "2026-09-12"
+      "days": 25,
+      "last_pivot_date": "2026-09-13"
     },
     "NOK": {
-      "days": 15,
-      "last_pivot_date": "2026-09-12"
+      "days": 16,
+      "last_pivot_date": "2026-09-13"
     },
     "SMCI": {
       "days": 5,
@@ -585,8 +585,8 @@
       "last_pivot_date": "2026-08-28"
     },
     "BMNR": {
-      "days": 1,
-      "last_pivot_date": "2026-09-12"
+      "days": 2,
+      "last_pivot_date": "2026-09-13"
     },
     "005935.KS": {
       "days": 1,
@@ -745,8 +745,8 @@
       "last_pivot_date": "2026-09-09"
     },
     "GRAB": {
-      "days": 4,
-      "last_pivot_date": "2026-09-12"
+      "days": 5,
+      "last_pivot_date": "2026-09-13"
     },
     "036930.KQ": {
       "days": 2,
@@ -765,20 +765,20 @@
       "last_pivot_date": "2026-09-11"
     },
     "KVUE": {
-      "days": 2,
-      "last_pivot_date": "2026-09-12"
+      "days": 3,
+      "last_pivot_date": "2026-09-13"
     },
     "329180.KS": {
       "days": 2,
       "last_pivot_date": "2026-09-13"
     },
     "KHC": {
-      "days": 1,
-      "last_pivot_date": "2026-09-12"
+      "days": 2,
+      "last_pivot_date": "2026-09-13"
     },
     "ORCL": {
-      "days": 1,
-      "last_pivot_date": "2026-09-12"
+      "days": 2,
+      "last_pivot_date": "2026-09-13"
     }
   },
   "STOCK_SOFI": {
@@ -856,7 +856,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-13 21:30 KST"
+    "updated_at": "2026-09-13 22:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "코스닥 ETF 시장을 이끄는 반도체 소부장 테마의 강세 속에서 이평선 정배열 안착과 장대양봉 고가 마감의 강력한 수급 유입이 포착되어 단기 상승 랠리 지속이 기대됨.",
@@ -875,7 +875,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-13 21:30 KST"
+    "updated_at": "2026-09-13 22:00 KST"
   },
   "STOCK_AUR": {
     "reason": "Aurora Innovation은 AI 및 빅테크 자율주행 섹터의 핵심 주로 주목받으며 Wall Street 거래대금 상위 종목으로 강한 유동성을 유지하고 있습니다. 최근 매크로 악재 및 본드마켓 변동성으로 인한 기술주 전반의 조정 국면 속에서, 단기 과매도 구간(RSI 31) 진입 후 핵심 지지선 반등을 시도하는 매력적인 눌림목 기회를 제공하고 있습니다.",
