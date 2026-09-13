@@ -211,7 +211,6 @@ def calculate_wilder_rsi(series, period=14, signal_period=9):
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
     
-    # 웰레스 와일더 지수평활 (RMA / EMA, alpha=1/period)
     avg_gain = gain.ewm(alpha=1.0/period, min_periods=period, adjust=False).mean()
     avg_loss = loss.ewm(alpha=1.0/period, min_periods=period, adjust=False).mean()
     
@@ -221,7 +220,7 @@ def calculate_wilder_rsi(series, period=14, signal_period=9):
     return rsi, rsi_signal
 
 # =========================================================
-# 🏛️ [LLM 다중화 매니저 - gemini-3.5-flash-lite 엄수 & 503 재시도 & Groq 호환성 확보]
+# 🏛️ [LLM 다중화 매니저 - gemini-3.5-flash-lite 엄수 & 503 재시도]
 # =========================================================
 class MultiLLMManager:
     def __init__(self, gemini_key, groq_keys):
@@ -273,7 +272,6 @@ class MultiLLMManager:
             raise RuntimeError("TEST_MODE가 활성화되어 있어 AI 호출을 스킵합니다.")
 
         # 1순위: Gemini (gemini-3.5-flash-lite)
-        # 구글 서버 503 혼잡(High Demand) 발생 시 즉시 탈락시키지 않고 3초 휴식 후 1회 재시도
         if self.gemini_client:
             for attempt in range(2):
                 try:
@@ -298,7 +296,7 @@ class MultiLLMManager:
                     print(f"⚠️ Gemini 일시 오류/429/503 ({e}) ➔ Groq으로 우회합니다.")
                     break
 
-        # 2순위: Groq 백업 풀 (Groq 지원 모델 목록 자동 폴백)
+        # 2순위: Groq 백업 풀
         groq_model_candidates = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama3-70b-8192", "llama-3.1-8b-instant"]
         while self.groq_client:
             for g_model in groq_model_candidates:
@@ -1336,8 +1334,6 @@ for stock_name, (symbol, supply_type) in selected_kr_targets.items():
         atr_val = calculate_atr(df_daily, period=14)
 
         df_daily = df_daily.ffill().bfill()
-
-        # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
         df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
         
         rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
@@ -1604,8 +1600,6 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
         atr_val = calculate_atr(df_daily, period=14)
 
         df_daily = df_daily.ffill().bfill()
-
-        # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
         df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
         
         rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
@@ -1747,7 +1741,7 @@ for stock_name, (symbol, supply_type) in selected_us_targets.items():
     except Exception as e: print(f"🚨 {stock_name} 생성 오류: {e}")
 
 # =========================================================
-# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결 (8단계 라벨 & 아코디언 토글)
+# PART 3: 🎯 마이 대시보드(index3.html) - 토스 실시간 잔고 직결
 # =========================================================
 print("\n" + "="*60)
 print("🎯 [PART 3] 토스 실계좌 실시간 잔고 직결 및 8단계 라벨 아코디언 리포트 생성 중...")
@@ -1943,8 +1937,6 @@ for h in toss_holdings:
             peaks_and_troughs_summary = extract_peaks_and_troughs(df_daily.tail(60), is_krw=is_krw)
 
             df_daily = df_daily.ffill().bfill()
-
-            # ✅ Wilder's Smoothing HTS/트레이딩뷰 표준 RSI 및 Signal 계산
             df_daily['RSI'], df_daily['RSI_Signal'] = calculate_wilder_rsi(df_daily['Close'], period=14, signal_period=9)
 
             rsi_val = round(float(df_daily['RSI'].iloc[-1]), 2)
@@ -2050,15 +2042,272 @@ total_cost_my = total_eval_my - total_profit_my
 total_return_pct_my = (total_profit_my / total_cost_my * 100) if total_cost_my > 0 else 0
 
 # =========================================================
-# PART 4: HTML 템플릿 및 레이아웃 (플로팅 Top 버튼 탑재)
+# PART 4: 📰 뉴스 인텔리전스 (index4.html) - SaveTicker 크롤링 & 다중자산 선별
+# =========================================================
+print("\n" + "="*60)
+print("📰 [PART 4] SaveTicker 뉴스 인텔리전스 & 거시/ETF/원자재/주도주 선별 중...")
+print("="*60)
+
+def scrape_saveticker_news():
+    news_items = []
+    try:
+        url = "https://www.saveticker.com/news"
+        res = requests.get(url, headers=headers, timeout=8)
+        if res.status_code == 200:
+            soup = BeautifulSoup(res.text, 'html.parser')
+            # SaveTicker의 뉴스 컨테이너 / 카드 태그 추출
+            cards = soup.select('article') or soup.select('.news-card') or soup.select('li')
+            for c in cards[:40]:
+                title_elem = c.select_one('h2') or c.select_one('h3') or c.select_one('.title') or c.select_one('a')
+                if not title_elem:
+                    continue
+                title = title_elem.text.strip()
+                if len(title) < 8:
+                    continue
+
+                desc_elem = c.select_one('p') or c.select_one('.desc') or c.select_one('.summary')
+                desc = desc_elem.text.strip()[:200] if desc_elem else title
+
+                time_elem = c.select_one('time') or c.select_one('.date') or c.select_one('.time')
+                time_tag = time_elem.text.strip() if time_elem else "최근 24시간 내"
+
+                news_items.append({
+                    "title": title,
+                    "desc": desc,
+                    "time": time_tag
+                })
+    except Exception as e:
+        print(f"⚠️ SaveTicker 스크래핑 예외: {e}")
+
+    # 크롤링 비상 폴백
+    if len(news_items) < 5:
+        print("ℹ️ SaveTicker 폴백/글로벌 속보 헤드라인 병합 수집")
+        yahoo_raw = get_yahoo_7days_news().split('\n')
+        for y_title in yahoo_raw[:25]:
+            if len(y_title) > 8:
+                news_items.append({
+                    "title": y_title,
+                    "desc": y_title,
+                    "time": "최근 12시간 내"
+                })
+
+    return news_items[:35]
+
+saveticker_news_list = scrape_saveticker_news()
+news_digest_text = "\n".join([f"[{item['time']}] {item['title']} - {item['desc']}" for item in saveticker_news_list])
+
+def analyze_saveticker_macro_and_assets(news_text, force_refresh=False):
+    cache_key = "SAVETICKER_INTEL_REPORT"
+    if not force_refresh and is_cache_valid(cache_key, max_hours=3):
+        print("📦 [SaveTicker AI] 3시간 이내 캐시 재사용 (AI 호출 스킵)")
+        return ai_cache_store[cache_key]
+
+    if not llm_mgr.is_available():
+        if cache_key in ai_cache_store:
+            return ai_cache_store[cache_key]
+        return {
+            "verdict": "중립 🟡",
+            "score": 0,
+            "core_drivers": ["AI 데이터 수집 지연으로 캐시를 유지합니다."],
+            "asset_hedges": [
+                {"name": "QQQ (나스닥 100)", "ticker": "QQQ", "type": "지수 ETF", "reason": "안정적 지수 추종 대응", "strategy": "분할 매수"}
+            ],
+            "continuation_stocks": [
+                {"name": "NVIDIA", "ticker": "NVDA", "reason": "AI 반도체 수요 견고", "strategy": "20일선 눌림목 지지 시 진입"}
+            ]
+        }
+
+    prompt = f"""
+너는 글로벌 매크로 헤지펀드의 수석 전략가이다.
+아래 세이브티커(SaveTicker) 실시간 뉴스들을 종합 분석하라.
+
+[수집된 최신 속보 및 시황]
+{news_text}
+
+[엄격한 필터링 원칙]
+1. 시간차 소멸 재료 탈락: 목표주가 단순 상향 리포트, 일회성 테마 찌라시 등 이미 시초가에 반영 완료된 단발성 뉴스는 배제할 것.
+2. 추세 지속성(Continuity): 
+   - 매크로(금리/유가/지정학/인플레이션)처럼 며칠~수주간 방향성이 유지되는 재료인지 판별.
+   - 증시가 하락할 것으로 판단되면 무리하게 개별주를 사지 말고 반드시 인버스 상품(SQQQ, SH, PSQ 등)을 추천할 것.
+   - 원자재(금 GLD, 은 SLV, 원유 USO), 채권(TLT), 섹터 ETF(XLE, SOXX) 등 최적의 자산군을 연결할 것.
+3. 개별 기업: 어닝 서프라이즈+가이던스 상향, 대규모 장기 수주 등 기관 리밸런싱이 지속될 명확한 모멘텀주만 2~3개 추출할 것.
+
+[출력 양식 - 반드시 아래 규격의 순수 JSON 포맷으로만 출력하라. 마크다운 따옴표 백틱(```json) 없이 오직 JSON만 반환하라.]
+{{
+  "verdict": "강한 상승 🟢" 또는 "완만한 상승 🟢" 또는 "중립 🟡" 또는 "하락 조정 🔴" 또는 "시장 급락 위험 🔴",
+  "score": -100부터 +100 사이의 정수 숫자,
+  "core_drivers": [
+    "핵심 시장 동인 1 요약",
+    "핵심 시장 동인 2 요약",
+    "핵심 시장 동인 3 요약"
+  ],
+  "asset_hedges": [
+    {{
+      "name": "상품명",
+      "ticker": "미국 티커(예: SQQQ, USO, GLD, TLT, SOXX 등)",
+      "type": "자산군 분류 (예: 나스닥 3X 인버스, WTI 원유, 금 현물, 미국 장기국채 등)",
+      "reason": "뉴스 기반 추천 근거 (1~2줄)",
+      "strategy": "실전 진입 및 헷지 전략"
+    }}
+  ],
+  "continuation_stocks": [
+    {{
+      "name": "기업명",
+      "ticker": "미국 주식 티커 (예: AAPL, NVDA 등)",
+      "reason": "시간차를 이기고 추세가 지속될 구체적 뉴스 호재",
+      "strategy": "추격 매수 금지 및 눌림목 진입 전략 가이드"
+    }}
+  ]
+}}
+"""
+    try:
+        raw_res = llm_mgr.generate_completion(prompt, temperature=0.2, max_tokens=1800)
+        json_clean = re.sub(r'^```json\s*', '', raw_res.strip(), flags=re.MULTILINE)
+        json_clean = re.sub(r'^```\s*', '', json_clean.strip(), flags=re.MULTILINE)
+        data = json.loads(json_clean)
+        save_ai_cache(cache_key, data)
+        return data
+    except Exception as e:
+        print(f"⚠️ SaveTicker AI 분석 파싱 오류 ({e}) ➔ 기본 포맷 구성")
+        fallback_data = {
+            "verdict": "중립 🟡",
+            "score": 5,
+            "core_drivers": ["거시 불확실성 지속 및 섹터별 차별화 장세 진행"],
+            "asset_hedges": [
+                {"name": "Invesco QQQ Trust", "ticker": "QQQ", "type": "나스닥 100", "reason": "주요 빅테크 실적 방어력 유효", "strategy": "20일선 지지선 분할 매수"},
+                {"name": "SPDR Gold Shares", "ticker": "GLD", "type": "금 안전자산", "reason": "지정학적 리스크 및 인플레 헷지 수요", "strategy": "박스권 하단 매수"}
+            ],
+            "continuation_stocks": [
+                {"name": "NVIDIA", "ticker": "NVDA", "reason": "AI 가속기 글로벌 공급 우위 지속", "strategy": "단기 급등 추격 자제 및 눌림목 대기"}
+            ]
+        }
+        return fallback_data
+
+saveticker_intel = analyze_saveticker_macro_and_assets(news_digest_text, force_refresh=us_emergency)
+
+# =========================================================
+# 🛡️ [파이썬 기술적 교차 검증] AI 추천 상품 및 주도주 검증
+# =========================================================
+def verify_asset_chart(ticker_symbol):
+    try:
+        df = yf.Ticker(ticker_symbol).history(period="6mo", interval="1d")
+        if df is None or df.empty or len(df) < 20:
+            return None
+        
+        last_close = float(df['Close'].iloc[-1])
+        prev_close = float(df['Close'].iloc[-2]) if len(df) >= 2 else last_close
+        daily_chg = ((last_close - prev_close) / prev_close) * 100.0
+
+        ma20 = float(df['Close'].rolling(20).mean().iloc[-1])
+        rsi_series, _ = calculate_wilder_rsi(df['Close'], period=14, signal_period=9)
+        rsi_val = round(float(rsi_series.iloc[-1]), 1)
+
+        # 과열 판별: 이미 +9% 이상 폭등했거나 RSI 78 이상인 경우
+        is_overheated = (daily_chg >= 9.0) or (rsi_val >= 78.0)
+        above_ma20 = (last_close >= ma20)
+
+        return {
+            "last_close": last_close,
+            "daily_chg": daily_chg,
+            "ma20": ma20,
+            "rsi": rsi_val,
+            "is_overheated": is_overheated,
+            "above_ma20": above_ma20
+        }
+    except Exception:
+        return None
+
+# 자산군 카드 HTML 생성
+asset_cards_html = ""
+for item in saveticker_intel.get("asset_hedges", [])[:4]:
+    sym = item.get("ticker", "").upper()
+    tech = verify_asset_chart(sym)
+    
+    tech_html = ""
+    status_tag = '<span class="badge-item" style="background:#15803d;">진입 유효 🟢</span>'
+    if tech:
+        if tech["is_overheated"]:
+            status_tag = '<span class="badge-item" style="background:#dc2626;">단기 과열 경고 (추격 금지) ⚠️</span>'
+        elif tech["above_ma20"]:
+            status_tag = '<span class="badge-item" style="background:#2563eb;">20일선 위 추세 유지 📈</span>'
+        
+        tech_html = f"""
+        <div class="report-line">• 현재가: <span class="highlight-val">${tech['last_close']:.2f}</span> ({tech['daily_chg']:+.2f}%) &nbsp;|&nbsp; 20일선: ${tech['ma20']:.2f} &nbsp;|&nbsp; Wilder RSI: {tech['rsi']}</div>
+        """
+
+    tv_url = f"[https://www.tradingview.com/symbols/](https://www.tradingview.com/symbols/){sym}/"
+    asset_cards_html += f"""
+    <div class="card">
+        <div class="console-report">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div class="report-header">{item.get('name')} ({sym}) - <span style="color:#a855f7;">{item.get('type')}</span> {status_tag}</div>
+                <a href="{tv_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
+            </div>
+            <div class="stock-reason-box">💡 <b>선정 근거 & 매크로 트리거:</b><br>{item.get('reason')}</div>
+            <div class="report-divider"></div>
+            {tech_html}
+            <div class="report-line" style="color:#38bdf8; font-weight:bold;">🎯 실전 대응/헷지 가이드 : {item.get('strategy')}</div>
+        </div>
+    </div>
+    """
+
+# 추세 지속 유망주 카드 HTML 생성
+stock_picks_html = ""
+for item in saveticker_intel.get("continuation_stocks", [])[:4]:
+    sym = item.get("ticker", "").upper()
+    tech = verify_asset_chart(sym)
+    
+    tech_html = ""
+    status_tag = '<span class="badge-item" style="background:#15803d;">추세 지속 모멘텀 🚀</span>'
+    if tech:
+        if tech["is_overheated"]:
+            status_tag = '<span class="badge-item" style="background:#b91c1c;">단기 1차 급등 반영 (눌림목 대기) 🟠</span>'
+        elif not tech["above_ma20"]:
+            status_tag = '<span class="badge-item" style="background:#64748b;">이평선 회복 확인 필요 🟡</span>'
+
+        tech_html = f"""
+        <div class="report-line">• 현재가: <span class="highlight-val">${tech['last_close']:.2f}</span> ({tech['daily_chg']:+.2f}%) &nbsp;|&nbsp; 20일선: ${tech['ma20']:.2f} &nbsp;|&nbsp; Wilder RSI: {tech['rsi']}</div>
+        """
+
+    tv_url = f"[https://www.tradingview.com/symbols/](https://www.tradingview.com/symbols/){sym}/"
+    stock_picks_html += f"""
+    <div class="card">
+        <div class="console-report">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div class="report-header">{item.get('name')} ({sym}) {status_tag}</div>
+                <a href="{tv_url}" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
+            </div>
+            <div class="stock-reason-box">💡 <b>뉴스 지속성 평가:</b><br>{item.get('reason')}</div>
+            <div class="report-divider"></div>
+            {tech_html}
+            <div class="report-line text-green">🎯 시간차 방어 진입 가이드 : {item.get('strategy')}</div>
+        </div>
+    </div>
+    """
+
+# 원문 뉴스 피드 리스트 생성
+news_feed_rows = []
+for n in saveticker_news_list:
+    news_feed_rows.append(f"""
+    <div style="margin-bottom:12px; border-bottom:1px dashed #334155; padding-bottom:8px;">
+        <span style="color:#38bdf8; font-size:12px; font-weight:bold;">[{n['time']}]</span> <b>{n['title']}</b>
+        <div style="color:#94a3b8; font-size:13px; margin-top:3px;">{n['desc']}</div>
+    </div>
+    """)
+news_feed_html = "".join(news_feed_rows)
+
+drivers_html = "<br>".join([f"&nbsp;&nbsp;• {d}" for d in saveticker_intel.get("core_drivers", [])])
+
+# =========================================================
+# PART 5: HTML 템플릿 및 레이아웃 (공통 플로팅 Top 버튼 & 4탭 내비게이션)
 # =========================================================
 html_style = """
 <style>
     * { box-sizing: border-box; }
     body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
-    .nav-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-    .nav-btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
+    .nav-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .nav-btn { padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13.5px; }
     .btn-active { background: #2563eb; color: #ffffff; }
     .btn-inactive { background: #334155; color: #94a3b8; }
     .header { background: #1e293b; color: #38bdf8; padding: 18px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
@@ -2134,7 +2383,6 @@ html_style = """
 
     .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
 
-    /* 🚀 플로팅 Top 버튼 스타일 */
     #btn-back-to-top {
         position: fixed;
         bottom: 25px;
@@ -2164,8 +2412,8 @@ html_style = """
     @media (max-width: 768px) {
         body { padding: 10px 8px; }
         .container { width: 100%; }
-        .nav-bar { gap: 6px; margin-bottom: 12px; }
-        .nav-btn { flex: 1; text-align: center; font-size: 14.5px; padding: 10px 2px; }
+        .nav-bar { gap: 5px; margin-bottom: 12px; }
+        .nav-btn { flex: 1 1 45%; text-align: center; font-size: 13px; padding: 9px 2px; }
         
         .header h1 { font-size: 19px; }
         .header p { font-size: 13.5px !important; }
@@ -2175,25 +2423,10 @@ html_style = """
         .macro-value { font-size: 20px; }
         .macro-sub { font-size: 12.5px; }
         
-        .event-banner { font-size: 13.5px; line-height: 1.65; padding: 12px; }
-        .event-banner-title { font-size: 14.5px; }
-        
-        .news-briefing-card { font-size: 15px; line-height: 1.75; padding: 14px; }
-        .news-title { font-size: 16.5px; }
-        
         .card { padding: 14px 10px; margin-bottom: 20px; }
-        .report-header { font-size: 18.5px; }
-        .tv-link-btn { font-size: 13px; padding: 4px 8px; }
-        .stock-reason-box { font-size: 14.5px; line-height: 1.6; padding: 10px; }
-        .console-report { font-size: 15.5px; line-height: 1.75; padding: 14px 12px; }
-        .sub-desc { font-size: 13px !important; }
-        .badge-item { font-size: 12px !important; padding: 2px 6px; }
+        .report-header { font-size: 17.5px; }
+        .console-report { font-size: 15px; line-height: 1.75; padding: 14px 12px; }
         
-        .ai-title { font-size: 16px; }
-        .ai-content { font-size: 15px; line-height: 1.7; }
-        .deep-report-btn { font-size: 14px; padding: 10px; }
-        .deep-report-content { font-size: 14px; line-height: 1.7; padding: 12px; }
-
         #btn-back-to-top {
             bottom: 20px;
             right: 18px;
@@ -2262,14 +2495,16 @@ macro_html_us = f"""
 </div>
 """
 
-full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:17px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div>{top_button_component}</body></html>"""
+full_html_kr = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇰🇷 AI 국장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-active">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a><a href="index4.html" class="nav-btn btn-inactive">📰 뉴스 인텔리전스</a></div><div class="header"><h1>📊 AI 국장 주도주 대시보드 <span style="font-size:17px;">[{kr_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {kr_open_msg} | 업데이트: {now_str}</p></div>{kr_banner_html}{macro_html_kr}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({kr_briefing_time})</span></div>{kr_sentiment_briefing}</div>{stock_cards_kr_html}</div>{top_button_component}</body></html>"""
 
-full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:17px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div>{top_button_component}</body></html>"""
+full_html_us = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🇺🇸 AI 미장 분석 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-active">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a><a href="index4.html" class="nav-btn btn-inactive">📰 뉴스 인텔리전스</a></div><div class="header"><h1>🇺🇸 AI US Stock 주도주 대시보드 <span style="font-size:17px;">[{us_market_status}]</span></h1><p style="margin:0; color:#94a3b8; font-size:13px;">상태: {us_open_msg} | 업데이트: {now_str}</p></div>{us_banner_html}{macro_html_us}<div class="news-briefing-card"><div class="news-title">📰 [최근 7일간 뉴스 AI 종합 분석 브리핑] <span style="font-size:11.5px; color:#94a3b8; font-weight:normal;">({us_briefing_time})</span></div>{us_sentiment_briefing}</div>{stock_cards_us_html}</div>{top_button_component}</body></html>"""
 
-full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div>{top_button_component}</body></html>"""
+full_html_my = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a><a href="index4.html" class="nav-btn btn-inactive">📰 뉴스 인텔리전스</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: {now_str}</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">{fmt_price(total_eval_my, True)}</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: {usd_krw_rate:,.1f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_profit_my>=0 else '#60a5fa'};">{total_profit_my:+,.0f}원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:{'#f87171' if total_return_pct_my>=0 else '#60a5fa'};">{total_return_pct_my:+.2f}%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>{my_stock_cards_html}</div>{top_button_component}</body></html>"""
+
+full_html_news = f"""<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>📰 SaveTicker 뉴스 인텔리전스</title>{html_style}</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-inactive">🎯 마이 대시보드</a><a href="index4.html" class="nav-btn btn-active">📰 뉴스 인텔리전스</a></div><div class="header"><h1>📰 SaveTicker 뉴스 인텔리전스 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">거시 시장 방향성 / 다중 자산(ETF·원자재·인버스) / 실전 주도주 | 업데이트: {now_str}</p></div><div class="card"><div class="console-report"><div class="report-header">🧭 글로벌 거시 시장 종합 나침반 : <span class="highlight-val">{saveticker_intel.get('verdict')}</span> (센티먼트 점수: {saveticker_intel.get('score', 0):+d}점)</div><div class="report-divider"></div><div class="report-line"><b>📌 시장을 움직이는 핵심 매크로 요인:</b><br>{drivers_html}</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">🛡️ 시장 대응 맞춤 자산 (지수 추종 / 인버스 헷지 / 원자재 ETF)</h2>{asset_cards_html}<h2 style="font-size:1.15rem; color:#4ade80; margin-bottom:12px;">🚀 뉴스 모멘텀 지속 유망주 (시간차 방어 및 눌림목)</h2>{stock_picks_html}<details class="deep-report-accordion" style="margin-top:20px;"><summary class="deep-report-btn">📋 SaveTicker 수집 원문 뉴스 피드 전체보기 ({len(saveticker_news_list)}건) ▼</summary><div class="deep-report-content">{news_feed_html}</div></details></div>{top_button_component}</body></html>"""
 
 # =========================================================
-# PART 5: GitHub Pages 및 ai_cache.json 통합 배포
+# PART 6: GitHub Pages 및 ai_cache.json 통합 배포 (index4.html 추가)
 # =========================================================
 def upload_to_github_safely(repo, file_path, commit_message, content):
     try:
@@ -2282,7 +2517,7 @@ def upload_to_github_safely(repo, file_path, commit_message, content):
     except Exception as e:
         print(f"🚨 {file_path} 배포 중 예외 발생: {e}")
 
-print("\n🌐 [PART 5] GitHub Pages (index, us_index, index3) 및 AI 캐시 동기화 업로드 중...")
+print("\n🌐 [PART 6] GitHub Pages (index, us_index, index3, index4) 및 AI 캐시 동기화 업로드 중...")
 try:
     if not GITHUB_TOKEN:
         raise ValueError("GH_TOKEN이 설정되지 않았습니다.")
@@ -2293,6 +2528,7 @@ try:
     upload_to_github_safely(repo, "index.html", f"Deploy KR Report: {now_str}", full_html_kr)
     upload_to_github_safely(repo, "us_index.html", f"Deploy US Report: {now_str}", full_html_us)
     upload_to_github_safely(repo, "index3.html", f"Deploy My Dashboard: {now_str}", full_html_my)
+    upload_to_github_safely(repo, "index4.html", f"Deploy News Intelligence: {now_str}", full_html_news)
     
     if os.path.exists(CACHE_FILE_NAME):
         with open(CACHE_FILE_NAME, "r", encoding="utf-8") as f:
@@ -2300,10 +2536,11 @@ try:
         upload_to_github_safely(repo, "ai_cache.json", f"Update AI Cache: {now_str}", cache_json_str)
 
     print("\n" + "="*65)
-    print("🎉 [최종 완료] Wilder RSI 지표 보정, Top 버튼 및 8단계 라벨 배포 완료!")
+    print("🎉 [최종 완료] index4(SaveTicker 뉴스 인텔리전스) 포함 4대 대시보드 배포 완료!")
     print(f"🔗 🇰🇷 국장: https://{repo.owner.login}.github.io/{repo.name}/index.html")
     print(f"🔗 🇺🇸 미장: https://{repo.owner.login}.github.io/{repo.name}/us_index.html")
     print(f"🔗 🎯 마이: https://{repo.owner.login}.github.io/{repo.name}/index3.html")
+    print(f"🔗 📰 뉴스: https://{repo.owner.login}.github.io/{repo.name}/index4.html")
     print("="*65)
 
 except Exception as e:
