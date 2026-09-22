@@ -1128,11 +1128,11 @@
     "updated_at": "2026-09-01 20:30 KST"
   },
   "VOLATILITY_STATE_KR": {
-    "date": "2026-09-22",
+    "date": "2026-09-23",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-22 23:30 KST"
+    "updated_at": "2026-09-23 00:01 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "코스닥 ETF 시장을 이끄는 반도체 소부장 테마의 강세 속에서 이평선 정배열 안착과 장대양봉 고가 마감의 강력한 수급 유입이 포착되어 단기 상승 랠리 지속이 기대됨.",
@@ -1147,11 +1147,11 @@
     "updated_at": "2026-09-09 04:31 KST"
   },
   "VOLATILITY_STATE_US": {
-    "date": "2026-09-22",
+    "date": "2026-09-23",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-22 23:30 KST"
+    "updated_at": "2026-09-23 00:01 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 인노베이션(AUR)은 자율주행 섹터의 핵심 주로 최근 활발한 거래대금과 함께 변동성을 키우고 있습니다. 기술적으로 20일 이동평균선과 주요 매물대 POC 부근의 지지를 확인하며 단기 반등을 노리는 눌림목 매매에 적합한 손익비를 제공합니다.",
