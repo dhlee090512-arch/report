@@ -660,54 +660,54 @@
         "NOK",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "IREN LIMITED": [
-        "IREN",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "Comcast Corporation": [
         "CMCSA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "IREN LIMITED": [
+        "IREN",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-27 22:01 KST"
+    "updated_at": "2026-09-28 22:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 5,
-      "last_pivot_date": "2026-09-27"
+      "days": 6,
+      "last_pivot_date": "2026-09-28"
     },
-    "updated_at": "2026-09-28 08:30 KST",
+    "updated_at": "2026-09-28 22:00 KST",
     "SPCX": {
-      "days": 38,
-      "last_pivot_date": "2026-09-27"
+      "days": 39,
+      "last_pivot_date": "2026-09-28"
     },
     "INTC": {
-      "days": 38,
-      "last_pivot_date": "2026-09-27"
+      "days": 39,
+      "last_pivot_date": "2026-09-28"
     },
     "NVDA": {
-      "days": 38,
-      "last_pivot_date": "2026-09-27"
+      "days": 39,
+      "last_pivot_date": "2026-09-28"
     },
     "NOK": {
-      "days": 30,
-      "last_pivot_date": "2026-09-27"
+      "days": 31,
+      "last_pivot_date": "2026-09-28"
     },
     "SMCI": {
-      "days": 2,
-      "last_pivot_date": "2026-09-27"
+      "days": 3,
+      "last_pivot_date": "2026-09-28"
     },
     "F": {
       "days": 1,
       "last_pivot_date": "2026-09-25"
     },
     "TSLA": {
-      "days": 3,
-      "last_pivot_date": "2026-09-27"
+      "days": 4,
+      "last_pivot_date": "2026-09-28"
     },
     "IREN": {
-      "days": 2,
-      "last_pivot_date": "2026-09-27"
+      "days": 3,
+      "last_pivot_date": "2026-09-28"
     },
     "HL": {
       "days": 1,
@@ -942,8 +942,8 @@
       "last_pivot_date": "2026-09-09"
     },
     "GRAB": {
-      "days": 18,
-      "last_pivot_date": "2026-09-27"
+      "days": 19,
+      "last_pivot_date": "2026-09-28"
     },
     "036930.KQ": {
       "days": 9,
@@ -1066,8 +1066,8 @@
       "last_pivot_date": "2026-09-24"
     },
     "CMCSA": {
-      "days": 2,
-      "last_pivot_date": "2026-09-27"
+      "days": 3,
+      "last_pivot_date": "2026-09-28"
     }
   },
   "STOCK_SOFI": {
@@ -1160,7 +1160,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-28 21:30 KST"
+    "updated_at": "2026-09-28 22:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "코스닥 ETF 시장을 이끄는 반도체 소부장 테마의 강세 속에서 이평선 정배열 안착과 장대양봉 고가 마감의 강력한 수급 유입이 포착되어 단기 상승 랠리 지속이 기대됨.",
@@ -1179,7 +1179,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-28 21:30 KST"
+    "updated_at": "2026-09-28 22:00 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
