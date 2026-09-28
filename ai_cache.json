@@ -636,20 +636,16 @@
         "NU",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Space Exploration Technologies ": [
-        "SPCX",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "Intel Corporation": [
         "INTC",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Nokia Corporation Sponsored": [
-        "NOK",
+      "Space Exploration Technologies ": [
+        "SPCX",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "IonQ, Inc.": [
-        "IONQ",
+      "Nokia Corporation Sponsored": [
+        "NOK",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "SoFi Technologies, Inc.": [
@@ -660,38 +656,42 @@
         "GRAB",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Meta Platforms, Inc.": [
-        "META",
+      "IonQ, Inc.": [
+        "IONQ",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Nike, Inc.": [
-        "NKE",
+      "Warner Bros. Discovery, Inc. - ": [
+        "WBD",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Tesla, Inc.": [
+        "TSLA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-28 23:00 KST"
+    "updated_at": "2026-09-29 00:01 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 6,
-      "last_pivot_date": "2026-09-28"
+      "days": 7,
+      "last_pivot_date": "2026-09-29"
     },
-    "updated_at": "2026-09-28 23:00 KST",
+    "updated_at": "2026-09-29 00:01 KST",
     "SPCX": {
-      "days": 39,
-      "last_pivot_date": "2026-09-28"
+      "days": 40,
+      "last_pivot_date": "2026-09-29"
     },
     "INTC": {
-      "days": 39,
-      "last_pivot_date": "2026-09-28"
+      "days": 40,
+      "last_pivot_date": "2026-09-29"
     },
     "NVDA": {
-      "days": 39,
-      "last_pivot_date": "2026-09-28"
+      "days": 40,
+      "last_pivot_date": "2026-09-29"
     },
     "NOK": {
-      "days": 31,
-      "last_pivot_date": "2026-09-28"
+      "days": 32,
+      "last_pivot_date": "2026-09-29"
     },
     "SMCI": {
       "days": 3,
@@ -702,8 +702,8 @@
       "last_pivot_date": "2026-09-25"
     },
     "TSLA": {
-      "days": 4,
-      "last_pivot_date": "2026-09-28"
+      "days": 5,
+      "last_pivot_date": "2026-09-29"
     },
     "IREN": {
       "days": 3,
@@ -734,8 +734,8 @@
       "last_pivot_date": "2026-09-01"
     },
     "SOFI": {
-      "days": 5,
-      "last_pivot_date": "2026-09-28"
+      "days": 6,
+      "last_pivot_date": "2026-09-29"
     },
     "NKE": {
       "days": 1,
@@ -826,8 +826,8 @@
       "last_pivot_date": "2026-08-22"
     },
     "IONQ": {
-      "days": 1,
-      "last_pivot_date": "2026-09-28"
+      "days": 2,
+      "last_pivot_date": "2026-09-29"
     },
     "PLTR": {
       "days": 1,
@@ -942,8 +942,8 @@
       "last_pivot_date": "2026-09-09"
     },
     "GRAB": {
-      "days": 19,
-      "last_pivot_date": "2026-09-28"
+      "days": 20,
+      "last_pivot_date": "2026-09-29"
     },
     "036930.KQ": {
       "days": 9,
@@ -1038,8 +1038,8 @@
       "last_pivot_date": "2026-09-21"
     },
     "WBD": {
-      "days": 3,
-      "last_pivot_date": "2026-09-24"
+      "days": 1,
+      "last_pivot_date": "2026-09-29"
     },
     "058470.KQ": {
       "days": 1,
@@ -1176,11 +1176,11 @@
     "updated_at": "2026-09-01 20:30 KST"
   },
   "VOLATILITY_STATE_KR": {
-    "date": "2026-09-28",
+    "date": "2026-09-29",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-28 23:00 KST"
+    "updated_at": "2026-09-29 00:01 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "코스닥 ETF 시장을 이끄는 반도체 소부장 테마의 강세 속에서 이평선 정배열 안착과 장대양봉 고가 마감의 강력한 수급 유입이 포착되어 단기 상승 랠리 지속이 기대됨.",
@@ -1195,11 +1195,11 @@
     "updated_at": "2026-09-09 04:31 KST"
   },
   "VOLATILITY_STATE_US": {
-    "date": "2026-09-28",
+    "date": "2026-09-29",
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-28 23:00 KST"
+    "updated_at": "2026-09-29 00:01 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
