@@ -622,6 +622,10 @@
         "INTC",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
+      "Space Exploration Technologies ": [
+        "SPCX",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
       "Nu Holdings Ltd.": [
         "NU",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
@@ -632,10 +636,6 @@
       ],
       "Grab Holdings Limited": [
         "GRAB",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
-      "Space Exploration Technologies ": [
-        "SPCX",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Nokia Corporation Sponsored": [
@@ -655,14 +655,14 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-30 13:00 KST"
+    "updated_at": "2026-09-30 13:30 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
       "days": 1,
       "last_pivot_date": "2026-09-30"
     },
-    "updated_at": "2026-09-30 13:00 KST",
+    "updated_at": "2026-09-30 13:30 KST",
     "SPCX": {
       "days": 1,
       "last_pivot_date": "2026-09-30"
@@ -1210,7 +1210,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-30 13:00 KST"
+    "updated_at": "2026-09-30 13:30 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 강한 거래량을 동반한 장대양봉 마감으로 상승 모멘텀을 증명했으나, RSI 과열권 및 이평선 혼조세 구간에 위치해 즉시 추격매수보다는 철저한 분할 눌림목 접근이 유리합니다. 철저한 리스크 관리를 전제로 상방 손익비가 나오는 구간에서 전략적 매매가 유효합니다.",
@@ -1236,7 +1236,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-30 13:00 KST"
+    "updated_at": "2026-09-30 13:30 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
