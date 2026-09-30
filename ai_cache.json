@@ -1,8 +1,8 @@
 {
   "MARKET_대한민국 주식시장(국장)": {
     "status": "보통 🟡",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 반도체 및 인공지능 관련 수출 회복세 기대감 지속<br>&nbsp;&nbsp;• 정부의 자본시장 활성화 정책 및 제도 개선 기대<br>&nbsp;&nbsp;• 일부 대기업의 호실적 발표 및 주주환원 정책 강화<br>&nbsp;&nbsp;• 외국인 투자자의 저가 매수세 유입 가능성<br>&nbsp;&nbsp;• 글로벌 공급망 안정화 및 물가 상승세 진정 조짐<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 미국 연방준비제도의 금리 인하 지연 우려<br>&nbsp;&nbsp;• 중동 지역 등 지정학적 리스크에 따른 글로벌 증시 변동성 확대<br>&nbsp;&nbsp;• 고환율 장기화로 인한 수입 기업 원가 부담 증가<br>&nbsp;&nbsp;• 국내 부동산 프로젝트 금융 리스크 및 가계부채 부담<br>&nbsp;&nbsp;• 중국 경제 성장 둔화 우려에 따른 대중 수출 타격 가능성<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능, 반도체 소부장, 저PBR 주식, 전력설비</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (글로벌 거시경제 불확실성과 국내 정책 기대감이 혼조세를 보이며 완만한 등락을 거듭하는 시장)</span>\n        ",
-    "updated_at": "2026-09-29 08:30 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 반도체 및 인공지능 관련 대형주의 실적 개선 기대감 지속<br>&nbsp;&nbsp;• 정부의 자본시장 부양 정책 및 밸류업 프로그램에 대한 기대 심리<br>&nbsp;&nbsp;• 외국인 투자자의 특정 업종 중심 순매수 유입 가능성<br>&nbsp;&nbsp;• 글로벌 공급망 안정화에 따른 수출 기업 실적 방어력<br>&nbsp;&nbsp;• 배당 시즌 도래에 따른 배당 투자 매력 부각<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 미국 연방준비제도의 금리 인하 지연 우려에 따른 환율 변동성 확대<br>&nbsp;&nbsp;• 중동 지역 등 지정학적 리스크로 인한 글로벌 증시 불확실성<br>&nbsp;&nbsp;• 국내 부동산 프로젝트 금융 리스크 및 가계부채 부담 상존<br>&nbsp;&nbsp;• 고금리 장기화에 따른 내수 경기 회복세 지연<br>&nbsp;&nbsp;• 중국 경제의 더디게 회복되는 성장 모멘텀으로 인한 수출 타격 우려<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능, 반도체 소부장, 전력설비, 저PBR 관련주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (글로벌 불확실성과 국내 정책 기대감이 혼재된 박스권 장세)</span>\n        ",
+    "updated_at": "2026-09-30 10:30 KST"
   },
   "STOCK_005930.KS": {
     "reason": "글로벌 대형 운용사들의 한국 기술주 매수세 유입과 반도체 섹터의 강력한 모멘텀이 지속되는 가운데, 단기 변동성 조정 구간을 거치며 탄탄한 저점 매수세가 유입되어 추세 우상향 흐름이 견조하게 유지되고 있습니다.",
@@ -522,28 +522,28 @@
   },
   "SELECTED_KR_TARGETS": {
     "targets": {
-      "HPSP": [
-        "403870.KQ",
+      "SK하이닉스": [
+        "000660.KS",
         "이평선 정배열 안착 🟢 / 장대양봉 종가 고가 마감 📈"
       ],
-      "피에스케이홀딩스": [
-        "031980.KQ",
+      "SK": [
+        "034730.KS",
         "이평선 정배열 안착 🟢 / 장대양봉 종가 고가 마감 📈"
       ],
-      "티에스이": [
-        "131290.KQ",
+      "주성엔지니어링": [
+        "036930.KQ",
         "이평선 정배열 안착 🟢 / 장대양봉 종가 고가 마감 📈"
       ],
-      "삼성전자우": [
-        "005935.KS",
-        "이평선 정배열 안착 🟢"
+      "이오테크닉스": [
+        "039030.KQ",
+        "이평선 정배열 안착 🟢 / 장대양봉 종가 고가 마감 📈"
       ],
-      "에코프로비엠": [
-        "247540.KQ",
-        "장대양봉 종가 고가 마감 📈"
+      "ISC": [
+        "095340.KQ",
+        "이평선 정배열 안착 🟢 / 장대양봉 종가 고가 마감 📈"
       ]
     },
-    "updated_at": "2026-09-29 08:30 KST"
+    "updated_at": "2026-09-30 10:30 KST"
   },
   "STOCK_055550.KS": {
     "reason": "신한지주는 정배열 안착과 함께 안정적인 우상향 흐름을 전개하고 있으며, 최근 조정 국면에서 20일선 부근 지지를 테스트하고 있어 분할 접근을 통한 저점 매수 매력도가 높은 구간입니다.",
@@ -628,10 +628,6 @@
   },
   "SELECTED_US_TARGETS": {
     "targets": {
-      "Nu Holdings Ltd.": [
-        "NU",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "NVIDIA Corporation": [
         "NVDA",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
@@ -640,43 +636,47 @@
         "INTC",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Space Exploration Technologies ": [
-        "SPCX",
+      "Nu Holdings Ltd.": [
+        "NU",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Carnival Corporation Ltd.": [
+        "CCL",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Grab Holdings Limited": [
         "GRAB",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
+      "Space Exploration Technologies ": [
+        "SPCX",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
       "Nokia Corporation Sponsored": [
         "NOK",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
-      "SoFi Technologies, Inc.": [
-        "SOFI",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
-      "AGNC Investment Corp.": [
-        "AGNC",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Warner Bros. Discovery, Inc. - ": [
         "WBD",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Rocket Companies, Inc.": [
-        "RKT",
+      "Pacific Gas & Electric Co.": [
+        "PCG",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Oracle Corporation": [
+        "ORCL",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-09-29 02:00 KST"
+    "updated_at": "2026-09-30 10:30 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
       "days": 1,
       "last_pivot_date": "2026-09-30"
     },
-    "updated_at": "2026-09-30 10:00 KST",
+    "updated_at": "2026-09-30 10:30 KST",
     "SPCX": {
       "days": 1,
       "last_pivot_date": "2026-09-30"
@@ -723,7 +723,7 @@
     },
     "039030.KQ": {
       "days": 1,
-      "last_pivot_date": "2026-09-22"
+      "last_pivot_date": "2026-09-30"
     },
     "108490.KQ": {
       "days": 1,
@@ -907,7 +907,7 @@
     },
     "095340.KQ": {
       "days": 1,
-      "last_pivot_date": "2026-09-16"
+      "last_pivot_date": "2026-09-30"
     },
     "086790.KS": {
       "days": 5,
@@ -946,8 +946,8 @@
       "last_pivot_date": "2026-09-30"
     },
     "036930.KQ": {
-      "days": 9,
-      "last_pivot_date": "2026-09-28"
+      "days": 10,
+      "last_pivot_date": "2026-09-30"
     },
     "222800.KQ": {
       "days": 7,
@@ -1224,7 +1224,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-30 10:00 KST"
+    "updated_at": "2026-09-30 10:30 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 강한 거래량을 동반한 장대양봉 마감으로 상승 모멘텀을 증명했으나, RSI 과열권 및 이평선 혼조세 구간에 위치해 즉시 추격매수보다는 철저한 분할 눌림목 접근이 유리합니다. 철저한 리스크 관리를 전제로 상방 손익비가 나오는 구간에서 전략적 매매가 유효합니다.",
@@ -1250,7 +1250,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-09-30 10:00 KST"
+    "updated_at": "2026-09-30 10:30 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
