@@ -1,22 +1,38 @@
-<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오</title>
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>🎯 마이 포트폴리오 대시보드</title>
 <style>
     * { box-sizing: border-box; }
     body { font-family: 'Consolas', -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
     .container { max-width: 950px; margin: 0 auto; }
-    .nav-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .nav-btn { padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13.5px; }
+    .nav-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .nav-btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; }
     .btn-active { background: #2563eb; color: #ffffff; }
     .btn-inactive { background: #334155; color: #94a3b8; }
     .header { background: #1e293b; color: #38bdf8; padding: 18px; border-radius: 12px; margin-bottom: 20px; text-align: center; border: 1px solid #334155; }
+    
     .event-banner { background: #3b0764; border: 1px solid #a855f7; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13.5px; line-height: 1.7; color: #f3e8ff; }
     .event-banner-title { font-weight: bold; color: #facc15; font-size: 15px; margin-bottom: 6px; }
+    
     .macro-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .macro-card { background: #182232; border: 1px solid #334155; border-radius: 10px; padding: 14px 12px; text-align: center; text-decoration: none; color: inherit; display: block; }
+    .macro-card { 
+        background: #182232; 
+        border: 1px solid #334155; 
+        border-radius: 10px; 
+        padding: 14px 12px; 
+        text-align: center; 
+        text-decoration: none; 
+        color: inherit; 
+        display: block;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+    .macro-card:hover { transform: translateY(-3px); border-color: #38bdf8; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); }
     .macro-title { font-size: 13px; color: #94a3b8; font-weight: bold; margin-bottom: 6px; }
     .macro-value { font-size: 19px; font-weight: bold; color: #38bdf8; margin-bottom: 4px; }
     .macro-sub { font-size: 11.5px; color: #4ade80; margin-top: 2px; }
+    
     .news-briefing-card { background: #182232; border: 1px solid #38bdf8; border-radius: 12px; padding: 16px; margin-bottom: 24px; line-height: 1.75; font-size: 14px; }
     .news-title { font-size: 15.5px; font-weight: bold; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px dashed #334155; padding-bottom: 6px; }
+    
     .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 26px; border: 1px solid #334155; }
     .console-report { background: #090d16; padding: 16px; border-radius: 8px; border: 1px solid #334155; font-size: 14.5px; line-height: 1.7; }
     .stock-reason-box { background: #1e1b4b; border-left: 4px solid #818cf8; padding: 11px; border-radius: 4px; margin: 10px 0; font-size: 13.5px; color: #e0e7ff; line-height: 1.6; }
@@ -26,53 +42,138 @@
     .highlight-val { color: #facc15; font-weight: bold; }
     .text-red { color: #f87171; font-weight: bold; }
     .text-green { color: #4ade80; font-weight: bold; }
-    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 9px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; }
-    .sub-desc { font-size: 12px; color: #94a3b8; }
+    .tv-link-btn { background: #2563eb; color: #ffffff; padding: 4px 9px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; display: inline-block; }
+    .sub-desc { font-size: 12px; color: #94a3b8; font-weight: normal; }
     .badge-item { color: #ffffff; font-size: 11.5px; padding: 2px 7px; border-radius: 12px; margin-left: 6px; font-weight: bold; display: inline-block; }
+    
     .ai-opinion-box { background: #062a1c; border: 1px solid #22c55e; border-radius: 8px; padding: 16px; margin-top: 14px; }
     .ai-title { font-size: 14.5px; font-weight: bold; color: #4ade80; margin-bottom: 8px; }
     .ai-content { font-size: 14px; color: #f1f5f9; line-height: 1.7; }
+    
     .deep-report-accordion { margin-top: 12px; border-top: 1px dashed rgba(34, 197, 94, 0.4); padding-top: 10px; }
-    .deep-report-btn { background: #0d4a32; color: #86efac; padding: 9px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; border: 1px solid #15803d; list-style: none; text-align: center; }
-    .deep-report-content { background: #041f15; border-radius: 6px; padding: 13px; margin-top: 8px; font-size: 13.5px; color: #e2e8f0; line-height: 1.75; border: 1px solid #166534; }
+    .deep-report-btn { 
+        background: #0d4a32; 
+        color: #86efac; 
+        padding: 9px 12px; 
+        border-radius: 6px; 
+        font-size: 13px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        user-select: none;
+        list-style: none;
+        text-align: center;
+        border: 1px solid #15803d;
+        transition: background 0.2s;
+    }
+    .deep-report-btn:hover { background: #15803d; }
+    .deep-report-btn::-webkit-details-marker { display: none; }
+    .deep-report-content { 
+        background: #041f15; 
+        border-radius: 6px; 
+        padding: 13px; 
+        margin-top: 8px; 
+        font-size: 13.5px; 
+        color: #e2e8f0; 
+        line-height: 1.75; 
+        border: 1px solid #166534; 
+    }
+
     .chart-container { margin-top: 16px; border-radius: 8px; overflow: hidden; }
-    #btn-back-to-top { position: fixed; bottom: 25px; right: 25px; display: none; width: 46px; height: 46px; border-radius: 50%; background: #2563eb; color: #fff; border: none; cursor: pointer; font-size: 20px; font-weight: bold; z-index: 9999; align-items: center; justify-content: center; }
-    @media (max-width: 768px) { .macro-grid { grid-template-columns: 1fr; } .nav-btn { flex: 1 1 45%; text-align: center; } }
+
+    /* 🚀 플로팅 Top 버튼 스타일 */
+    #btn-back-to-top {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        display: none;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #ffffff;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        font-size: 20px;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        z-index: 9999;
+        transition: opacity 0.3s, transform 0.2s, background 0.2s;
+        align-items: center;
+        justify-content: center;
+    }
+    #btn-back-to-top:hover {
+        background: #1d4ed8;
+        transform: translateY(-3px);
+    }
+
+    @media (max-width: 768px) {
+        body { padding: 10px 8px; }
+        .container { width: 100%; }
+        .nav-bar { gap: 6px; margin-bottom: 12px; }
+        .nav-btn { flex: 1; text-align: center; font-size: 14.5px; padding: 10px 2px; }
+        
+        .header h1 { font-size: 19px; }
+        .header p { font-size: 13.5px !important; }
+        
+        .macro-grid { grid-template-columns: 1fr; gap: 6px; }
+        .macro-title { font-size: 13.5px; }
+        .macro-value { font-size: 20px; }
+        .macro-sub { font-size: 12.5px; }
+        
+        .event-banner { font-size: 13.5px; line-height: 1.65; padding: 12px; }
+        .event-banner-title { font-size: 14.5px; }
+        
+        .news-briefing-card { font-size: 15px; line-height: 1.75; padding: 14px; }
+        .news-title { font-size: 16.5px; }
+        
+        .card { padding: 14px 10px; margin-bottom: 20px; }
+        .report-header { font-size: 18.5px; }
+        .tv-link-btn { font-size: 13px; padding: 4px 8px; }
+        .stock-reason-box { font-size: 14.5px; line-height: 1.6; padding: 10px; }
+        .console-report { font-size: 15.5px; line-height: 1.75; padding: 14px 12px; }
+        .sub-desc { font-size: 13px !important; }
+        .badge-item { font-size: 12px !important; padding: 2px 6px; }
+        
+        .ai-title { font-size: 16px; }
+        .ai-content { font-size: 15px; line-height: 1.7; }
+        .deep-report-btn { font-size: 14px; padding: 10px; }
+        .deep-report-content { font-size: 14px; line-height: 1.7; padding: 12px; }
+
+        #btn-back-to-top {
+            bottom: 20px;
+            right: 18px;
+            width: 42px;
+            height: 42px;
+            font-size: 18px;
+        }
+    }
 </style>
-</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장</a><a href="index3.html" class="nav-btn btn-active">🎯 마이</a><a href="index4.html" class="nav-btn btn-inactive">📰 뉴스</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">2026-09-30 10:00 KST</p></div><div style="background:#1e293b; padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155;"><div><div style="font-size:12px; color:#94a3b8;">총 평가 금액</div><div style="font-size:22px; font-weight:bold;">59,115,394원</div></div><div><div style="font-size:12px; color:#94a3b8;">총 손익</div><div style="font-size:22px; font-weight:bold; color:#f87171;">-4,999,310원</div></div><div><div style="font-size:12px; color:#94a3b8;">수익률</div><div style="font-size:22px; font-weight:bold; color:#f87171;">-7.80%</div></div></div>
+</head><body><div class="container"><div class="nav-bar"><a href="index.html" class="nav-btn btn-inactive">🇰🇷 국장 대시보드</a><a href="us_index.html" class="nav-btn btn-inactive">🇺🇸 미장 대시보드</a><a href="index3.html" class="nav-btn btn-active">🎯 마이 대시보드</a></div><div class="header"><h1>🎯 마이 포트폴리오 실계좌 대시보드</h1><p style="margin:0; color:#94a3b8; font-size:13px;">업데이트: 2026-09-30 10:30 KST</p></div><div style="background:linear-gradient(135deg, #1e293b, #334155); padding:16px; border-radius:12px; margin-bottom:22px; display:flex; justify-content:space-around; text-align:center; border:1px solid #334155; flex-wrap:wrap; gap:8px;"><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 금액 (원화)</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#f8fafc;">59,094,632원</div><div style="font-size:0.75rem; color:#60a5fa; margin-top:2px;">환율: 1,356.8원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">총 평가 손익</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-5,011,892원</div></div><div><div style="font-size:0.75rem; color:#94a3b8;">전체 수익률</div><div style="font-size:1.4rem; font-weight:bold; margin-top:3px; color:#60a5fa;">-7.82%</div></div></div><h2 style="font-size:1.15rem; color:#38bdf8; margin-bottom:12px;">📊 토스증권 연동 보유 종목 정밀 분석 & AI 가이드</h2>
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 RISE 미국AI밸류체인데일리고정커버드콜 (490590) - 730주</div>
+                    <div class="report-header">🇰🇷 RISE 미국AI밸류체인데일리고정커버드콜 (490590) - 730주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-490590/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    10,462,221원 <span class="text-green">(+377,810원)</span>
+                    10,458,571원 <span class="text-green">(+374,160원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">13,814원</span> (<span class="text-green">+3.74%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">14,335원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">13,814.26원</span> (<span class="text-green">+3.71%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">14,330원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">13,835원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (54.53) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -80,36 +181,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 RISE 미국AI밸류체인TOP3Plus (485690) - 270주</div>
+                    <div class="report-header">🇰🇷 RISE 미국AI밸류체인TOP3Plus (485690) - 270주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-485690/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    6,156,187원 <span class="text-red">(-531,713원)</span>
+                    6,149,438원 <span class="text-red">(-538,462원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">24,770원</span> (<span class="text-red">-7.95%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">22,805원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">24,770.00원</span> (<span class="text-red">-8.05%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">22,780원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">23,762원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (59.46) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -117,36 +209,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 RISE 미국테크100데일리고정커버드콜 (491620) - 230주</div>
+                    <div class="report-header">🇰🇷 RISE 미국테크100데일리고정커버드콜 (491620) - 230주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-491620/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    2,389,098원 <span class="text-red">(-74,682원)</span>
+                    2,385,649원 <span class="text-red">(-78,131원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">10,712원</span> (<span class="text-red">-3.03%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">10,390원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">10,712.09원</span> (<span class="text-red">-3.17%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">10,375원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">11,303원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (47.61) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -154,36 +237,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 KODEX 미국S&P500액티브 (0041E0) - 190주</div>
+                    <div class="report-header">🇰🇷 KODEX 미국S&P500액티브 (0041E0) - 190주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0041E0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    3,070,417원 <span class="text-red">(-194,928원)</span>
+                    3,064,718원 <span class="text-red">(-200,627원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">17,186원</span> (<span class="text-red">-5.96%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">16,165원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">17,186.03원</span> (<span class="text-red">-6.14%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">16,135원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">15,959원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (51.03) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -191,36 +265,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 SOL 미국넥스트테크TOP10액티브 (0118S0) - 300주</div>
+                    <div class="report-header">🇰🇷 SOL 미국넥스트테크TOP10액티브 (0118S0) - 300주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0118S0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     3,242,152원 <span class="text-red">(-613,298원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">12,852원</span> (<span class="text-red">-15.90%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">10,810원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">12,851.50원</span> (<span class="text-red">-15.90%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">10,810원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">13,498원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (51.19) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -228,36 +293,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 TIME 글로벌우주테크&방산액티브 (478150) - 145주</div>
+                    <div class="report-header">🇰🇷 TIME 글로벌우주테크&방산액티브 (478150) - 145주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-478150/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    2,573,801원 <span class="text-red">(-520,524원)</span>
+                    2,570,902원 <span class="text-red">(-523,423원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">21,340원</span> (<span class="text-red">-16.82%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">17,755원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">21,340.17원</span> (<span class="text-red">-16.91%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">17,735원</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 하한선 근접/지지 🟢 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">22,568원</span></div>
+                <div class="report-line">RSI / MACD : 과매도 (25.5) 🟢 / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -265,36 +321,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 TIGER 미국우주테크 (0183J0) - 80주</div>
+                    <div class="report-header">🇰🇷 TIGER 미국우주테크 (0183J0) - 80주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0183J0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    599,475원 <span class="text-red">(-404,117원)</span>
+                    599,075원 <span class="text-red">(-404,517원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">12,545원</span> (<span class="text-red">-40.26%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">7,495원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">12,544.90원</span> (<span class="text-red">-40.30%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">7,490원</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">10,880원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (45.9) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -302,36 +349,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 두산에너빌리티 (034020) - 40주</div>
+                    <div class="report-header">🇰🇷 두산에너빌리티 (034020) - 40주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-034020/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    3,256,627원 <span class="text-red">(-119,428원)</span>
+                    3,276,584원 <span class="text-red">(-99,471원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">84,401원</span> (<span class="text-red">-3.53%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">81,600원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">84,401.38원</span> (<span class="text-red">-2.94%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">82,100원</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">88,140원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (47.85) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -339,36 +377,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 한화오션 (042660) - 30주</div>
+                    <div class="report-header">🇰🇷 한화오션 (042660) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-042660/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     2,391,640원 <span class="text-red">(-523,972원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">97,187원</span> (<span class="text-red">-17.97%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">79,900원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">97,187.07원</span> (<span class="text-red">-17.97%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">79,900원</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">132,987원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (40.8) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -376,36 +405,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 SKC (011790) - 60주</div>
+                    <div class="report-header">🇰🇷 SKC (011790) - 60주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-011790/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     5,741,154원 <span class="text-red">(-306,681원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">100,797원</span> (<span class="text-red">-5.07%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">95,900원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">100,797.25원</span> (<span class="text-red">-5.07%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">95,900원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 상한선 돌파/근접 🚀 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">155,783원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (64.45) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -413,36 +433,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 KODEX 금액티브 (0064K0) - 250주</div>
+                    <div class="report-header">🇰🇷 KODEX 금액티브 (0064K0) - 250주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-0064K0/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    2,976,600원 <span class="text-red">(-60,400원)</span>
+                    2,970,351원 <span class="text-red">(-66,649원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">12,148원</span> (<span class="text-red">-1.98%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">11,910원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">12,148.00원</span> (<span class="text-red">-2.19%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">11,885원</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 하한선 근접/지지 🟢 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">14,162원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (38.41) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -450,36 +461,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇰🇷 SK하이닉스 (000660) - 5주</div>
+                    <div class="report-header">🇰🇷 SK하이닉스 (000660) - 5주 </div>
                     <a href="https://www.tradingview.com/symbols/KRX-000660/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
                     9,039,245원 <span class="text-red">(-1,633,970원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">2,134,643원</span> (<span class="text-red">-15.30%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">1,812,000원</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">2,134,643.00원</span> (<span class="text-red">-15.30%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">1,812,000원</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">1,902,014원</span></div>
+                <div class="report-line">RSI / MACD : 중립 (53.66) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -487,36 +489,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 NASA (NASA) - 1주</div>
+                    <div class="report-header">🇺🇸 NASA (NASA) - 1주 </div>
                     <a href="https://www.tradingview.com/symbols/NASA/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    32,462원 <span class="text-red">(-16,038원)</span>
+                    32,319원 <span class="text-red">(-16,129원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$35.71</span> (<span class="text-red">-33.06%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$23.96</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$35.71</span> (<span class="text-red">-33.29%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$23.88</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$32.64</span></div>
+                <div class="report-line">RSI / MACD : 중립 (48.87) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -524,36 +517,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 넷플릭스 (NFLX) - 5주</div>
+                    <div class="report-header">🇺🇸 넷플릭스 (NFLX) - 5주 </div>
                     <a href="https://www.tradingview.com/symbols/NFLX/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    478,562원 <span class="text-red">(-17,535원)</span>
+                    477,777원 <span class="text-red">(-17,787원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$73.05</span> (<span class="text-red">-3.53%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$70.61</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$73.05</span> (<span class="text-red">-3.58%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$70.57</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$74.30</span></div>
+                <div class="report-line">RSI / MACD : 중립 (37.14) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -561,36 +545,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 노키아(ADR) (NOK) - 50주</div>
+                    <div class="report-header">🇺🇸 노키아(ADR) (NOK) - 50주 </div>
                     <a href="https://www.tradingview.com/symbols/NOK/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    704,886원 <span class="text-red">(-11,239원)</span>
+                    702,107원 <span class="text-red">(-13,249원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$10.54</span> (<span class="text-red">-1.56%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$10.40</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$10.54</span> (<span class="text-red">-1.85%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$10.37</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$10.38</span></div>
+                <div class="report-line">RSI / MACD : 중립 (49.59) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -598,36 +573,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 맥도날드 (MCD) - 2주</div>
+                    <div class="report-header">🇺🇸 맥도날드 (MCD) - 2주 </div>
                     <a href="https://www.tradingview.com/symbols/MCD/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    635,616원 <span class="text-red">(-21,012원)</span>
+                    634,444원 <span class="text-red">(-21,478원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$241.72</span> (<span class="text-red">-3.19%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$234.45</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$241.72</span> (<span class="text-red">-3.27%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$234.27</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$270.34</span></div>
+                <div class="report-line">RSI / MACD : 과매도 (23.86) 🟢 / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -635,36 +601,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 브로드컴 (AVGO) - 1주</div>
+                    <div class="report-header">🇺🇸 브로드컴 (AVGO) - 1주 </div>
                     <a href="https://www.tradingview.com/symbols/AVGO/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    483,140원 <span class="text-green">(+7,280원)</span>
+                    481,915원 <span class="text-green">(+6,567원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$350.35</span> (<span class="text-green">+1.52%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$356.41</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$350.35</span> (<span class="text-green">+1.38%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$355.89</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$418.71</span></div>
+                <div class="report-line">RSI / MACD : 중립 (46.25) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -672,36 +629,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 소파이 테크놀로지스 (SOFI) - 20주</div>
+                    <div class="report-header">🇺🇸 소파이 테크놀로지스 (SOFI) - 20주 </div>
                     <a href="https://www.tradingview.com/symbols/SOFI/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    432,939원 <span class="text-red">(-27,272원)</span>
+                    432,202원 <span class="text-red">(-27,514원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$16.94</span> (<span class="text-red">-5.92%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$15.97</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$16.94</span> (<span class="text-red">-5.98%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$15.96</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$17.08</span></div>
+                <div class="report-line">RSI / MACD : 중립 (36.54) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -709,36 +657,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 어플라이드 머티리얼즈 (AMAT) - 1주</div>
+                    <div class="report-header">🇺🇸 어플라이드 머티리얼즈 (AMAT) - 1주 </div>
                     <a href="https://www.tradingview.com/symbols/AMAT/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    694,590원 <span class="text-green">(+34,717원)</span>
+                    693,545원 <span class="text-green">(+34,381원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$485.83</span> (<span class="text-green">+5.26%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$512.38</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$485.83</span> (<span class="text-green">+5.21%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$512.16</span></div>
+                <div class="report-line">추세 진단 : 단기 상승 추세 📈 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 상승 추세 📈</div>
+                <div class="report-line">차트 구조 : 상한선 돌파/근접 🚀 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$437.23</span></div>
+                <div class="report-line">RSI / MACD : 중립 (63.03) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -746,36 +685,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 오라클 (ORCL) - 4주</div>
+                    <div class="report-header">🇺🇸 오라클 (ORCL) - 4주 </div>
                     <a href="https://www.tradingview.com/symbols/ORCL/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    749,409원 <span class="text-red">(-503원)</span>
+                    750,123원 <span class="text-green">(+1,018원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$138.03</span> (<span class="text-red">-0.06%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$138.21</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$138.03</span> (<span class="text-green">+0.13%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$138.49</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$145.86</span></div>
+                <div class="report-line">RSI / MACD : 중립 (43.08) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -783,36 +713,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 캐리어 (CARR) - 4주</div>
+                    <div class="report-header">🇺🇸 캐리어 (CARR) - 4주 </div>
                     <a href="https://www.tradingview.com/symbols/CARR/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    298,881원 <span class="text-red">(-2,914원)</span>
+                    298,559원 <span class="text-red">(-2,911원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$55.55</span> (<span class="text-red">-0.96%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$55.12</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$55.55</span> (<span class="text-red">-0.96%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$55.12</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$63.35</span></div>
+                <div class="report-line">RSI / MACD : 중립 (39.65) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -820,36 +741,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 헤일리온(ADR) (HLN) - 50주</div>
+                    <div class="report-header">🇺🇸 헤일리온(ADR) (HLN) - 50주 </div>
                     <a href="https://www.tradingview.com/symbols/HLN/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    614,726원 <span class="text-red">(-13,460원)</span>
+                    614,065원 <span class="text-red">(-13,446원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$9.25</span> (<span class="text-red">-2.14%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$9.07</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$9.25</span> (<span class="text-red">-2.14%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$9.07</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$9.22</span></div>
+                <div class="report-line">RSI / MACD : 중립 (36.38) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -857,36 +769,27 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 ASTX (ASTX) - 30주</div>
+                    <div class="report-header">🇺🇸 ASTX (ASTX) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/ASTX/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    399,051원 <span class="text-red">(-308,196원)</span>
+                    400,250원 <span class="text-red">(-306,236원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$17.36</span> (<span class="text-red">-43.57%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$9.82</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$17.36</span> (<span class="text-red">-43.34%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$9.86</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 밴드 내 안정 ⚖️ &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$11.09</span></div>
+                <div class="report-line">RSI / MACD : 중립 (43.35) ⚖️ / 골든크로스 📈</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
@@ -894,44 +797,43 @@
         <div class="card">
             <div class="console-report">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div class="report-header">🇺🇸 IAUM (IAUM) - 30주</div>
+                    <div class="report-header">🇺🇸 IAUM (IAUM) - 30주 </div>
                     <a href="https://www.tradingview.com/symbols/IAUM/" target="_blank" class="tv-link-btn">📈 TradingView 차트 ↗</a>
                 </div>
                 <div style="font-size:20px; font-weight:bold; margin-top:6px; color:#f8fafc;">
-                    1,692,516원 <span class="text-red">(-17,236원)</span>
+                    1,687,848원 <span class="text-red">(-20,067원)</span>
                 </div>
-
-                <div style="background:#111827; border:1px solid #374151; border-radius:8px; padding:10px 14px; margin:10px 0;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:13px; color:#94a3b8; font-weight:bold;">🎯 포지션 파워 스코어</span>
-                        <span style="font-size:15px; font-weight:bold; color:#facc15;">+0점 [관망 🟡]</span>
-                    </div>
-                    <div style="font-size:12px; color:#cbd5e1; line-height:1.6; border-top:1px dashed #374151; padding-top:6px;">
-                        • <b>가격 매력도:</b> -<br>
-                        • <b>저항/지지:</b> -<br>
-                        • <b>대응 권고:</b> -
-                    </div>
-                </div>
-
                 <div class="report-divider"></div>
-                <div class="report-line">평단가 : <span class="highlight-val">$41.96</span> (<span class="text-red">-1.00%</span>) &nbsp;|&nbsp; 현재가 : <span class="highlight-val">$41.62</span></div>
+                <div class="report-line">주당 평단가 : <span class="highlight-val">$41.96</span> (<span class="text-red">-1.17%</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 주당 현재가 : <span class="highlight-val">$41.55</span></div>
+                <div class="report-line">추세 진단 : 단기 하락 추세 📉 &nbsp;&nbsp;|&nbsp;&nbsp; 중기 하락 추세 📉</div>
+                <div class="report-line">차트 구조 : 하한선 근접/지지 🟢 &nbsp;&nbsp;|&nbsp;&nbsp; 구름대 상태 유효 🟢</div>
+                <div class="report-line">집중 매물대 (POC) : <span class="highlight-val">$42.85</span></div>
+                <div class="report-line">RSI / MACD : 중립 (39.87) ⚖️ / 데드크로스 📉</div>
                 
-                <div class="report-line text-red">🛑 손절선(Trailing) : 산출 대기</div>
-                <div class="report-line text-green">🚀 목표가 : 산출 대기</div>
+                <div class="report-line text-red">🛑 AI 권장 손절선(Trailing) : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
+                <div class="report-line text-green">🚀 AI 동적 목표가 : ⚠️ 산출 실패 (AI 응답 파싱 에러)</div>
             </div>
             <details class="deep-report-accordion">
                 <summary class="deep-report-btn">🔍 AI 포트폴리오 심도 대응 전략 자세히 보기 ▼</summary>
                 <div class="deep-report-content" style="white-space: pre-line;">
-                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:00 KST)</span></div>
-                    분석 오류: 모든 AI 모델(Gemini 1/2 및 Groq Pool) 호출에 실패했습니다.
+                    <div style="font-size:14px; font-weight:bold; color:#4ade80; margin-bottom:8px;">⚡ AI 포지션 대응 분석 <span class="sub-desc">(2026-09-30 10:30 KST)</span></div>
+                    🚨 AI 분석 오류 발생: 모든 AI API(Gemini Key 1/2번 및 Groq 1/2번) 호출에 실패했습니다.
                 </div>
             </details>
         </div>
         </div>
-<button id="btn-back-to-top" title="최상단으로">▲</button>
+<button id="btn-back-to-top" title="최상단으로 이동">▲</button>
 <script>
     const topBtn = document.getElementById("btn-back-to-top");
-    window.addEventListener("scroll", () => { topBtn.style.display = (window.scrollY > 300) ? "flex" : "none"; });
-    topBtn.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: "smooth" }); });
+    window.addEventListener("scroll", () => {
+        if (window.scrollY > 300) {
+            topBtn.style.display = "flex";
+        } else {
+            topBtn.style.display = "none";
+        }
+    });
+    topBtn.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
 </script>
 </body></html>
