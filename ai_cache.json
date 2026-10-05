@@ -71,8 +71,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "보통 🟡",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 국채 금리 상승세가 완화되면서 주식시장이 반등하고 사상 최고가 부근으로 회복하는 모습 관찰<br>&nbsp;&nbsp;• 고용 지표가 다소 부드럽게 나오거나 약화되면서 추가 금리 인상에 대한 시장의 우려와 공포가 진정됨<br>&nbsp;&nbsp;• 연방준비제도 관계자의 발언 등으로 인해 과도한 금리 인상 베팅이 냉각되며 시장에 안도감 제공<br>&nbsp;&nbsp;• 4분기를 맞아 전통적인 계절적 강세 기대감과 함께 반등 및 랠리 재개에 대한 월가 시각 존재<br>&nbsp;&nbsp;• 인공지능(AI) 관련 낙관론과 기술주 중심의 저력이 여전히 시장의 하단을 지지하는 동력으로 작용<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 국채 금리가 다채로운 기간 동안 급등하며 채권시장이 수년 내 최악의 월간 부진을 겪고 주식시장에 하방 압력 가중<br>&nbsp;&nbsp;• 국제유가 상승(100달러 임박 등) 및 제조업 지표 혼조세로 인한 스티키 인플레이션(끈질긴 물가) 우려 상존<br>&nbsp;&nbsp;• 지정학적 리스크와 글로벌 경제 요인으로 인해 시장 변동성이 극심해지고 3분기 마감 과정에서 몸살을 앓음<br>&nbsp;&nbsp;• 기업들의 이익 둔화 우려와 함께 변동성 통제 펀드의 과도한 주식 노출로 인한 잠재적 매도세(셀오프) 위험 경고<br>&nbsp;&nbsp;• 예측 시장의 주식시장 진입에 따른 규제 우려 및 에브리띵 버블(모든 자산 거품) 재발에 대한 경계감 공존<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">AI 모멘텀 및 4분기 계절적 반등 기대 테마</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+05점 (채권 금리 급등과 인플레이션 압박이라는 뚜렷한 하방 리스크가 존재하나, 고용 지표 냉각과 금리 상승세 진정에 따른 반등 시도가 팽팽히 맞서며 중립적이지만 소폭 우상향하는 국면)</span>\n        ",
-    "updated_at": "2026-10-04 22:00 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 고용 지표 둔화 및 노동시장 안정화로 연방준비제도(Fed)의 추가 금리 인상 우려 완화<br>&nbsp;&nbsp;• 3분기 변동성을 소화하고 전통적으로 강세를 보이는 4분기(Q4) 장세 진입 기대감<br>&nbsp;&nbsp;• 유럽 등 타 지역 시장 대비 우수한 미국 주식시장의 글로벌 상대적 우위 지속<br>&nbsp;&nbsp;• 견조한 기업 실적 성장세와 인공지능(AI) 테마 중심의 기술주 펀더멘털 유지<br>&nbsp;&nbsp;• 주말 24시간 거래 허용 등 시장 접근성 확대 및 혁신을 위한 인프라 변화 시도<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 미 국채 금리 급등(장기채 수익률 다년 내 최고치 경신)에 따른 증시 밸류에이션 압박<br>&nbsp;&nbsp;• 인플레이션 고착화 우려 및 유가 상승(100달러 돌파 가능성) 등 거시경제 불안 요인<br>&nbsp;&nbsp;• 지정학적 리스크 및 글로벌 경제 성장 둔화(팩토리 스트렝스 및 경기 침체 우려)<br>&nbsp;&nbsp;• 변동성 제어 펀드의 높은 주식 노출도로 인한 급락(매도) 리스크 증대<br>&nbsp;&nbsp;• 규제 우려를 낳는 예측 시장의 미장 진출 및 유럽발 재정 압력 전염 위험<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 및 기술주 중심 종목 장세</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-10점 (금리 상승 압박과 채권 시장 불안이 증시 상단을 제한하고 있으나, 4분기 계절성 기대와 고용 둔화에 따른 안도감이 혼조세를 형성함)</span>\n        ",
+    "updated_at": "2026-10-05 22:00 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 종목이자 AI 및 빅테크 핵심 테마의 중심에 있는 SPCX는, 최근 금리 및 매크로 변동성 속에서도 견조한 펀더멘털을 유지하며 글로벌 시장의 주목을 받고 있습니다. 강력한 기관 수급 유입과 거래량 동반 장대양봉 발생이 맞물려 단기 모멘텀이 극대화된 주도 테마의 대장주로서 우수한 매매 기회를 제공합니다.",
@@ -478,12 +478,12 @@
         "NKE",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Space Exploration Technologies ": [
-        "SPCX",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "NVIDIA Corporation": [
         "NVDA",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Space Exploration Technologies ": [
+        "SPCX",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "Intel Corporation": [
@@ -506,38 +506,38 @@
         "RIVN",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Tesla, Inc.": [
-        "TSLA",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "Warner Bros. Discovery, Inc. - ": [
         "WBD",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Tesla, Inc.": [
+        "TSLA",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-10-04 22:00 KST"
+    "updated_at": "2026-10-05 22:00 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
-    "updated_at": "2026-10-05 08:30 KST",
+    "updated_at": "2026-10-05 22:00 KST",
     "SPCX": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
     "INTC": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
     "NVDA": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
     "NOK": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
     "SMCI": {
       "days": 3,
@@ -548,8 +548,8 @@
       "last_pivot_date": "2026-10-01"
     },
     "TSLA": {
-      "days": 2,
-      "last_pivot_date": "2026-10-04"
+      "days": 3,
+      "last_pivot_date": "2026-10-05"
     },
     "IREN": {
       "days": 3,
@@ -584,12 +584,12 @@
       "last_pivot_date": "2026-09-29"
     },
     "NKE": {
-      "days": 3,
-      "last_pivot_date": "2026-10-04"
+      "days": 4,
+      "last_pivot_date": "2026-10-05"
     },
     "RIVN": {
-      "days": 2,
-      "last_pivot_date": "2026-10-04"
+      "days": 3,
+      "last_pivot_date": "2026-10-05"
     },
     "207940.KS": {
       "days": 9,
@@ -788,8 +788,8 @@
       "last_pivot_date": "2026-09-09"
     },
     "GRAB": {
-      "days": 5,
-      "last_pivot_date": "2026-10-04"
+      "days": 6,
+      "last_pivot_date": "2026-10-05"
     },
     "036930.KQ": {
       "days": 11,
@@ -884,8 +884,8 @@
       "last_pivot_date": "2026-10-01"
     },
     "WBD": {
-      "days": 4,
-      "last_pivot_date": "2026-10-04"
+      "days": 5,
+      "last_pivot_date": "2026-10-05"
     },
     "058470.KQ": {
       "days": 4,
@@ -1076,7 +1076,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-10-05 21:30 KST"
+    "updated_at": "2026-10-05 22:00 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 강력한 외인 및 기관의 대규모 수급 유입과 함께 반도체 섹터 주도주로 부각되며 이평선 정배열 안착 및 장대양봉 종가 고가 마감 패턴을 시현하고 있습니다. 특히 거래량을 동반한 직전 매물대 돌파 이후 단기 상승 모멘텀이 극대화되는 국면으로 추가 탄력이 매우 기대되는 종목입니다.",
@@ -1095,7 +1095,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-10-05 21:30 KST"
+    "updated_at": "2026-10-05 22:00 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
