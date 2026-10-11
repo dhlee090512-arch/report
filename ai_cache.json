@@ -72,8 +72,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "보통 🟡",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• AI 중심의 강세장이 지속되며 S&P 500과 나스닥이 사상 최고가 기록 경신<br>&nbsp;&nbsp;• 기업들의 실적 개선 기대감이 시장 하방을 지지하고 매수세를 유입시킴<br>&nbsp;&nbsp;• 견조한 서비스업 지표와 기업 이익 전망에 대한 낙관론 확산<br>&nbsp;&nbsp;• AI 소프트웨어 관련 주식들이 우려를 딛고 연고점 및 신고가 경신<br>&nbsp;&nbsp;• 일부 전문가들은 2026년 중간선거 이후 연말 랠리 가능성 제기<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 유가 급등(배럴당 104달러 상회) 및 지정학적 리스크로 인한 인플레이션 재점화 우려<br>&nbsp;&nbsp;• 미 국채 금리(30년물 등)의 급등과 연방준비제도 금리 인하 기대 약화<br>&nbsp;&nbsp;• AI 수익성에 대한 의구심과 오픈AI의 실적 부진 보도로 인한 기술주 변동성 확대<br>&nbsp;&nbsp;• 일부 대형 투자자와 브로커리지(레이 달리오 등)의 시장 과열 및 밸류에이션 경고<br>&nbsp;&nbsp;• 지수 상승이 소수 기술주에만 편중되어 있다는 지적과 향후 급락(조정) 경고 존재<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 반도체 및 소프트웨어 테마</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (사상 최고가 경신과 실적 기대감이라는 호재와, 유가 및 국채 금리 상승에 따른 인플레이션 압력이 팽팽하게 맞서는 국면)</span>\n        ",
-    "updated_at": "2026-10-10 22:00 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 인공지능(AI) 중심의 강세장 지속 및 관련 기술주들의 사상 최고가 기록 경신<br>&nbsp;&nbsp;• 기업들의 견조한 실적 기대감과 긍정적인 어닝 시즌 전망<br>&nbsp;&nbsp;• 서비스업의 견고한 성장세와 주요 지수들의 주간 단위 상승 마감<br>&nbsp;&nbsp;• AI 소프트웨어 주식들의 강세 및 디스럽션 우려 완화<br>&nbsp;&nbsp;• 유가 안정세 회복 및 일부 채권 금리 하락에 따른 투자 심리 회복<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 중동 리스크 등으로 인한 원유 가격 급등(배럴당 104달러 상회) 및 인플레이션 우려 재부각<br>&nbsp;&nbsp;• 국채 금리 상승(30년물 국채 금리 연고점 경신 등) 및 연방준비제도(Fed) 정책 불확실성<br>&nbsp;&nbsp;• 일부 전문가들의 고평가 경고 및 강세장 피로감 및 밸류에이션 부담 지적<br>&nbsp;&nbsp;• AI 수익성에 대한 일부 의구심과 대형 기술주 편중 장세에 대한 경계감<br>&nbsp;&nbsp;• 무역 적자 우려 및 2026년 중간선거 등 거시경제 및 정치적 변동성 대기<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 및 반도체 테크놀로지 주식</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">+15점 (사상 최고가 경신과 실적 기대감이라는 긍정적 모멘텀이 유가 급등 및 금리 상승에 따른 인플레이션 우려와 팽팽하게 맞서고 있는 중립 속 완만한 강세 국면)</span>\n        ",
+    "updated_at": "2026-10-11 22:01 KST"
   },
   "STOCK_SPCX": {
     "reason": "Wall Street 거래대금 상위 및 빅테크 AI 핵심주로서 강력한 모멘텀을 유지하고 있으며, 최근 견조한 거래량 동반과 함께 주요 이평선 위에서 우상향 흐름을 주도하는 주도 테마 섹터의 강세를 보이고 있습니다.",
@@ -484,12 +484,12 @@
         "NU",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
-      "Grab Holdings Limited": [
-        "GRAB",
-        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
-      ],
       "Intel Corporation": [
         "INTC",
+        "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
+      ],
+      "Grab Holdings Limited": [
+        "GRAB",
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ],
       "NVIDIA Corporation": [
@@ -509,25 +509,25 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-10-10 22:00 KST"
+    "updated_at": "2026-10-11 22:01 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
-      "days": 11,
-      "last_pivot_date": "2026-10-10"
+      "days": 12,
+      "last_pivot_date": "2026-10-11"
     },
-    "updated_at": "2026-10-11 08:30 KST",
+    "updated_at": "2026-10-11 22:01 KST",
     "SPCX": {
-      "days": 11,
-      "last_pivot_date": "2026-10-10"
+      "days": 12,
+      "last_pivot_date": "2026-10-11"
     },
     "INTC": {
-      "days": 11,
-      "last_pivot_date": "2026-10-10"
+      "days": 12,
+      "last_pivot_date": "2026-10-11"
     },
     "NVDA": {
-      "days": 11,
-      "last_pivot_date": "2026-10-10"
+      "days": 12,
+      "last_pivot_date": "2026-10-11"
     },
     "NOK": {
       "days": 9,
@@ -718,8 +718,8 @@
       "last_pivot_date": "2026-10-09"
     },
     "PCG": {
-      "days": 1,
-      "last_pivot_date": "2026-10-10"
+      "days": 2,
+      "last_pivot_date": "2026-10-11"
     },
     "AMZN": {
       "days": 3,
@@ -782,8 +782,8 @@
       "last_pivot_date": "2026-09-09"
     },
     "GRAB": {
-      "days": 11,
-      "last_pivot_date": "2026-10-10"
+      "days": 12,
+      "last_pivot_date": "2026-10-11"
     },
     "036930.KQ": {
       "days": 5,
@@ -858,8 +858,8 @@
       "last_pivot_date": "2026-09-18"
     },
     "T": {
-      "days": 1,
-      "last_pivot_date": "2026-10-10"
+      "days": 2,
+      "last_pivot_date": "2026-10-11"
     },
     "PSKY": {
       "days": 3,
@@ -954,8 +954,8 @@
       "last_pivot_date": "2026-09-29"
     },
     "ASTS": {
-      "days": 1,
-      "last_pivot_date": "2026-10-10"
+      "days": 2,
+      "last_pivot_date": "2026-10-11"
     },
     "STLA": {
       "days": 2,
@@ -986,8 +986,8 @@
       "last_pivot_date": "2026-10-11"
     },
     "BBD": {
-      "days": 5,
-      "last_pivot_date": "2026-10-10"
+      "days": 6,
+      "last_pivot_date": "2026-10-11"
     },
     "PBR": {
       "days": 1,
@@ -1014,8 +1014,8 @@
       "last_pivot_date": "2026-10-09"
     },
     "VZ": {
-      "days": 1,
-      "last_pivot_date": "2026-10-10"
+      "days": 2,
+      "last_pivot_date": "2026-10-11"
     }
   },
   "STOCK_SOFI": {
@@ -1102,7 +1102,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-10-11 21:30 KST"
+    "updated_at": "2026-10-11 22:01 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "HPSP는 최근 강력한 외인 및 기관의 대규모 수급 유입과 함께 반도체 섹터 주도주로 부각되며 이평선 정배열 안착 및 장대양봉 종가 고가 마감 패턴을 시현하고 있습니다. 특히 거래량을 동반한 직전 매물대 돌파 이후 단기 상승 모멘텀이 극대화되는 국면으로 추가 탄력이 매우 기대되는 종목입니다.",
@@ -1121,7 +1121,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-10-11 21:30 KST"
+    "updated_at": "2026-10-11 22:01 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
