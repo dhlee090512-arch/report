@@ -45,9 +45,11 @@ except Exception:
 GITHUB_REPO_NAME = os.environ.get("GITHUB_REPOSITORY", "dhlee090512-arch/report")
 CACHE_FILE_NAME = "ai_cache.json"
 
+# =========================================================
+# 🌐 [오라클 프록시 설정 적용]
+# =========================================================
 PROXY_POOL = [
-    "http://ljdunsqh:ln7u5fsekv2t@142.111.67.146:5611",
-    "http://zghmkutu:36itaybf3evk@31.59.20.176:6754"
+    "http://proxy:password@161.33.159.78:3128"
 ]
 if FIXIE_URL and FIXIE_URL not in PROXY_POOL:
     PROXY_POOL.append(FIXIE_URL)
