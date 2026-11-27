@@ -101,8 +101,8 @@
   },
   "MARKET_미국 주식시장(미장)": {
     "status": "부정 🔴",
-    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 젠슨 황의 엔비디아 CEO 복귀로 인한 일시적 주가 급등 및 인공지능 투자 심리 회복<br>&nbsp;&nbsp;• S&P 500 지수가 내년에 7,800까지 상승할 것이라는 뱅크오브아메리카의 장기 전망<br>&nbsp;&nbsp;• 하락장 속에서 저가 매수세가 유입되며 낙폭을 일부 만회하는 흐름 관측<br>&nbsp;&nbsp;• 미국 경제의 지속적인 성장세 유지<br>&nbsp;&nbsp;• 일부 시장 참여자들의 저가 매수 기회 모색 및 옵션 시장의 신중한 접근<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• 기술주와 인공지능(AI) 관련 우려로 인한 S&P 500 및 나스닥의 급락과 조정장 진입<br>&nbsp;&nbsp;• 트럼프 대통령의 관세 정책 우려로 인한 글로벌 증시 동반 하락<br>&nbsp;&nbsp;• 앤트로픽 상장과 AI 열풍 둔화로 인한 섹터 변동성 확대 및 거품 우려<br>&nbsp;&nbsp;• PCE 인플레이션 데이터 발표를 앞둔 연방준비제도의 매파적 신호와 국채 금리 상승 압박<br>&nbsp;&nbsp;• 시장 매도세가 더 악화될 수 있다는 비관적 전망과 투자자들의 공포 확산<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">인공지능(AI) 및 반도체</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-35점 (기술주 급락과 AI 랠리 둔화, 관세 및 인플레이션 우려가 시장을 지배하며 전반적으로 부정적 심리가 우세함)</span>\n        ",
-    "updated_at": "2026-11-26 22:01 KST"
+    "briefing_html": "\n        🟢 <b>지난 7일 긍정 호재 (5개):</b><br>&nbsp;&nbsp;• 젠슨 황의 엔비디아 CEO 복귀로 인한 급반등 및 시장 구원 효과<br>&nbsp;&nbsp;• 낙폭 과대 인식에 따른 저가 매수세(바겐헌팅) 유입<br>&nbsp;&nbsp;• 추수감사절과 블랙프라이데이 연휴 앞두고 소비 지출에 대한 기대감 부각<br>&nbsp;&nbsp;• AI 섹터 조정 속에서 가치주로 자금이 유입되는 순환매 현상 발생<br>&nbsp;&nbsp;• 2027년 장기 전망에서 S&P 500 지수의 두 자릿수 상승 여력 기대<br><br>\n        🔴 <b>지난 7일 부정 리스크 (5개):</b><br>&nbsp;&nbsp;• AI 산업의 거품 우려와 앤트로픽 IPO 실패로 인한 기술주 폭락<br>&nbsp;&nbsp;• 트럼프 행정부의 관세 정책 우려로 인한 글로벌 증시 동반 하락<br>&nbsp;&nbsp;• 주요 경제 지표(PCE 물가) 발표를 앞둔 시장 변동성 확대<br>&nbsp;&nbsp;• S&P 500 및 다우 지수의 조정 국면 진입과 나스닥의 연간 상승분 반납<br>&nbsp;&nbsp;• 롤링 베어마켓 공포 확산 및 투자 심리 위축<br><br>\n        🚀 <b>시장 주도/강세 테마:</b> <span style=\"color:#38bdf8; font-weight:bold;\">엔비디아 중심의 하드웨어 반도체 및 저가 매수 가치주</span><br>\n        📊 <b>7일 누적 뉴스 감성 지수:</b> <span class=\"highlight-val\">-65점 (기술주 폭락과 AI 거품 우려로 인한 극심한 변동성과 조정 압박이 지배적이나, 엔비디아 복귀에 따른 일시적 반등 시도가 혼재함)</span>\n        ",
+    "updated_at": "2026-11-27 22:01 KST"
   },
   "STOCK_SPCX": {
     "reason": "최근 거시경제 인플레이션 우려와 AI 관련 변동성 확대로 주가가 단기 조정을 겪었으나, 핵심 매물대와 120일선 부근에서 지지를 테스트하고 있습니다. 대형 기관 수급이 유입되는 구간으로 리스크 관리 병행 시 매력적인 눌림목 타점이 형성되고 있습니다.",
@@ -661,14 +661,14 @@
         "🔥 Wall Street 거래대금 상위 및 빅테크/AI 핵심주"
       ]
     },
-    "updated_at": "2026-11-26 22:01 KST"
+    "updated_at": "2026-11-27 22:01 KST"
   },
   "RECOMMEND_DAYS_TRACKER": {
     "NU": {
       "days": 16,
       "last_pivot_date": "2026-10-15"
     },
-    "updated_at": "2026-11-27 08:31 KST",
+    "updated_at": "2026-11-27 22:01 KST",
     "SPCX": {
       "days": 16,
       "last_pivot_date": "2026-10-15"
@@ -678,8 +678,8 @@
       "last_pivot_date": "2026-10-15"
     },
     "NVDA": {
-      "days": 58,
-      "last_pivot_date": "2026-11-26"
+      "days": 59,
+      "last_pivot_date": "2026-11-27"
     },
     "NOK": {
       "days": 13,
@@ -694,8 +694,8 @@
       "last_pivot_date": "2026-10-01"
     },
     "TSLA": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "IREN": {
       "days": 2,
@@ -762,8 +762,8 @@
       "last_pivot_date": "2026-08-20"
     },
     "AAPL": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "MRNA": {
       "days": 4,
@@ -822,8 +822,8 @@
       "last_pivot_date": "2026-09-29"
     },
     "PLTR": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "257720.KQ": {
       "days": 2,
@@ -874,8 +874,8 @@
       "last_pivot_date": "2026-10-12"
     },
     "AMZN": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "MRVL": {
       "days": 3,
@@ -910,8 +910,8 @@
       "last_pivot_date": "2026-09-04"
     },
     "AVGO": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "SUNB": {
       "days": 2,
@@ -1078,8 +1078,8 @@
       "last_pivot_date": "2026-09-28"
     },
     "META": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "247540.KQ": {
       "days": 2,
@@ -1182,16 +1182,16 @@
       "last_pivot_date": "2026-10-15"
     },
     "MSFT": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "AMD": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "GOOGL": {
-      "days": 42,
-      "last_pivot_date": "2026-11-26"
+      "days": 43,
+      "last_pivot_date": "2026-11-27"
     },
     "277810.KQ": {
       "days": 1,
@@ -1339,7 +1339,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-11-27 21:31 KST"
+    "updated_at": "2026-11-27 22:01 KST"
   },
   "STOCK_403870.KQ": {
     "reason": "최근 36,000원 바닥 확인 후 거래량이 급증하며 주요 저항선을 돌파하는 장대양봉이 출현하여 추세 반전 가능성이 높습니다. 20일 이동평균선을 상향 이탈하며 안착을 시도하고 있어 현 구간은 매력적인 안전마진을 제공합니다.",
@@ -1365,7 +1365,7 @@
     "status": "NORMAL",
     "crash_count": 0,
     "recovery_count": 0,
-    "updated_at": "2026-11-27 21:31 KST"
+    "updated_at": "2026-11-27 22:01 KST"
   },
   "STOCK_AUR": {
     "reason": "오로라 이노베이션(AUR)은 자율주행 및 빅테크/AI 핵심 테크주로서 시장의 높은 관심 속에서 거래대금이 유입되고 있습니다. 현재 주가는 단기 조정을 거치며 주요 매물대와 20일선 부근에서 지지 테스트를 완료하였고, RSI 상향 및 MACD 골든크로스로 상승 모멘텀이 살아있어 매력적인 눌림목 진입 구간을 형성하고 있습니다.",
